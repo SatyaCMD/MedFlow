@@ -154,8 +154,8 @@ Ensure the following tools are installed and configured on the machine where Jen
 4. Scroll down to the **Pipeline** configuration panel:
    * **Definition**: Choose `Pipeline script from SCM` from the dropdown.
    * **SCM**: Select `Git`.
-   * **Repository URL**: Enter the absolute path to this local repository:
-     `c:\Users\SATYA\OneDrive\Desktop\MedFlow`
+   * **Repository URL**: Enter the GitHub repository URL:
+     `https://github.com/SatyaCMD/MedFlow.git`
    * **Branch Specifier**: Enter `*/main` (or the branch you are actively developing on).
    * **Script Path**: Verify it is set to `Jenkinsfile`.
 5. Click **Save**.
@@ -169,5 +169,6 @@ The Jenkinsfile looks up a SonarQube Scanner tool definition. If you are using S
 *Note: If you do not have SonarQube or Trivy installed yet and want to bypass these stages for initial testing, you can comment out the `SonarQube Static Scan`, `Trivy Repository Audit`, and `Trivy Container Scan` stages in the [Jenkinsfile](file:///c:/Users/SATYA/OneDrive/Desktop/MedFlow/Jenkinsfile).*
 
 ### 4. Running the Pipeline
-Click **Build Now** in your Jenkins project dashboard. Jenkins will fetch your codebase from `c:\Users\SATYA\OneDrive\Desktop\MedFlow`, run security scans, compile applications, build Docker containers, and trigger production deployments.
+Click **Build Now** in your Jenkins project dashboard. Jenkins will fetch your codebase from `https://github.com/SatyaCMD/MedFlow.git`, run security scans, compile applications, build Docker containers, and trigger production deployments.
+
 
