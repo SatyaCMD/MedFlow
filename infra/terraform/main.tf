@@ -189,7 +189,7 @@ resource "aws_elasticache_subnet_group" "redis_subnet_group" {
 # AWS ElastiCache Redis Replication Group
 resource "aws_elasticache_replication_group" "medicore_redis" {
   replication_group_id          = "medicore-redis-cluster"
-  replication_group_description = "Redis session store and job queue broker"
+  description                   = "Redis session store and job queue broker"
   node_type                     = "cache.t3.micro"
   port                          = 6379
   parameter_group_name          = "default.redis7"
@@ -227,6 +227,107 @@ resource "aws_security_group" "db_sg" {
   }
 }
 
+# Random ID for unique S3 bucket naming
+resource "random_id" "bucket_suffix" {
+  byte_length = 4
+}
+
+# S3 Bucket for medical record storage
+resource "aws_s3_bucket" "medicore_storage" {
+  bucket        = "medicore-records-${random_id.bucket_suffix.hex}"
+  force_destroy = true
+
+  tags = {
+    Name        = "medicore-records-storage"
+    Environment = var.environment
+  }
+}
+
+# Enable versioning for security audits
+resource "aws_s3_bucket_versioning" "storage_versioning" {
+  bucket = aws_s3_bucket.medicore_storage.id
+  versioning_configuration {
+    status = "Enabled"
+  }
+}
+
+# Enforce secure transport block public access
+resource "aws_s3_bucket_public_access_block" "storage_public_block" {
+  bucket = aws_s3_bucket.medicore_storage.id
+
+  block_public_acls       = true
+  block_public_policy     = true
+  ignore_public_acls      = true
+  restrict_public_buckets = true
+}
+
+# Security Group for EC2 Application Host
+resource "aws_security_group" "ec2_sg" {
+  name        = "medicore-ec2-sg"
+  description = "Allows SSH, HTTP and HTTPS access to EC2 instance"
+  vpc_id      = aws_vpc.medicore_vpc.id
+
+  ingress {
+    from_port   = 22
+    to_port     = 22
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port   = 80
+    to_port     = 80
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  ingress {
+    from_port   = 443
+    to_port     = 443
+    protocol    = "tcp"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  egress {
+    from_port   = 0
+    to_port     = 0
+    protocol    = "-1"
+    cidr_blocks = ["0.0.0.0/0"]
+  }
+
+  tags = {
+    Name = "medicore-ec2-sg"
+  }
+}
+
+# Get latest Amazon Linux 2 AMI
+data "aws_ami" "amazon_linux" {
+  most_recent = true
+  filter {
+    name   = "name"
+    values = ["amzn2-ami-hvm-*-x86_64-gp2"]
+  }
+  filter {
+    name   = "virtualization-type"
+    values = ["hvm"]
+  }
+  owners = ["137112412989"] # Amazon
+}
+
+# EC2 Application Server
+resource "aws_instance" "medicore_ec2" {
+  ami                         = data.aws_ami.amazon_linux.id
+  instance_type               = "t3.micro"
+  subnet_id                   = aws_subnet.public_subnet_a.id
+  vpc_security_group_ids      = [aws_security_group.ec2_sg.id]
+  associate_public_ip_address = true
+
+  tags = {
+    Name        = "medicore-app-server"
+    Environment = var.environment
+  }
+}
+
 # Terraform Outputs
 output "eks_cluster_endpoint" {
   value = aws_eks_cluster.medicore_eks.endpoint
@@ -243,3 +344,14 @@ output "docdb_endpoint" {
 output "redis_primary_endpoint" {
   value = aws_elasticache_replication_group.medicore_redis.primary_endpoint_address
 }
+
+output "ec2_public_ip" {
+  value       = aws_instance.medicore_ec2.public_ip
+  description = "The public IP address of the EC2 instance"
+}
+
+output "s3_bucket_name" {
+  value       = aws_s3_bucket.medicore_storage.id
+  description = "The name of the S3 bucket"
+}
+
