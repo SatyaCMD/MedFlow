@@ -6,7 +6,6 @@ pipeline {
         API_IMAGE = "medicore360-api"
         WEB_IMAGE = "medicore360-web"
         IMAGE_TAG = "${BUILD_NUMBER}"
-        SONAR_SCANNER_HOME = tool 'SonarScanner'
     }
 
     stages {
@@ -14,88 +13,114 @@ pipeline {
             steps {
                 echo 'Checking out code and verifying environment...'
                 checkout scm
-                sh 'node -v'
-                sh 'npm -v'
-                // Ensure pnpm is installed and available
-                sh 'npm install -g pnpm'
+                script {
+                    if (isUnix()) {
+                        sh 'node -v'
+                        sh 'npm -v'
+                        sh 'npm install -g pnpm'
+                    } else {
+                        bat 'node -v'
+                        bat 'npm -v'
+                        bat 'npm install -g pnpm'
+                    }
+                }
             }
         }
 
         stage('Install Dependencies') {
             steps {
                 echo 'Installing workspace dependencies...'
-                sh 'pnpm install'
+                script {
+                    if (isUnix()) {
+                        sh 'pnpm install'
+                    } else {
+                        bat 'pnpm install'
+                    }
+                }
             }
         }
 
-        stage('Lint & Quality Checks') {
+        stage('Lint Checks') {
             steps {
                 echo 'Running static analysis linting checks...'
-                sh 'pnpm run lint'
+                script {
+                    if (isUnix()) {
+                        sh 'pnpm run lint'
+                    } else {
+                        bat 'pnpm run lint'
+                    }
+                }
             }
         }
 
+        stage('Compile & Build') {
+            steps {
+                echo 'Compiling and building the monorepo workspaces...'
+                script {
+                    if (isUnix()) {
+                        sh 'pnpm run build'
+                    } else {
+                        bat 'pnpm run build'
+                    }
+                }
+            }
+        }
+
+        // The following advanced scanning/dockerization stages are templates.
+        // To run them, make sure the required tools (Trivy, SonarQube Scanner, Docker) are installed on your Jenkins host.
+        /*
         stage('SonarQube Static Scan') {
             steps {
                 echo 'Executing SonarQube static code analysis...'
-                withSonarQubeEnv('SonarQubeServer') {
-                    sh "${SONAR_SCANNER_HOME}/bin/sonar-scanner"
+                script {
+                    def scannerHome = tool 'SonarScanner'
+                    withSonarQubeEnv('SonarQubeServer') {
+                        if (isUnix()) {
+                            sh "${scannerHome}/bin/sonar-scanner"
+                        } else {
+                            bat "${scannerHome}/bin/sonar-scanner.bat"
+                        }
+                    }
                 }
             }
         }
 
         stage('Trivy Repository Audit') {
             steps {
-                echo 'Auditing repository files for secrets and dependencies vulnerability...'
-                sh 'trivy fs --exit-code 0 --severity HIGH,CRITICAL .'
+                echo 'Auditing repository files for secrets and dependencies...'
+                script {
+                    if (isUnix()) {
+                        sh 'trivy fs --exit-code 0 --severity HIGH,CRITICAL .'
+                    } else {
+                        bat 'trivy fs --exit-code 0 --severity HIGH,CRITICAL .'
+                    }
+                }
             }
         }
 
         stage('Build Docker Images') {
             steps {
                 echo 'Building production docker images for API and Web services...'
-                sh "docker build -f infra/docker/api.prod.Dockerfile -t ${DOCKER_REGISTRY}/${API_IMAGE}:${IMAGE_TAG} -t ${DOCKER_REGISTRY}/${API_IMAGE}:latest ."
-                sh "docker build -f infra/docker/web.prod.Dockerfile -t ${DOCKER_REGISTRY}/${WEB_IMAGE}:${IMAGE_TAG} -t ${DOCKER_REGISTRY}/${WEB_IMAGE}:latest ."
+                script {
+                    if (isUnix()) {
+                        sh "docker build -f infra/docker/api.prod.Dockerfile -t ${DOCKER_REGISTRY}/${API_IMAGE}:${IMAGE_TAG} -t ${DOCKER_REGISTRY}/${API_IMAGE}:latest ."
+                        sh "docker build -f infra/docker/web.prod.Dockerfile -t ${DOCKER_REGISTRY}/${WEB_IMAGE}:${IMAGE_TAG} -t ${DOCKER_REGISTRY}/${WEB_IMAGE}:latest ."
+                    } else {
+                        bat "docker build -f infra/docker/api.prod.Dockerfile -t ${DOCKER_REGISTRY}/${API_IMAGE}:${IMAGE_TAG} -t ${DOCKER_REGISTRY}/${API_IMAGE}:latest ."
+                        bat "docker build -f infra/docker/web.prod.Dockerfile -t ${DOCKER_REGISTRY}/${WEB_IMAGE}:${IMAGE_TAG} -t ${DOCKER_REGISTRY}/${WEB_IMAGE}:latest ."
+                    }
+                }
             }
         }
-
-        stage('Trivy Container Scan') {
-            steps {
-                echo 'Scanning built container images for vulnerabilities...'
-                sh "trivy image --exit-code 1 --severity CRITICAL ${DOCKER_REGISTRY}/${API_IMAGE}:${IMAGE_TAG}"
-                sh "trivy image --exit-code 1 --severity CRITICAL ${DOCKER_REGISTRY}/${WEB_IMAGE}:${IMAGE_TAG}"
-            }
-        }
-
-        stage('Publish Images') {
-            steps {
-                echo 'Pushing verified container images to registry...'
-                // sh "docker login -u ${DOCKER_USER} -p ${DOCKER_PASS}"
-                // sh "docker push ${DOCKER_REGISTRY}/${API_IMAGE}:${IMAGE_TAG}"
-                // sh "docker push ${DOCKER_REGISTRY}/${API_IMAGE}:latest"
-                // sh "docker push ${DOCKER_REGISTRY}/${WEB_IMAGE}:${IMAGE_TAG}"
-                // sh "docker push ${DOCKER_REGISTRY}/${WEB_IMAGE}:latest"
-                echo 'Container images successfully published.'
-            }
-        }
-
-        stage('GitOps Deployment via Helm') {
-            steps {
-                echo 'Updating Helm templates and deploying to Kubernetes...'
-                sh "helm upgrade --install medflow-production ./infra/helm/medflow \
-                    --namespace production \
-                    --set api.image.tag=${IMAGE_TAG} \
-                    --set web.image.tag=${IMAGE_TAG}"
-            }
-        }
+        */
     }
 
     post {
         success {
-            echo 'Build, security checks, and GitOps update completed successfully!'
+            echo 'Build, quality checks, and compilation completed successfully!'
         }
         failure {
-            echo 'Pipeline execution failed. Review build logs and security scan reports.'
+            echo 'Pipeline execution failed. Review build logs and tools output.'
         }
     }
 }
