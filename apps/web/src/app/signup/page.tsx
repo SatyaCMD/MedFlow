@@ -4,17 +4,21 @@
 import React, { useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Mail, Lock, Eye, EyeOff, Loader2, ArrowRight, CheckCircle } from 'lucide-react';
+import { Mail, Lock, Eye, EyeOff, Loader2, ArrowRight, CheckCircle, Info } from 'lucide-react';
 import { api } from '../../lib/axios';
 import { Logo } from '../../components/shared/Logo';
 
-export default function LoginPage() {
+export default function SignupPage() {
   const router = useRouter();
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [role, setRole] = useState('PATIENT');
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState(false);
 
   const features = [
     'Strict Multi-Tenant Database Isolation',
@@ -23,24 +27,37 @@ export default function LoginPage() {
     'Secure Multi-Factor OTP Verification'
   ];
 
+  const roles = [
+    { value: 'PATIENT', label: 'Patient' },
+    { value: 'DOCTOR', label: 'Doctor / Physician' },
+    { value: 'NURSE', label: 'Nurse / Clinical Staff' },
+    { value: 'RECEPTIONIST', label: 'Receptionist' },
+    { value: 'PHARMACIST', label: 'Pharmacist' },
+    { value: 'LAB_TECHNICIAN', label: 'Lab Technician' },
+    { value: 'HOSPITAL_ADMIN', label: 'Hospital Administrator' },
+    { value: 'SUPER_ADMIN', label: 'Super Administrator' },
+  ];
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
     setError(null);
 
     try {
-      const response = await api.post('/auth/login', { email, password });
-      const { data } = response.data;
+      await api.post('/auth/register', {
+        firstName,
+        lastName,
+        email,
+        password,
+        role,
+      });
 
-      if (data.requiresOtp && data.tempToken) {
-        // Store tempToken and route to verify OTP
-        sessionStorage.setItem('tempToken', data.tempToken);
-        router.push(`/verify?tempToken=${data.tempToken}`);
-      } else {
-        setError('Unexpected authentication response structure.');
-      }
+      setSuccess(true);
+      setTimeout(() => {
+        router.push('/login');
+      }, 2000);
     } catch (err: any) {
-      const message = err.response?.data?.error?.message || 'Login failed. Please check your credentials.';
+      const message = err.response?.data?.error?.message || 'Registration failed. Please check the inputs.';
       setError(message);
     } finally {
       setLoading(false);
@@ -52,7 +69,6 @@ export default function LoginPage() {
       
       {/* LEFT COLUMN: Deep Gradient Info Sidebar (Hidden on mobile) */}
       <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-tr from-blue-700 via-blue-600 to-indigo-800 relative items-center justify-center p-12 text-white overflow-hidden">
-        {/* Subtle geometric circles */}
         <div className="absolute -top-24 -left-24 w-96 h-96 bg-blue-500/20 rounded-full blur-[100px]" />
         <div className="absolute -bottom-24 -right-24 w-96 h-96 bg-indigo-500/20 rounded-full blur-[100px]" />
 
@@ -71,10 +87,10 @@ export default function LoginPage() {
           {/* Heading */}
           <div className="space-y-4">
             <h2 className="text-4xl font-extrabold leading-tight tracking-tight">
-              A Unified Portal for Hospital Systems
+              Create Your Clinical Workstation
             </h2>
             <p className="text-blue-100 text-sm leading-relaxed">
-              Log in to access clinical workflows, EMR directories, appointments, and secure multi-tenant settings.
+              Register an account with your hospital mapping to access secure EMR data entries and scheduling boards.
             </p>
           </div>
 
@@ -101,7 +117,7 @@ export default function LoginPage() {
         </div>
       </div>
 
-      {/* RIGHT COLUMN: Interactive Login Form */}
+      {/* RIGHT COLUMN: Interactive Registration Form */}
       <div className="w-full lg:w-1/2 flex items-center justify-center p-8 sm:p-12 relative bg-slate-50">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-blue-500/5 via-transparent to-transparent pointer-events-none" />
 
@@ -118,13 +134,42 @@ export default function LoginPage() {
           </div>
 
           <div className="mb-8">
-            <h2 className="text-2xl font-black text-slate-850 tracking-tight">Access Platform</h2>
-            <p className="text-sm text-slate-500 mt-1">Enter credentials to verify your medical workstation</p>
+            <h2 className="text-2xl font-black text-slate-850 tracking-tight">Create Account</h2>
+            <p className="text-sm text-slate-500 mt-1">Enter your details to register as a hospital workstation</p>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form onSubmit={handleSubmit} className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+                  First Name
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  placeholder="Gregory"
+                  className="w-full px-4 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all duration-300"
+                />
+              </div>
+              <div>
+                <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+                  Last Name
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  placeholder="House"
+                  className="w-full px-4 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all duration-300"
+                />
+              </div>
+            </div>
+
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-2">
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">
                 Work Email Address
               </label>
               <div className="relative">
@@ -137,20 +182,15 @@ export default function LoginPage() {
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder="doctor@medicore360.com"
-                  className="w-full pl-11 pr-4 py-3.5 bg-slate-50/50 border border-slate-200 rounded-xl text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all duration-300"
+                  className="w-full pl-11 pr-4 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all duration-300"
                 />
               </div>
             </div>
 
             <div>
-              <div className="flex items-center justify-between mb-2">
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-400">
-                  Password
-                </label>
-                <a href="#" className="text-xs font-semibold text-blue-600 hover:underline">
-                  Forgot Password?
-                </a>
-              </div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+                Password (min 10 chars)
+              </label>
               <div className="relative">
                 <span className="absolute inset-y-0 left-0 flex items-center pl-4 text-slate-400 pointer-events-none">
                   <Lock className="w-5 h-5" />
@@ -161,7 +201,7 @@ export default function LoginPage() {
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••••••"
-                  className="w-full pl-11 pr-11 py-3.5 bg-slate-50/50 border border-slate-200 rounded-xl text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all duration-300"
+                  className="w-full pl-11 pr-11 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-slate-700 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all duration-300"
                 />
                 <button
                   type="button"
@@ -172,6 +212,30 @@ export default function LoginPage() {
                 </button>
               </div>
             </div>
+
+            <div>
+              <label className="block text-xs font-bold uppercase tracking-wider text-slate-400 mb-1.5">
+                Account Role / Scope
+              </label>
+              <select
+                value={role}
+                onChange={(e) => setRole(e.target.value)}
+                className="w-full px-4 py-2.5 bg-slate-50/50 border border-slate-200 rounded-xl text-slate-700 focus:outline-none focus:ring-2 focus:ring-blue-500/10 focus:border-blue-500 transition-all duration-300"
+              >
+                {roles.map((r, idx) => (
+                  <option key={idx} value={r.value}>
+                    {r.label}
+                  </option>
+                ))}
+              </select>
+            </div>
+
+            {role === 'SUPER_ADMIN' && (
+              <div className="p-3 bg-blue-50/60 border border-blue-100 rounded-xl flex gap-2 text-xs text-blue-700 font-semibold items-start leading-relaxed">
+                <Info className="w-4 h-4 text-blue-600 flex-shrink-0 mt-0.5" />
+                <span>Note: System rules dictate that only one Super Admin account can exist globally in the database.</span>
+              </div>
+            )}
 
             <AnimatePresence mode="wait">
               {error && (
@@ -184,11 +248,21 @@ export default function LoginPage() {
                   {error}
                 </motion.div>
               )}
+
+              {success && (
+                <motion.div
+                  initial={{ opacity: 0, y: -10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="p-3.5 bg-emerald-50 border border-emerald-100 rounded-xl text-xs text-emerald-600 font-semibold text-center"
+                >
+                  Registration Successful! Directing to Login...
+                </motion.div>
+              )}
             </AnimatePresence>
 
             <motion.button
               type="submit"
-              disabled={loading}
+              disabled={loading || success}
               whileHover={{ scale: 1.01 }}
               whileTap={{ scale: 0.99 }}
               className="w-full py-3.5 px-4 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold rounded-xl flex items-center justify-center space-x-2 shadow-lg shadow-blue-500/10 hover:shadow-blue-500/20 transition-all duration-300 disabled:opacity-50 disabled:cursor-not-allowed cursor-pointer"
@@ -196,24 +270,24 @@ export default function LoginPage() {
               {loading ? (
                 <>
                   <Loader2 className="w-5 h-5 animate-spin" />
-                  <span>Decrypting salts...</span>
+                  <span>Registering workstation...</span>
                 </>
               ) : (
                 <>
-                  <span>Sign In</span>
+                  <span>Create Account</span>
                   <ArrowRight className="w-4 h-4" />
                 </>
               )}
             </motion.button>
           </form>
 
-          <div className="mt-8 text-center text-xs text-slate-400">
-            Don&apos;t have an account?{' '}
+          <div className="mt-6 text-center text-xs text-slate-400">
+            Already registered?{' '}
             <button
-              onClick={() => router.push('/signup')}
+              onClick={() => router.push('/login')}
               className="text-blue-600 font-bold hover:underline"
             >
-              Create Account
+              Sign In
             </button>
           </div>
         </motion.div>

@@ -41,3 +41,14 @@ body {
   color: var(--foreground);
   font-feature-settings: "rlig" 1, "calt" 1;
 }
+
+/* Hide scrollbar globally across Chrome, Safari, Firefox, IE, Edge */
+::-webkit-scrollbar {
+  display: none !important;
+}
+
+html, body, main, div, section, nav, aside {
+  -ms-overflow-style: none !important; /* IE and Edge */
+  scrollbar-width: none !important; /* Firefox */
+}
+

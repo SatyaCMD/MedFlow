@@ -41,6 +41,13 @@ export class AuthService {
       throw new AppError('User with this email already exists', 409, 'DUPLICATE_RESOURCE');
     }
 
+    if (data.role === 'SUPER_ADMIN') {
+      const existingSuperAdmin = await User.findOne({ role: 'SUPER_ADMIN', deletedAt: null });
+      if (existingSuperAdmin) {
+        throw new AppError('A Super Admin already exists in the system', 400, 'SUPER_ADMIN_EXISTS');
+      }
+    }
+
     const salt = crypto.randomBytes(16).toString('hex');
     const passwordHash = await this.hashPassword(data.password, salt);
     

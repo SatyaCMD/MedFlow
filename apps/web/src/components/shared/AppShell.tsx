@@ -17,6 +17,7 @@ import {
   Moon,
   Search,
 } from 'lucide-react';
+import { Logo } from './Logo';
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -72,9 +73,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children, userRole = 'DOCTOR
         {/* Brand header */}
         <div className={`flex items-center justify-between h-16 px-6 border-b ${darkMode ? 'border-slate-800' : 'border-slate-100'}`}>
           <div className="flex items-center gap-3">
-            <div className="flex items-center justify-center w-8 h-8 rounded-xl bg-blue-600 text-white font-bold shadow-md shadow-blue-500/20">
-              M
-            </div>
+            <Logo size={36} />
             {!isCollapsed && (
               <span className={`font-bold text-base tracking-wider ${
                 darkMode ? 'bg-gradient-to-r from-slate-100 to-blue-400 text-transparent bg-clip-text' : 'text-slate-800'
