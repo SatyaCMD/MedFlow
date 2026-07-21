@@ -46,28 +46,28 @@ export default function Home() {
     {
       header: 'Time',
       accessor: (row: typeof recentAppointments[0]) => (
-        <span className="text-blue-400 font-semibold">{row.time}</span>
+        <span className="text-blue-600 font-semibold">{row.time}</span>
       ),
     },
     {
       header: 'Patient Name',
       accessor: (row: typeof recentAppointments[0]) => (
         <div className="flex items-center gap-2">
-          <div className="w-7 h-7 rounded-full bg-slate-800 flex items-center justify-center text-xs font-semibold text-slate-300">
+          <div className="w-7 h-7 rounded-xl bg-slate-100 flex items-center justify-center text-xs font-semibold text-slate-600 border border-slate-200/50">
             {row.patient.split(' ').map(n => n[0]).join('')}
           </div>
-          <span>{row.patient}</span>
+          <span className="text-slate-700 font-semibold">{row.patient}</span>
         </div>
       ),
     },
     {
       header: 'Assigned Doctor',
-      accessor: (row: typeof recentAppointments[0]) => <span>{row.doctor}</span>,
+      accessor: (row: typeof recentAppointments[0]) => <span className="text-slate-600">{row.doctor}</span>,
     },
     {
       header: 'Department',
       accessor: (row: typeof recentAppointments[0]) => (
-        <span className="px-2.5 py-0.5 rounded-full bg-slate-800 text-xs text-slate-400 border border-slate-700">
+        <span className="px-2.5 py-0.5 rounded-full bg-slate-50 text-xs text-slate-500 border border-slate-100">
           {row.dept}
         </span>
       ),
@@ -76,12 +76,12 @@ export default function Home() {
       header: 'Status',
       accessor: (row: typeof recentAppointments[0]) => {
         const colors: Record<string, string> = {
-          'In Progress': 'bg-blue-950/60 text-blue-400 border-blue-900/40',
-          'Scheduled': 'bg-amber-950/60 text-amber-400 border-amber-900/40',
-          'Completed': 'bg-emerald-950/60 text-emerald-400 border-emerald-900/40',
+          'In Progress': 'bg-blue-50 text-blue-600 border-blue-100',
+          'Scheduled': 'bg-amber-50 text-amber-600 border-amber-100',
+          'Completed': 'bg-emerald-50 text-emerald-600 border-emerald-100',
         };
         return (
-          <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold border ${colors[row.status] || 'bg-slate-900 text-slate-400'}`}>
+          <span className={`px-2.5 py-0.5 rounded-full text-xs font-semibold border ${colors[row.status] || 'bg-slate-50 text-slate-500'}`}>
             {row.status}
           </span>
         );
@@ -91,10 +91,10 @@ export default function Home() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center min-h-screen bg-[#080b11] text-slate-100">
+      <div className="flex items-center justify-center min-h-screen bg-slate-50 text-slate-800">
         <div className="flex flex-col items-center gap-4">
-          <Heart className="w-10 h-10 animate-pulse text-blue-500" />
-          <span className="text-sm font-semibold tracking-wider text-slate-400">Loading MediCore 360...</span>
+          <Heart className="w-10 h-10 animate-pulse text-blue-600" />
+          <span className="text-sm font-semibold tracking-wider text-slate-500">Loading MediCore 360...</span>
         </div>
       </div>
     );
@@ -106,16 +106,16 @@ export default function Home() {
       <AppShell userRole={user.role}>
         <div className="space-y-8">
           {/* Header Panel */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-900 pb-6">
+          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-6">
             <div>
-              <h1 className="text-3xl font-bold tracking-tight text-slate-100">Welcome Back, {user.firstName}!</h1>
-              <p className="text-slate-400 mt-1 text-sm">
+              <h1 className="text-3xl font-bold tracking-tight text-slate-800">Welcome Back, {user.firstName}!</h1>
+              <p className="text-slate-500 mt-1 text-sm">
                 Here is a summary of today&apos;s activity at {user.role === 'SUPER_ADMIN' ? 'All Tenants' : 'Your Medical Clinic'}.
               </p>
             </div>
             <button
               onClick={logout}
-              className="self-start md:self-auto px-4 py-2 bg-slate-900 hover:bg-slate-800 text-slate-300 font-semibold text-xs rounded-xl border border-slate-800 hover:border-slate-700 transition-all cursor-pointer"
+              className="self-start md:self-auto px-4 py-2 bg-white hover:bg-slate-50 text-slate-600 font-semibold text-xs rounded-xl border border-slate-100 shadow-sm transition-all cursor-pointer"
             >
               Sign Out
             </button>
@@ -158,18 +158,18 @@ export default function Home() {
             {/* Left: Appointments Table */}
             <div className="lg:col-span-2 space-y-4">
               <div className="flex items-center justify-between">
-                <h3 className="text-lg font-bold text-slate-200">Recent Appointments</h3>
-                <span className="text-xs text-blue-400 hover:underline cursor-pointer">View all appointments</span>
+                <h3 className="text-lg font-bold text-slate-800">Recent Appointments</h3>
+                <span className="text-xs text-blue-600 hover:underline cursor-pointer font-semibold">View all appointments</span>
               </div>
               <DataTable columns={appointmentColumns} data={recentAppointments} />
             </div>
 
             {/* Right: Telemetry & Activity Feed */}
-            <div className="space-y-4 bg-slate-900/40 border border-slate-800/80 rounded-2xl p-6 backdrop-blur-md">
-              <div className="flex items-center justify-between border-b border-slate-800/60 pb-4">
-                <h3 className="text-md font-bold text-slate-200">System Telemetry</h3>
-                <span className="px-2 py-0.5 text-[10px] font-semibold text-emerald-400 bg-emerald-950/40 border border-emerald-900/30 rounded-full flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-ping" />
+            <div className="space-y-4 bg-white border border-slate-100 rounded-2xl p-6 shadow-sm">
+              <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                <h3 className="text-md font-bold text-slate-800">System Telemetry</h3>
+                <span className="px-2.5 py-0.5 text-[10px] font-semibold text-emerald-600 bg-emerald-50 border border-emerald-100 rounded-full flex items-center gap-1">
+                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping" />
                   Live
                 </span>
               </div>
@@ -178,32 +178,32 @@ export default function Home() {
                 <div className="flex items-start gap-3">
                   <div className="w-2 h-2 rounded-full bg-blue-500 mt-1.5" />
                   <div className="flex flex-col">
-                    <span className="text-xs text-slate-200 font-semibold">MongoDB Database Synced</span>
-                    <span className="text-[10px] text-slate-500">Connected successfully to replica sets</span>
+                    <span className="text-xs text-slate-700 font-semibold">MongoDB Database Synced</span>
+                    <span className="text-[10px] text-slate-400">Connected successfully to replica sets</span>
                   </div>
                 </div>
 
                 <div className="flex items-start gap-3">
                   <div className="w-2 h-2 rounded-full bg-blue-500 mt-1.5" />
                   <div className="flex flex-col">
-                    <span className="text-xs text-slate-200 font-semibold">Redis Session Cache</span>
-                    <span className="text-[10px] text-slate-500">Cluster healthy. 0.2ms latency</span>
+                    <span className="text-xs text-slate-700 font-semibold">Redis Session Cache</span>
+                    <span className="text-[10px] text-slate-400">Cluster healthy. 0.2ms latency</span>
                   </div>
                 </div>
 
                 <div className="flex items-start gap-3">
                   <div className="w-2 h-2 rounded-full bg-indigo-500 mt-1.5" />
                   <div className="flex flex-col">
-                    <span className="text-xs text-slate-200 font-semibold">Auth Service PEPPER Check</span>
-                    <span className="text-[10px] text-slate-500">Salt keys verified successfully</span>
+                    <span className="text-xs text-slate-700 font-semibold">Auth Service PEPPER Check</span>
+                    <span className="text-[10px] text-slate-400">Salt keys verified successfully</span>
                   </div>
                 </div>
 
                 <div className="flex items-start gap-3">
                   <div className="w-2 h-2 rounded-full bg-emerald-500 mt-1.5" />
                   <div className="flex flex-col">
-                    <span className="text-xs text-slate-200 font-semibold">Jenkins CI Pipeline Integration</span>
-                    <span className="text-[10px] text-slate-500">Connected to Jenkins webhook on port 8080</span>
+                    <span className="text-xs text-slate-700 font-semibold">Jenkins CI Pipeline Integration</span>
+                    <span className="text-[10px] text-slate-400">Connected to Jenkins webhook on port 8080</span>
                   </div>
                 </div>
               </div>
@@ -216,8 +216,8 @@ export default function Home() {
 
   // Render Marketing Landing page if not authenticated
   return (
-    <div className="flex flex-col items-center justify-center min-h-screen px-6 py-12 bg-[#0b0f19] text-slate-100 relative overflow-hidden">
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-900/20 via-transparent to-transparent pointer-events-none" />
+    <div className="flex flex-col items-center justify-center min-h-screen px-6 py-12 bg-slate-50 text-slate-800 relative overflow-hidden">
+      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-100/20 via-transparent to-transparent pointer-events-none" />
 
       <header className="z-10 text-center max-w-3xl mb-16">
         <motion.div
@@ -225,20 +225,20 @@ export default function Home() {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
         >
-          <span className="px-3 py-1 text-xs font-semibold text-blue-400 bg-blue-950/50 border border-blue-900/50 rounded-full">
+          <span className="px-3 py-1 text-xs font-semibold text-blue-600 bg-blue-50 border border-blue-100 rounded-full">
             MediCore 360 v1.0
           </span>
-          <h1 className="mt-6 text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight bg-gradient-to-r from-slate-100 via-slate-200 to-blue-400 bg-clip-text text-transparent">
+          <h1 className="mt-6 text-4xl sm:text-5xl md:text-6xl font-extrabold tracking-tight bg-gradient-to-r from-slate-800 via-slate-700 to-blue-600 bg-clip-text text-transparent">
             Enterprise Healthcare Platform
           </h1>
-          <p className="mt-6 text-lg text-slate-400">
+          <p className="mt-6 text-lg text-slate-500">
             A secure, multi-tenant EHMS platform designed for modern hospital systems.
           </p>
 
           <div className="mt-8 flex justify-center">
             <button
               onClick={() => router.push('/login')}
-              className="px-6 py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-sm rounded-xl flex items-center gap-2 shadow-lg shadow-blue-950/50 hover:shadow-blue-500/20 transition-all cursor-pointer group"
+              className="px-6 py-3.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-bold text-sm rounded-xl flex items-center gap-2 shadow-lg shadow-blue-100/50 hover:shadow-blue-500/20 transition-all cursor-pointer group"
             >
               <span>Sign In to Platform</span>
               <ArrowRight className="w-4 h-4 transform group-hover:translate-x-1 transition-transform" />
@@ -255,18 +255,18 @@ export default function Home() {
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.5, delay: idx * 0.1 }}
             whileHover={{ scale: 1.02 }}
-            className="flex flex-col p-6 bg-slate-900/40 border border-slate-800 rounded-2xl backdrop-blur-md"
+            className="flex flex-col p-6 bg-white border border-slate-100 rounded-2xl shadow-sm hover:shadow-md transition-all duration-350"
           >
-            <div className="flex items-center justify-center w-12 h-12 bg-blue-950/80 border border-blue-900/40 text-blue-400 rounded-xl mb-6">
+            <div className="flex items-center justify-center w-12 h-12 bg-blue-50 border border-blue-100 text-blue-600 rounded-xl mb-6">
               <card.icon className="w-6 h-6" />
             </div>
-            <h3 className="text-lg font-semibold text-slate-200">{card.title}</h3>
-            <p className="mt-2 text-sm text-slate-400 leading-relaxed">{card.desc}</p>
+            <h3 className="text-lg font-semibold text-slate-800">{card.title}</h3>
+            <p className="mt-2 text-sm text-slate-500 leading-relaxed">{card.desc}</p>
           </motion.div>
         ))}
       </main>
 
-      <footer className="z-10 mt-20 text-center text-xs text-slate-600">
+      <footer className="z-10 mt-20 text-center text-xs text-slate-400">
         © {new Date().getFullYear()} MediCore 360 Inc. All rights reserved.
       </footer>
     </div>

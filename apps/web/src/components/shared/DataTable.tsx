@@ -30,16 +30,16 @@ export function DataTable<T>({
   onPageChange,
 }: DataTableProps<T>) {
   return (
-    <div className="bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden flex flex-col">
+    <div className="bg-white border border-slate-100 rounded-2xl overflow-hidden flex flex-col shadow-sm">
       {/* Scrollable table container */}
       <div className="overflow-x-auto w-full">
-        <table className="min-w-full divide-y divide-slate-800 text-left">
-          <thead className="bg-slate-950/60 sticky top-0 backdrop-blur-sm z-10">
+        <table className="min-w-full divide-y divide-slate-100 text-left">
+          <thead className="bg-slate-50/80 sticky top-0 backdrop-blur-sm z-10">
             <tr>
               {columns.map((col, idx) => (
                 <th
                   key={idx}
-                  className={`px-6 py-4 text-xs font-semibold uppercase tracking-wider text-slate-500 ${
+                  className={`px-6 py-4 text-xs font-bold uppercase tracking-wider text-slate-400 ${
                     col.align === 'center' ? 'text-center' : col.align === 'right' ? 'text-right' : 'text-left'
                   }`}
                 >
@@ -49,14 +49,14 @@ export function DataTable<T>({
             </tr>
           </thead>
 
-          <tbody className="divide-y divide-slate-800 bg-slate-900/20">
+          <tbody className="divide-y divide-slate-100 bg-white">
             {loading ? (
               // Loading Skeletons
               Array.from({ length: 5 }).map((_, rIdx) => (
                 <tr key={rIdx}>
                   {columns.map((_, cIdx) => (
                     <td key={cIdx} className="px-6 py-4">
-                      <div className="h-4 bg-slate-800 rounded animate-pulse w-full max-w-[120px]" />
+                      <div className="h-4 bg-slate-100 rounded animate-pulse w-full max-w-[120px]" />
                     </td>
                   ))}
                 </tr>
@@ -65,8 +65,8 @@ export function DataTable<T>({
               // Empty State view
               <tr>
                 <td colSpan={columns.length} className="px-6 py-16 text-center">
-                  <div className="flex flex-col items-center justify-center gap-3 text-slate-500">
-                    <AlertCircle className="w-10 h-10 text-slate-600" />
+                  <div className="flex flex-col items-center justify-center gap-3 text-slate-400">
+                    <AlertCircle className="w-10 h-10 text-slate-300" />
                     <span className="text-sm font-medium">{emptyMessage}</span>
                   </div>
                 </td>
@@ -79,12 +79,12 @@ export function DataTable<T>({
                   initial={{ opacity: 0 }}
                   animate={{ opacity: 1 }}
                   transition={{ duration: 0.15, delay: rIdx * 0.05 }}
-                  className="hover:bg-slate-850/30 transition-colors"
+                  className="hover:bg-slate-50/50 transition-colors"
                 >
                   {columns.map((col, cIdx) => (
                     <td
                       key={cIdx}
-                      className={`px-6 py-4 text-sm text-slate-300 font-medium ${
+                      className={`px-6 py-4 text-sm text-slate-600 font-medium ${
                         col.align === 'center' ? 'text-center' : col.align === 'right' ? 'text-right' : 'text-left'
                       }`}
                     >
@@ -100,22 +100,22 @@ export function DataTable<T>({
 
       {/* Pagination control panel */}
       {totalPages > 1 && (
-        <div className="px-6 py-4 bg-slate-950/40 border-t border-slate-800 flex items-center justify-between text-xs text-slate-500">
+        <div className="px-6 py-4 bg-slate-50/40 border-t border-slate-100 flex items-center justify-between text-xs text-slate-400">
           <span>
-            Page <strong className="text-slate-300">{currentPage}</strong> of <strong className="text-slate-300">{totalPages}</strong>
+            Page <strong className="text-slate-600">{currentPage}</strong> of <strong className="text-slate-600">{totalPages}</strong>
           </span>
           <div className="flex items-center gap-2">
             <button
               onClick={() => onPageChange && onPageChange(currentPage - 1)}
               disabled={currentPage <= 1 || loading}
-              className="p-1.5 rounded-lg border border-slate-800 hover:border-slate-700 bg-slate-900 disabled:opacity-50 text-slate-400 hover:text-slate-200 transition-all cursor-pointer"
+              className="p-1.5 rounded-xl border border-slate-100 hover:border-slate-200 bg-white disabled:opacity-50 text-slate-400 hover:text-slate-600 transition-all cursor-pointer shadow-sm"
             >
               <ChevronLeft className="w-4 h-4" />
             </button>
             <button
               onClick={() => onPageChange && onPageChange(currentPage + 1)}
               disabled={currentPage >= totalPages || loading}
-              className="p-1.5 rounded-lg border border-slate-800 hover:border-slate-700 bg-slate-900 disabled:opacity-50 text-slate-400 hover:text-slate-200 transition-all cursor-pointer"
+              className="p-1.5 rounded-xl border border-slate-100 hover:border-slate-200 bg-white disabled:opacity-50 text-slate-400 hover:text-slate-600 transition-all cursor-pointer shadow-sm"
             >
               <ChevronRight className="w-4 h-4" />
             </button>
