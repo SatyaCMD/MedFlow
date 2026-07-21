@@ -24,7 +24,8 @@
     "onlyBuiltDependencies": [
       "argon2",
       "esbuild",
-      "msgpackr-extract"
+      "msgpackr-extract",
+      "unrs-resolver"
     ]
   }
 }
