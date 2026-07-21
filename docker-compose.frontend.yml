@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  # Frontend Next.js Service
+  web:
+    build:
+      context: .
+      dockerfile: ./infra/docker/web.prod.Dockerfile
+    container_name: medflow-web
+    ports:
+      - "3000:3000"
+    environment:
+      # If running backend compose locally on port 4000, point to http://localhost:4000/api/v1
+      # Or if routing via gateway, point to http://localhost/api/v1
+      - NEXT_PUBLIC_API_URL=http://localhost:4000/api/v1
+      - NODE_ENV=production
+    restart: always
+    networks:
+      - medflow-frontend-net
+
+networks:
+  medflow-frontend-net:
+    driver: bridge

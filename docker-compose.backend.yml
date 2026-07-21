@@ -1,0 +1,140 @@
+version: '3.8'
+
+services:
+  # Backend Express API Service
+  api:
+    build:
+      context: .
+      dockerfile: ./infra/docker/api.prod.Dockerfile
+    container_name: medflow-api
+    ports:
+      - "4000:4000"
+    environment:
+      - PORT=4000
+      - NODE_ENV=production
+      - MONGO_URI=mongodb://mongo:27017/medicore?replicaSet=rs0
+      - REDIS_URI=redis://redis:6379
+      - JWT_ACCESS_SECRET=your_production_access_secret_key_32_chars
+      - JWT_REFRESH_SECRET=your_production_refresh_secret_key_32_chars
+      - APP_PEPPER=your_production_pepper_key_16_chars_chili
+      - SMTP_HOST=mailpit
+      - SMTP_PORT=1025
+      - SMTP_USER=
+      - SMTP_PASS=
+    depends_on:
+      - mongo
+      - redis
+    restart: always
+    networks:
+      - medflow-backend-net
+
+  # MongoDB Database Engine
+  mongo:
+    image: mongo:6.0
+    container_name: medflow-mongo
+    command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]
+    ports:
+      - "27018:27017"
+    volumes:
+      - mongo_prod_data:/data/db
+    restart: always
+    networks:
+      - medflow-backend-net
+
+  # Redis Cache & Broker Store
+  redis:
+    image: redis:7.0-alpine
+    container_name: medflow-redis
+    command: ["redis-server", "--appendonly", "yes"]
+    ports:
+      - "6380:6379"
+    volumes:
+      - redis_prod_data:/data
+    restart: always
+    networks:
+      - medflow-backend-net
+
+  # Mailpit SMTP Capture server
+  mailpit:
+    image: axllent/mailpit
+    container_name: medflow-mailpit
+    ports:
+      - "1025:1025"   # SMTP Port
+      - "8025:8025"   # Web UI Port
+    restart: always
+    networks:
+      - medflow-backend-net
+
+  # Prometheus Observability Scraper
+  prometheus:
+    image: prom/prometheus:latest
+    container_name: medflow-prometheus
+    volumes:
+      - ./infra/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
+      - prometheus_data:/prometheus
+    ports:
+      - "9090:9090"
+    depends_on:
+      - api
+    restart: always
+    networks:
+      - medflow-backend-net
+
+  # Grafana Dashboard Visualization
+  grafana:
+    image: grafana/grafana:latest
+    container_name: medflow-grafana
+    volumes:
+      - grafana_data:/var/lib/grafana
+    ports:
+      - "3005:3000"
+    depends_on:
+      - prometheus
+    restart: always
+    networks:
+      - medflow-backend-net
+
+  # SonarQube Quality Scanner Server
+  sonarqube:
+    image: sonarqube:community
+    container_name: medflow-sonarqube
+    ports:
+      - "9000:9000"
+    environment:
+      - SONAR_ES_BOOTSTRAP_CHECKS_DISABLE=true
+    volumes:
+      - sonarqube_data:/opt/sonarqube/data
+      - sonarqube_extensions:/opt/sonarqube/extensions
+      - sonarqube_logs:/opt/sonarqube/logs
+    restart: always
+    networks:
+      - medflow-backend-net
+
+  # Jenkins CI/CD Orchestration Server
+  jenkins:
+    image: jenkins/jenkins:lts
+    container_name: medflow-jenkins
+    user: root
+    ports:
+      - "8080:8080"
+      - "50000:50000"
+    volumes:
+      - jenkins_data:/var/jenkins_home
+      - /var/run/docker.sock:/var/run/docker.sock
+    restart: always
+    networks:
+      - medflow-backend-net
+
+volumes:
+  mongo_prod_data:
+  redis_prod_data:
+  prometheus_data:
+  grafana_data:
+  sonarqube_data:
+  sonarqube_extensions:
+  sonarqube_logs:
+  jenkins_data:
+
+networks:
+  medflow-backend-net:
+    driver: bridge

@@ -1,0 +1,6 @@
+apiVersion: v2
+name: medflow
+description: A Helm chart for MediCore 360 (MedFlow EHMS)
+type: application
+version: 1.0.0
+appVersion: "1.0.0"

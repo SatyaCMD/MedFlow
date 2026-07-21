@@ -1,0 +1,17 @@
+node_modules
+**/node_modules
+.git
+.github
+.next
+**/out
+.turbo
+dist
+**/dist
+build
+.vscode
+.idea
+*.log
+.agents
+.gemini
+.env
+.env.production

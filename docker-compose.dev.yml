@@ -1,0 +1,85 @@
+version: '3.8'
+
+services:
+  mongo:
+    image: mongo:6.0
+    container_name: medicore360-mongo
+    ports:
+      - '27018:27017'
+    volumes:
+      - mongo-data:/data/db
+    networks:
+      - medicore-net
+
+  redis:
+    image: redis:7.0-alpine
+    container_name: medicore360-redis
+    ports:
+      - '6380:6379'
+    volumes:
+      - redis-data:/data
+    networks:
+      - medicore-net
+
+  mailpit:
+    image: axllent/mailpit
+    container_name: medicore360-mailpit
+    ports:
+      - '1026:1025'
+      - '8026:8025'
+    networks:
+      - medicore-net
+
+  api:
+    build:
+      context: .
+      dockerfile: ./infra/docker/api.dev.Dockerfile
+    container_name: medicore360-api
+    ports:
+      - '4000:4000'
+    environment:
+      - PORT=4000
+      - NODE_ENV=development
+      - MONGO_URI=mongodb://mongo:27017/medicore
+      - REDIS_URI=redis://redis:6379
+      - SMTP_HOST=mailpit
+      - SMTP_PORT=1025
+    volumes:
+      - .:/workspace
+      - /workspace/node_modules
+      - /workspace/apps/api/node_modules
+      - /workspace/apps/web/node_modules
+      - /workspace/packages/shared/node_modules
+      - /workspace/packages/config/node_modules
+    depends_on:
+      - mongo
+      - redis
+    networks:
+      - medicore-net
+
+  web:
+    build:
+      context: .
+      dockerfile: ./infra/docker/web.dev.Dockerfile
+    container_name: medicore360-web
+    ports:
+      - '3000:3000'
+    volumes:
+      - .:/workspace
+      - /workspace/node_modules
+      - /workspace/apps/api/node_modules
+      - /workspace/apps/web/node_modules
+      - /workspace/packages/shared/node_modules
+      - /workspace/packages/config/node_modules
+    depends_on:
+      - api
+    networks:
+      - medicore-net
+
+volumes:
+  mongo-data:
+  redis-data:
+
+networks:
+  medicore-net:
+    driver: bridge

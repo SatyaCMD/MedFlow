@@ -1,0 +1,128 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: medicore-api
+  labels:
+    app: medicore-api
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: medicore-api
+  template:
+    metadata:
+      labels:
+        app: medicore-api
+    spec:
+      containers:
+      - name: api
+        image: medicore360/api:latest
+        ports:
+        - containerPort: 4000
+        envFrom:
+        - secretRef:
+            name: medicore-secrets
+        - configMapRef:
+            name: medicore-config
+        livenessProbe:
+          httpGet:
+            path: /health
+            port: 4000
+          initialDelaySeconds: 15
+          periodSeconds: 10
+        readinessProbe:
+          httpGet:
+            path: /ready
+            port: 4000
+          initialDelaySeconds: 10
+          periodSeconds: 10
+        resources:
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+          requests:
+            cpu: "250m"
+            memory: "256Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: medicore-api-service
+spec:
+  selector:
+    app: medicore-api
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 4000
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: medicore-web
+  labels:
+    app: medicore-web
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: medicore-web
+  template:
+    metadata:
+      labels:
+        app: medicore-web
+    spec:
+      containers:
+      - name: web
+        image: medicore360/web:latest
+        ports:
+        - containerPort: 3000
+        env:
+        - name: NEXT_PUBLIC_API_URL
+          value: "http://api.medicore360.com/api/v1"
+        resources:
+          limits:
+            cpu: "500m"
+            memory: "512Mi"
+          requests:
+            cpu: "250m"
+            memory: "256Mi"
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: medicore-web-service
+spec:
+  selector:
+    app: medicore-web
+  ports:
+  - protocol: TCP
+    port: 80
+    targetPort: 3000
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: medicore-ingress
+  annotations:
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+    nginx.ingress.kubernetes.io/limit-rps: "10"
+spec:
+  rules:
+  - host: medicore360.com
+    http:
+      paths:
+      - path: /api/v1
+        pathType: Prefix
+        backend:
+          service:
+            name: medicore-api-service
+            port:
+              number: 80
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: medicore-web-service
+            port:
+              number: 80

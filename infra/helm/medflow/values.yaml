@@ -1,0 +1,67 @@
+# Global values
+environment: production
+domain: medicore360.com
+
+# API Service Configuration
+api:
+  replicaCount: 2
+  image:
+    repository: medicore360/medicore360-api
+    pullPolicy: IfNotPresent
+    tag: "latest"
+  service:
+    type: ClusterIP
+    port: 80
+    targetPort: 4000
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+  env:
+    PORT: "4000"
+    NODE_ENV: "production"
+    MONGO_URI: "mongodb://mongo-service:27017/medicore"
+    REDIS_URI: "redis://redis-service:6379"
+
+# Web Service Configuration
+web:
+  replicaCount: 2
+  image:
+    repository: medicore360/medicore360-web
+    pullPolicy: IfNotPresent
+    tag: "latest"
+  service:
+    type: ClusterIP
+    port: 80
+    targetPort: 3000
+  resources:
+    limits:
+      cpu: 500m
+      memory: 512Mi
+    requests:
+      cpu: 250m
+      memory: 256Mi
+  env:
+    NEXT_PUBLIC_API_URL: "https://medicore360.com/api/v1"
+
+# Redis Stack Configuration
+redis:
+  enabled: true
+  image:
+    repository: redis
+    tag: "7.0-alpine"
+  service:
+    port: 6379
+
+# Sensitive Credentials Secrets (should ideally be fed at install time)
+secrets:
+  jwtAccessSecret: "your_production_access_secret_key_32_chars"
+  jwtRefreshSecret: "your_production_refresh_secret_key_32_chars"
+  appPepper: "your_production_pepper_key_16_chars_chili"
+  smtpHost: "mailpit-service"
+  smtpPort: "1025"
+  smtpUser: ""
+  smtpPass: ""
