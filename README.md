@@ -10,11 +10,11 @@ The codebase is split into isolated apps and packages under a unified monorepo m
 
 ```mermaid
 graph TD
-    subgraph Apps (Services)
+    subgraph Apps ["Apps (Services)"]
         Web["apps/web (Next.js Frontend)"]
         API["apps/api (Express Backend)"]
     end
-    subgraph Packages (Shared Libraries)
+    subgraph Packages ["Packages (Shared Libraries)"]
         Shared["packages/shared (Types, Schemas, RBAC constants)"]
         Config["packages/config (ESLint & TS Base Presets)"]
     end
