@@ -4,30 +4,128 @@ Production-grade, multi-tenant Enterprise Hospital Management System (EHMS) stru
 
 ---
 
-## 🏗️ System Architecture & Workspace Separation
+## 🏗️ Complete End-to-End System Architecture
 
-The codebase is split into isolated apps and packages under a unified monorepo manager:
+The project is structured as an enterprise-grade monorepo featuring a clean layered architecture, robust persistence mechanisms, and an automated DevOps & DevSecOps delivery pipeline:
 
 ```mermaid
-graph TD
-    subgraph Apps ["Apps (Services)"]
-        Web["apps/web (Next.js Frontend)"]
-        API["apps/api (Express Backend)"]
-    end
-    subgraph Packages ["Packages (Shared Libraries)"]
-        Shared["packages/shared (Types, Schemas, RBAC constants)"]
-        Config["packages/config (ESLint & TS Base Presets)"]
+graph TB
+    subgraph Client ["💻 Frontend Client (apps/web)"]
+        direction TB
+        WebUI["Next.js App Router (TypeScript)"]
+        Dashboards["Role Dashboards\n(SuperAdmin | Doctor | Nurse | Pharmacist | Patient)"]
+        WebPages["Core Modules\n(Auth | Appointments | EMR | Billing | Patients | Settings)"]
+        WebUI --> Dashboards
+        WebUI --> WebPages
     end
 
-    Web --> Shared
-    API --> Shared
-    Web --> Config
-    API --> Config
+    subgraph API ["⚡ RESTful Backend API (apps/api)"]
+        direction TB
+        ExpressAPI["Express.js API Engine"]
+        
+        subgraph Middlewares ["Middleware Layer"]
+            AuthGuard["Argon2id + Salt + Pepper Guard"]
+            RBAC["Role-Based Access Control"]
+            RateLimit["Rate Limiter & Audit Logger"]
+        end
+
+        subgraph CoreModules ["Domain Services"]
+            ModAuth["Auth & 2FA/OTP"]
+            ModPatient["Patient & EMR"]
+            ModAppt["Appointments"]
+            ModBilling["Billing & Pharmacy"]
+            ModLab["Lab & Inventory"]
+            ModAI["AI & Messaging"]
+            ModAudit["Audit & Staff"]
+        end
+
+        ExpressAPI --> Middlewares
+        Middlewares --> CoreModules
+    end
+
+    subgraph SharedPkg ["📦 Monorepo Packages (packages/)"]
+        SharedLib["packages/shared\n(Zod Schemas, Types, RBAC Constants)"]
+        ConfigLib["packages/config\n(ESLint & TypeScript Presets)"]
+    end
+
+    subgraph DataServices ["🗄️ Persistence & Async Processing"]
+        MongoDB[("MongoDB Primary DB\n(Patient Records, EMR, Invoices)")]
+        Redis[("Redis In-Memory Store\n(Sessions, OTP Codes, Rate Limits)")]
+        Mailpit["Mailpit / SMTP Server\n(Transactional Emails)"]
+        BullMQ["BullMQ\n(Async Queue Processing)"]
+    end
+
+    subgraph DevOps ["🚀 Infrastructure, DevOps & Security Layer"]
+        subgraph IaC ["Terraform Cloud Infra"]
+            Terraform["AWS Terraform\n(EKS Cluster, VPC, ECR, IAM)"]
+        end
+        
+        subgraph K8sStack ["Kubernetes & GitOps"]
+            K8s["EKS Kubernetes Cluster"]
+            Helm["Helm Charts"]
+            ArgoCD["Argo CD (GitOps Delivery)"]
+            NginxIngress["Nginx Ingress Controller"]
+            NginxIngress --> K8s
+            Helm --> K8s
+            ArgoCD --> K8s
+        end
+
+        subgraph CICD ["Jenkins CI/CD & Security"]
+            Jenkins["Jenkins Pipeline (Port 8080)"]
+            SonarQube["SonarQube (Code Quality)"]
+            Trivy["Trivy (Security Audit Scanner)"]
+            Postman["Postman API Suite"]
+            Jenkins --> SonarQube
+            Jenkins --> Trivy
+            Jenkins --> Postman
+        end
+
+        subgraph Monitoring ["Observability Stack"]
+            Prometheus["Prometheus"]
+            Grafana["Grafana Dashboards"]
+            Prometheus --> Grafana
+        end
+    end
+
+    %% Dependencies
+    Client -. Shared Code .-> SharedLib
+    API -. Shared Code .-> SharedLib
+    Client -. Shared Config .-> ConfigLib
+    API -. Shared Config .-> ConfigLib
+
+    %% Network Flow
+    Client -- "HTTP / REST API" --> ExpressAPI
+    ExpressAPI --> MongoDB
+    ExpressAPI --> Redis
+    ExpressAPI --> Mailpit
+    ExpressAPI --> BullMQ
+
+    %% Infra Connections
+    Terraform -. Provisions .-> K8sStack
+    CICD -. Scans & Deploys .-> K8sStack
+    Monitoring -. Scrapes Telemetry .-> API
+    Monitoring -. Scrapes Metrics .-> K8sStack
 ```
 
-*   **Separate Backend (`apps/api`)**: Built with Express.js, TypeScript, Mongoose, Redis, Nodemailer, and BullMQ. Serves a RESTful JSON API on port `4000`.
-*   **Separate Frontend (`apps/web`)**: Built with Next.js (App Router), TypeScript, Tailwind CSS, Axios, and Framer Motion. Serves the user interface on port `3000`.
-*   **Shared Code (`packages/shared`)**: Houses strict compile-time types, Zod DTO schemas, and RBAC permission models shared between frontend client and backend API.
+### 🧩 System Component Breakdown
+
+* **Frontend Web Application (`apps/web`)**: Next.js (App Router) with TypeScript, Tailwind CSS, Framer Motion, and Axios. Features role-tailored dashboards for SuperAdmins, Doctors, Nurses, Pharmacists, and Patients, plus dedicated pages for Appointments, EMR, Billing, Patients, Settings, and Auth flows.
+* **Backend REST API (`apps/api`)**: Built with Express.js and TypeScript, following modular service-repository architecture. Implements domain services for Auth (Argon2id + Salt + Pepper + OTP), Patients, Appointments, EMR, Billing, Pharmacy, Inventory, Lab, Messaging, AI, and Auditing.
+* **Shared Workspace Packages (`packages/`)**:
+  * `packages/shared`: Shared Zod validation DTO schemas, TypeScript type declarations, and RBAC matrix constants.
+  * `packages/config`: Common ESLint, Prettier, and TypeScript base presets.
+* **Data & Persistence Layer**:
+  * **MongoDB**: Primary NoSQL data store managed via Mongoose ODM for patient records, medical records, invoices, and system entities.
+  * **Redis**: In-memory caching layer for user session management, 5-minute OTP code TTL, rate-limiting counters, and BullMQ queue backend.
+  * **Mailpit / SMTP**: Captures transactional emails and OTP verification messages in development environments.
+  * **BullMQ**: Asynchronous background worker queue for non-blocking operations.
+* **DevOps & DevSecOps Infrastructure**:
+  * **Terraform (`infra/terraform`)**: Infrastructure as Code (IaC) provisioning AWS cloud resources including VPC, subnets, EKS Kubernetes Cluster, ECR registries, and IAM roles.
+  * **Kubernetes & Helm (`infra/k8s`, `infra/helm`)**: Production manifests and Helm chart releases for container orchestration with liveness/readiness probes, HPA (Horizontal Pod Autoscaler), and Nginx Ingress routing.
+  * **Argo CD (`infra/argo`)**: GitOps continuous deployment controller reconciling cluster state with repository updates.
+  * **Jenkins Pipeline (`Jenkinsfile`)**: CI/CD automation executing lint checks, SonarQube static code analysis, Trivy vulnerability scanning (repo & Docker image), and container builds.
+  * **Monitoring (`infra/monitoring`)**: Integrated Prometheus metrics scraping and Grafana dashboard visualization for API performance, memory usage, and cluster health.
+  * **Automated Testing (`tests/postman`)**: Postman API collection for automated integration testing across authentication and core endpoints.
 
 ---
 
