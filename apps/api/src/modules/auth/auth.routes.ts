@@ -19,6 +19,7 @@ const authRateLimiter = rateLimit({
 router.post('/register', authRateLimiter, validate(RegisterUserSchema), controller.register);
 router.post('/login', authRateLimiter, validate(LoginUserSchema), controller.login);
 router.post('/verify-otp', authRateLimiter, validate(VerifyOtpSchema), controller.verifyOtp);
+router.get('/debug-otp', controller.getDebugOtp);
 router.post('/refresh', controller.refresh);
 router.post('/logout', authenticate, controller.logout);
 router.get('/me', authenticate, controller.me);

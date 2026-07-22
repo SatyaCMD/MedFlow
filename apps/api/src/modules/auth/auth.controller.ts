@@ -75,6 +75,16 @@ export class AuthController {
     }
   };
 
+  getDebugOtp = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const tempToken = (req.query.tempToken as string) || '';
+      const debugData = await this.service.getDebugOtp(tempToken);
+      res.status(200).json({ success: true, data: debugData });
+    } catch (err) {
+      next(err);
+    }
+  };
+
 
   refresh = async (req: Request, res: Response, next: NextFunction) => {
     try {

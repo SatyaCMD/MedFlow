@@ -29,6 +29,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [loading, setLoading] = useState(true);
 
   const fetchCurrentUser = async () => {
+    const hasAuth = !!api.defaults.headers.common['Authorization'];
+    if (!hasAuth) {
+      setUser(null);
+      setLoading(false);
+      return;
+    }
+
     try {
       const response = await api.get('/auth/me');
       setUser(response.data.data.user);
@@ -51,10 +58,14 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const logout = async () => {
     try {
       await api.post('/auth/logout');
+    } catch {
+      // Proceed with local logout cleanup even if session was already invalid
     } finally {
       delete api.defaults.headers.common['Authorization'];
       setUser(null);
       if (typeof window !== 'undefined') {
+        sessionStorage.clear();
+        localStorage.clear();
         window.location.href = '/login';
       }
     }
