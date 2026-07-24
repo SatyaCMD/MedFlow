@@ -164,9 +164,8 @@ export const AppShell: React.FC<AppShellProps> = ({ children, userRole = 'DOCTOR
           badge: 'PHYSICIAN WORKSTATION NAV',
           badgeBg: 'bg-blue-100 text-blue-800 border-blue-300',
           items: [
-            { label: 'OPD Clinical Workstation', href: '/', icon: Stethoscope },
+            { label: 'OPD Consultations & Prescribe Workstation', href: '/', icon: Stethoscope },
             { label: 'My Patient Roster', href: '/patients', icon: Users },
-            { label: 'Appointment Schedule', href: '/appointments', icon: Calendar },
             { label: 'Signed EMR Vault', href: '/emr', icon: FileText },
             { label: 'Blood Bank Transfusions', href: '#bloodbank', icon: Droplet, onClick: () => setIsBloodBankOpen(true) },
             { label: 'Emergency Alerts', href: '/ambulance', icon: Siren },
