@@ -1,7 +1,7 @@
 'use client';
-/* eslint-disable @typescript-eslint/no-unused-vars */
 
-import React, { useState } from 'react';
+/* eslint-disable @typescript-eslint/no-unused-vars, @typescript-eslint/no-explicit-any */
+import React, { useState, useEffect, useRef } from 'react';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
 import { motion, AnimatePresence } from 'framer-motion';
@@ -19,9 +19,24 @@ import {
   Sun,
   Moon,
   Search,
+  Clock,
+  ShieldCheck,
+  CheckCircle2,
+  AlertTriangle,
+  LayoutGrid,
+  Droplet,
+  KeyRound,
+  Siren,
 } from 'lucide-react';
 import { Logo } from './Logo';
 import { useAuth } from '../../hooks/useAuth';
+import { useToast } from '../../context/ToastContext';
+import { KycModal } from './KycModal';
+import { EnterpriseCommandCenterModal } from './EnterpriseCommandCenterModal';
+import { BloodBankModal } from './BloodBankModal';
+import { ForgotPasswordModal } from './ForgotPasswordModal';
+import { BookDoctorVisitModal } from './BookDoctorVisitModal';
+import { PaymentModal } from './PaymentModal';
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -30,222 +45,301 @@ interface AppShellProps {
 
 export const AppShell: React.FC<AppShellProps> = ({ children, userRole = 'DOCTOR' }) => {
   const { logout, user } = useAuth();
+  const { showToast } = useToast();
   const pathname = usePathname();
+
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
   const [darkMode, setDarkMode] = useState(false);
 
   const currentRole = user?.role || userRole;
+  const isSuperAdmin = currentRole === 'SUPER_ADMIN' || currentRole === 'HOSPITAL_ADMIN';
 
-  const getMenuItems = () => {
-    switch (currentRole) {
-      case 'DOCTOR':
-        return [
-          { icon: Activity, label: 'Clinical Dashboard', path: '/' },
-          { icon: Users, label: 'My Patients', path: '/patients' },
-          { icon: Calendar, label: 'Appointments Matrix', path: '/appointments' },
-          { icon: FileText, label: 'EMR Records Vault', path: '/emr' },
-          { icon: Settings, label: 'Settings', path: '/settings' },
-        ];
-      case 'PATIENT':
-        return [
-          { icon: Activity, label: 'Health Portal', path: '/' },
-          { icon: Calendar, label: 'Book Visit', path: '/appointments' },
-          { icon: FileText, label: 'My Reports & Prescriptions', path: '/emr' },
-          { icon: CreditCard, label: 'Billing & Receipts', path: '/billing' },
-          { icon: Settings, label: 'Settings', path: '/settings' },
-        ];
-      case 'NURSE':
-        return [
-          { icon: Activity, label: 'Nursing Dashboard', path: '/' },
-          { icon: Users, label: 'Ward Patients', path: '/patients' },
-          { icon: Calendar, label: 'Appointments', path: '/appointments' },
-          { icon: FileText, label: 'Vitals & Charting', path: '/emr' },
-        ];
-      case 'PHARMACIST':
-        return [
-          { icon: Activity, label: 'Dispensary Station', path: '/' },
-          { icon: FileText, label: 'Rx Queue', path: '/emr' },
-          { icon: CreditCard, label: 'Pharmacy Sales', path: '/billing' },
-          { icon: Settings, label: 'Settings', path: '/settings' },
-        ];
-      case 'SUPER_ADMIN':
-      case 'HOSPITAL_ADMIN':
-      default:
-        return [
-          { icon: Activity, label: 'Control Center', path: '/' },
-          { icon: Users, label: 'Patients Directory', path: '/patients' },
-          { icon: Calendar, label: 'Appointments Matrix', path: '/appointments' },
-          { icon: CreditCard, label: 'Billing & Revenue', path: '/billing' },
-          { icon: FileText, label: 'EMR Audit Vault', path: '/emr' },
-          { icon: Settings, label: 'Hospital Settings', path: '/settings' },
-        ];
+  // 1. 30-Minute Patient Session Timeout State (1800 Seconds)
+  const [sessionTimeLeft, setSessionTimeLeft] = useState(1800);
+
+  // 2. KYC Verification & 5-Minute Hold Queue State (300 Seconds)
+  const [isKycModalOpen, setIsKycModalOpen] = useState(false);
+  const [is44ModulesOpen, setIs44ModulesOpen] = useState(false);
+  const [isBloodBankOpen, setIsBloodBankOpen] = useState(false);
+  const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState(false);
+  const [isBookVisitOpen, setIsBookVisitOpen] = useState(false);
+  const [isPaymentOpen, setIsPaymentOpen] = useState(false);
+  const [paymentTarget, setPaymentTarget] = useState({
+    title: '',
+    category: 'APPOINTMENT' as 'APPOINTMENT' | 'LAB_TEST' | 'HOSPITAL_SUPPLY',
+    amount: '₹1,500',
+    patientName: 'Alex Care',
+  });
+  const [kycSubmitted, setKycSubmitted] = useState(false);
+  const [holdTimeLeft, setHoldTimeLeft] = useState(300);
+  const [isApproved, setIsApproved] = useState(false);
+
+  // Trigger KYC modal on first visit for non-super-admins
+  useEffect(() => {
+    if (!isSuperAdmin && !kycSubmitted && !isApproved) {
+      const timer = setTimeout(() => setIsKycModalOpen(true), 1200);
+      return () => clearTimeout(timer);
     }
+  }, [isSuperAdmin, kycSubmitted, isApproved]);
+
+  // Hold queue countdown timer
+  useEffect(() => {
+    if (!kycSubmitted || isApproved) return;
+    const interval = setInterval(() => {
+      setHoldTimeLeft((prev) => {
+        if (prev <= 1) {
+          setIsApproved(true);
+          showToast({ title: 'KYC Verification Approved!', message: 'Your identity has been auto-verified.', type: 'success' });
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [kycSubmitted, isApproved, showToast]);
+
+  // Stable refs for callbacks to prevent timer reset
+  const logoutRef = useRef(logout);
+  const showToastRef = useRef(showToast);
+
+  useEffect(() => {
+    logoutRef.current = logout;
+    showToastRef.current = showToast;
+  }, [logout, showToast]);
+
+  // Session timeout countdown timer (Runs once continuously without reset)
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setSessionTimeLeft((prev) => {
+        if (prev <= 1) {
+          if (logoutRef.current) logoutRef.current();
+          if (showToastRef.current) {
+            showToastRef.current({ title: 'Session Expired', message: '30-minute inactivity security window elapsed.', type: 'warning' });
+          }
+          return 0;
+        }
+        return prev - 1;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, []);
+
+  const formatTimer = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const menuItems = getMenuItems();
-
-  const toggleTheme = () => {
-    setDarkMode(!darkMode);
-    if (typeof window !== 'undefined') {
-      document.documentElement.classList.toggle('dark');
-    }
-  };
+  const navItems = [
+    { label: 'Workstation', href: '/', icon: Activity },
+    { label: 'Patients', href: '/patients', icon: Users },
+    { label: 'Appointments', href: '/appointments', icon: Calendar },
+    { label: 'Ambulance & Dispatch', href: '/ambulance', icon: Siren },
+    { label: 'Blood Bank', href: '/blood-bank', icon: Droplet },
+    { label: 'EMR / EHR Vault', href: '/emr', icon: FileText },
+    { label: 'Billing & Finance', href: '/billing', icon: CreditCard },
+    { label: 'System Settings', href: '/settings', icon: Settings },
+  ];
 
   return (
-    <div className={`min-h-screen flex ${darkMode ? 'bg-slate-950 text-slate-100' : 'bg-slate-50 text-slate-900'} font-sans transition-colors duration-300`}>
-      {/* Mobile Sidebar overlay */}
+    <div className="min-h-screen bg-slate-50 flex overflow-hidden">
+      {/* 44 Enterprise Modules Command Center Modal */}
+      <EnterpriseCommandCenterModal
+        isOpen={is44ModulesOpen}
+        onClose={() => setIs44ModulesOpen(false)}
+      />
+
+      {/* Blood Bank Exchange Command Modal */}
+      <BloodBankModal
+        isOpen={isBloodBankOpen}
+        onClose={() => setIsBloodBankOpen(false)}
+      />
+
+      {/* Forgot Password OTP Modal */}
+      <ForgotPasswordModal
+        isOpen={isForgotPasswordOpen}
+        onClose={() => setIsForgotPasswordOpen(false)}
+      />
+
+      {/* Book Doctor Visit Modal */}
+      <BookDoctorVisitModal
+        isOpen={isBookVisitOpen}
+        onClose={() => setIsBookVisitOpen(false)}
+        onProceedToPayment={(details) => {
+          setIsBookVisitOpen(false);
+          setPaymentTarget({
+            title: `Doctor Consultation — ${details.doctor.name} (${details.department})`,
+            category: 'APPOINTMENT',
+            amount: details.amount,
+            patientName: details.patientName,
+          });
+          setIsPaymentOpen(true);
+        }}
+      />
+
+      {/* Payment Gateway Sandbox Checkout Modal */}
+      <PaymentModal
+        isOpen={isPaymentOpen}
+        onClose={() => setIsPaymentOpen(false)}
+        itemTitle={paymentTarget.title}
+        itemCategory={paymentTarget.category}
+        amount={paymentTarget.amount}
+        patientName={paymentTarget.patientName}
+        onPaymentSuccess={() => {
+          showToast({ title: 'Appointment Booked!', message: 'Consultation session verified & scheduled.', type: 'success' });
+        }}
+      />
+
+      {/* KYC Document Verification Modal */}
+      <KycModal
+        isOpen={isKycModalOpen}
+        onClose={() => setIsKycModalOpen(false)}
+        userRole={currentRole}
+        onKycSubmitted={() => {
+          setKycSubmitted(true);
+          setIsKycModalOpen(false);
+        }}
+      />
+
+      {/* Mobile Sidebar Overlay */}
       <AnimatePresence>
         {isMobileOpen && (
           <motion.div
             initial={{ opacity: 0 }}
-            animate={{ opacity: 0.4 }}
+            animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
             onClick={() => setIsMobileOpen(false)}
-            className="fixed inset-0 z-40 bg-slate-900 lg:hidden"
+            className="fixed inset-0 z-40 bg-slate-900/50 backdrop-blur-xs lg:hidden"
           />
         )}
       </AnimatePresence>
 
-      {/* Sidebar container */}
-      <motion.aside
-        animate={{ width: isCollapsed ? 80 : 260 }}
-        transition={{ duration: 0.2, ease: 'easeInOut' }}
-        className={`fixed inset-y-0 left-0 z-50 flex flex-col h-screen sticky top-0 shrink-0 ${
-          darkMode ? 'bg-slate-900 border-slate-800' : 'bg-white border-slate-200 shadow-sm'
-        } border-r lg:sticky lg:top-0 lg:h-screen lg:translate-x-0 ${
-          isMobileOpen ? 'translate-x-0' : '-translate-x-full'
-        } transition-colors duration-300 overflow-hidden`}
+      {/* Sidebar Navigation */}
+      <aside
+        className={`fixed lg:static inset-y-0 left-0 z-50 bg-white border-r border-slate-200/80 flex flex-col justify-between transition-all duration-300 ${
+          isCollapsed ? 'w-20' : 'w-64'
+        } ${isMobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
       >
-        {/* Brand header */}
-        <div className={`flex items-center justify-between h-16 px-6 border-b ${darkMode ? 'border-slate-800' : 'border-slate-200'}`}>
-          <div className="flex items-center gap-3">
-            <Logo size={34} />
-            {!isCollapsed && (
-              <span className={`font-black text-base tracking-tight ${
-                darkMode ? 'text-white' : 'text-slate-900'
-              }`}>
-                MediCore<span className="text-blue-600">360</span>
-              </span>
-            )}
+        <div className="space-y-6 p-4">
+          <div className="flex items-center justify-between">
+            <Logo textVisible={!isCollapsed} />
+            <button
+              onClick={() => setIsCollapsed(!isCollapsed)}
+              className="hidden lg:flex p-1.5 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
+            >
+              <ChevronLeft className={`w-5 h-5 transition-transform ${isCollapsed ? 'rotate-180' : ''}`} />
+            </button>
           </div>
-          <button
-            onClick={() => setIsCollapsed(!isCollapsed)}
-            className={`hidden lg:flex items-center justify-center w-7 h-7 rounded-lg hover:${
-              darkMode ? 'bg-slate-800 text-slate-200' : 'bg-slate-100 text-slate-700'
-            } text-slate-500 transition-colors`}
-          >
-            <ChevronLeft className={`w-4 h-4 transform transition-transform ${isCollapsed ? 'rotate-180' : ''}`} />
-          </button>
+
+          <nav className="space-y-1">
+            {navItems.map((item) => {
+              const isActive = pathname === item.href;
+              const Icon = item.icon;
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  className={`flex items-center gap-3 px-3.5 py-2.5 rounded-2xl font-bold text-xs transition-all ${
+                    isActive
+                      ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20'
+                      : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
+                  }`}
+                >
+                  <Icon className="w-4 h-4 shrink-0" />
+                  {!isCollapsed && <span>{item.label}</span>}
+                </Link>
+              );
+            })}
+          </nav>
         </div>
 
-        {/* Navigation list */}
-        <nav className="flex-1 px-3 py-6 space-y-1.5 overflow-y-auto min-h-0">
-          {menuItems.map((item, idx) => {
-            const isActive = pathname === item.path;
-            return (
-              <Link
-                key={idx}
-                href={item.path}
-                onClick={() => setIsMobileOpen(false)}
-                className={`flex items-center gap-3 px-3 py-2.5 rounded-xl text-xs font-bold transition-all duration-150 group ${
-                  isActive
-                    ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20'
-                    : darkMode
-                      ? 'text-slate-300 hover:bg-slate-800 hover:text-white'
-                      : 'text-slate-800 hover:bg-slate-100 hover:text-blue-600'
-                }`}
-              >
-                <item.icon className={`w-4 h-4 shrink-0 ${
-                  isActive
-                    ? 'text-white'
-                    : darkMode
-                      ? 'text-slate-400 group-hover:text-blue-400'
-                      : 'text-slate-500 group-hover:text-blue-600'
-                } transition-colors`} />
-                {!isCollapsed && <span className="truncate">{item.label}</span>}
-              </Link>
-            );
-          })}
-        </nav>
-
-        {/* Sidebar Footer */}
-        <div className={`p-4 border-t ${darkMode ? 'border-slate-800' : 'border-slate-200'} flex items-center justify-between`}>
+        {/* User Footer Card */}
+        <div className="p-4 border-t border-slate-100 space-y-3">
           {!isCollapsed && (
-            <div className="flex items-center gap-3">
-              <div className={`w-9 h-9 rounded-xl ${
-                darkMode ? 'bg-blue-600/20 text-blue-400 border-blue-500/30' : 'bg-blue-50 text-blue-600 border-blue-200'
-              } border flex items-center justify-center font-black text-xs`}>
-                {user?.firstName ? user.firstName.substring(0, 2).toUpperCase() : 'US'}
+            <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-center justify-between">
+              <div>
+                <span className="font-black text-xs text-slate-900 block truncate">{user?.email || 'user@medflow.org'}</span>
+                <span className="text-[10px] font-extrabold uppercase text-blue-600 block">{currentRole}</span>
               </div>
-              <div className="flex flex-col">
-                <span className={`text-xs font-bold ${darkMode ? 'text-slate-200' : 'text-slate-900'}`}>
-                  {user?.firstName ? `${user.firstName} ${user.lastName || ''}` : 'Workstation User'}
-                </span>
-                <span className={`text-[10px] font-semibold uppercase tracking-wider ${darkMode ? 'text-slate-400' : 'text-slate-500'}`}>
-                  {user?.role || userRole}
-                </span>
-              </div>
+              <button
+                onClick={logout}
+                title="Logout"
+                className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer"
+              >
+                <LogOut className="w-4 h-4" />
+              </button>
             </div>
           )}
-          <button
-            onClick={() => logout()}
-            title="Sign Out of Workstation"
-            className={`text-slate-500 hover:text-rose-600 w-8 h-8 rounded-xl flex items-center justify-center hover:${
-              darkMode ? 'bg-slate-800' : 'bg-rose-50'
-            } transition-colors cursor-pointer`}
-          >
-            <LogOut className="w-4 h-4" />
-          </button>
         </div>
-      </motion.aside>
+      </aside>
 
-      {/* Main viewport area */}
-      <div className="flex-1 flex flex-col min-w-0">
-        {/* Topbar navigation header */}
-        <header className={`h-16 flex items-center justify-between px-6 ${
-          darkMode ? 'bg-slate-900/60 border-slate-800' : 'bg-white border-slate-200 shadow-2xs'
-        } border-b backdrop-blur-md sticky top-0 z-30 transition-colors duration-300`}>
+      {/* Main Content Workspace */}
+      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
+        {/* Top Navbar */}
+        <header className="h-16 bg-white border-b border-slate-200/80 px-6 flex items-center justify-between shrink-0">
           <div className="flex items-center gap-4">
             <button
               onClick={() => setIsMobileOpen(true)}
-              className={`lg:hidden p-1.5 rounded-lg hover:${darkMode ? 'bg-slate-800 text-slate-200' : 'bg-slate-100 text-slate-800'} text-slate-600`}
+              className="lg:hidden p-2 rounded-xl text-slate-500 hover:bg-slate-100"
             >
-              <Menu className="w-6 h-6" />
+              <Menu className="w-5 h-5" />
             </button>
 
-            {/* Global search component */}
-            <div className={`hidden sm:flex items-center gap-2 px-3 py-1.5 ${
-              darkMode ? 'bg-slate-950 border-slate-800 text-slate-300' : 'bg-slate-100 border-slate-200 text-slate-700'
-            } border rounded-xl max-w-xs w-64 hover:border-blue-400 transition-colors cursor-pointer`}>
-              <Search className="w-4 h-4 text-slate-500" />
-              <span className="text-xs font-semibold flex-1">Search dashboard (⌘K)</span>
-            </div>
+            <button
+              onClick={() => setIs44ModulesOpen(true)}
+              className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs rounded-xl shadow-2xs flex items-center gap-1.5 transition-all cursor-pointer"
+            >
+              <LayoutGrid className="w-4 h-4 text-blue-400" />
+              <span className="hidden sm:inline">44 Enterprise Modules Hub</span>
+            </button>
           </div>
 
+          {/* Topbar Right Badges */}
           <div className="flex items-center gap-3">
             <button
-              onClick={toggleTheme}
-              className={`w-9 h-9 rounded-xl flex items-center justify-center ${
-                darkMode ? 'bg-slate-950 border-slate-800' : 'bg-slate-100 border-slate-200'
-              } border hover:border-blue-400 text-slate-600 dark:text-slate-300 transition-all cursor-pointer`}
+              onClick={() => setIsBloodBankOpen(true)}
+              className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 font-extrabold text-xs rounded-xl flex items-center gap-1.5 transition-all cursor-pointer"
             >
-              {darkMode ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-slate-700" />}
+              <Droplet className="w-3.5 h-3.5 fill-rose-600 text-rose-600" />
+              <span className="hidden sm:inline">Blood Bank Exchange</span>
             </button>
 
-            <button className={`w-9 h-9 rounded-xl flex items-center justify-center ${
-              darkMode ? 'bg-slate-950 border-slate-800' : 'bg-slate-100 border-slate-200'
-            } border hover:border-blue-400 text-slate-600 dark:text-slate-300 relative transition-all cursor-pointer`}>
-              <Bell className="w-4 h-4" />
-              <span className="absolute top-2 right-2 w-2 h-2 rounded-full bg-blue-600 animate-pulse" />
+            <button
+              onClick={() => setIsForgotPasswordOpen(true)}
+              className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 font-extrabold text-xs rounded-xl flex items-center gap-1.5 transition-all cursor-pointer"
+            >
+              <KeyRound className="w-3.5 h-3.5 text-blue-600" />
+              <span className="hidden sm:inline">Reset Password OTP</span>
             </button>
+
+            {/* 30-Minute Patient Countdown Badge */}
+            {currentRole === 'PATIENT' && (
+              <div className="px-3 py-1 bg-amber-50 border border-amber-200 text-amber-800 rounded-full text-xs font-black flex items-center gap-1.5 shadow-2xs">
+                <Clock className="w-3.5 h-3.5 text-amber-600" />
+                <span>Session: {formatTimer(sessionTimeLeft)}</span>
+              </div>
+            )}
+
+            {/* 5-Minute Hold Queue Badge */}
+            {!isSuperAdmin && kycSubmitted && !isApproved && (
+              <div className="px-3 py-1 bg-blue-50 border border-blue-200 text-blue-800 rounded-full text-xs font-black flex items-center gap-1.5 shadow-2xs animate-pulse">
+                <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
+                <span>KYC Review (Hold: {formatTimer(holdTimeLeft)})</span>
+              </div>
+            )}
+
+            {!isSuperAdmin && isApproved && (
+              <div className="px-3 py-1 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-full text-xs font-black flex items-center gap-1 shadow-2xs">
+                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                <span>KYC Approved</span>
+              </div>
+            )}
           </div>
         </header>
 
-        {/* Content body container */}
-        <main className="flex-1 p-6 overflow-y-auto max-w-7xl w-full mx-auto">
-          {children}
-        </main>
+        {/* Page Viewport */}
+        <main className="flex-1 overflow-y-auto p-6 sm:p-8">{children}</main>
       </div>
     </div>
   );

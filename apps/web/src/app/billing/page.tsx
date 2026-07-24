@@ -1,52 +1,76 @@
 'use client';
-/* eslint-disable @typescript-eslint/no-unused-vars */
 
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
 import React, { useState } from 'react';
 import { AppShell } from '../../components/shared/AppShell';
 import { StatCard } from '../../components/shared/StatCard';
 import { DataTable } from '../../components/shared/DataTable';
-import { CreditCard, FileText, Download, ShieldCheck } from 'lucide-react';
-
-interface Invoice {
-  id: string;
-  invoiceNo: string;
-  patient: string;
-  amount: string;
-  date: string;
-  insurance: string;
-  status: 'paid' | 'pending' | 'overdue';
-}
+import { PaymentModal } from '../../components/shared/PaymentModal';
+import { useToast } from '../../context/ToastContext';
+import {
+  CreditCard,
+  Building2,
+  Download,
+  CheckCircle2,
+  FileText,
+  DollarSign,
+  Plus,
+  ShieldCheck,
+  Receipt,
+  PieChart
+} from 'lucide-react';
 
 export default function BillingPage() {
+  const { showToast } = useToast();
   const [currentPage, setCurrentPage] = useState(1);
+  const [isPaymentOpen, setIsPaymentOpen] = useState(false);
+  const [paymentTarget, setPaymentTarget] = useState({ title: 'IPD Hospital Stay & Surgery Package', amount: '₹45,800' });
 
-  const mockInvoices: Invoice[] = [
-    { id: '1', invoiceNo: 'INV-2026-081', patient: 'John Doe', amount: '$1,450.00', date: '2026-07-21', insurance: 'BlueCross (80%)', status: 'paid' },
-    { id: '2', invoiceNo: 'INV-2026-082', patient: 'Jane Smith', amount: '$320.00', date: '2026-07-22', insurance: 'Medicare', status: 'pending' },
-    { id: '3', invoiceNo: 'INV-2026-083', patient: 'Robert Lee', amount: '$4,890.00', date: '2026-07-15', insurance: 'Aetna Select', status: 'overdue' },
-    { id: '4', invoiceNo: 'INV-2026-084', patient: 'Emily Davis', amount: '$680.00', date: '2026-07-20', insurance: 'UnitedHealth', status: 'paid' },
-  ];
+  const [invoices] = useState([
+    { id: 'INV-9901', date: 'Jul 22, 2026', patient: 'Sarah Connor', dept: 'IPD Cardiology Ward', total: '₹45,800', tpaStatus: 'TPA Cashless Pre-Approved', gst: '₹2,290 (5%)', status: 'Paid' },
+    { id: 'INV-9902', date: 'Jul 21, 2026', patient: 'John Doe', dept: 'OPD Neurology', total: '₹2,500', tpaStatus: 'Direct Patient Payment', gst: '₹125 (5%)', status: 'Paid' },
+    { id: 'INV-9903', date: 'Jul 20, 2026', patient: 'Bruce Wayne', dept: 'Pharmacy & Surgical Consumables', total: '₹12,400', tpaStatus: 'Star Health TPA Claim Pending', gst: '₹620 (5%)', status: 'Pending TPA Settlement' },
+  ]);
+
+  const handleDownloadInvoice = (invId: string) => {
+    showToast({
+      title: 'Downloading GST Tax Invoice',
+      message: `Generating printable GST tax invoice #${invId}...`,
+      type: 'info',
+    });
+  };
 
   const columns = [
-    { header: 'Invoice Number', accessor: (row: Invoice) => <span className="font-bold text-blue-600">{row.invoiceNo}</span> },
-    { header: 'Patient Name', accessor: (row: Invoice) => <span className="font-bold text-slate-900">{row.patient}</span> },
-    { header: 'Billing Amount', accessor: (row: Invoice) => <span className="font-black text-slate-900 tabular-nums">{row.amount}</span> },
-    { header: 'Insurance Provider', accessor: (row: Invoice) => <span className="text-slate-700 font-medium">{row.insurance}</span> },
-    { header: 'Issue Date', accessor: (row: Invoice) => <span className="text-slate-600 tabular-nums">{row.date}</span> },
+    { header: 'Invoice Code', accessor: (row: typeof invoices[0]) => <span className="font-mono font-black text-blue-600">{row.id}</span> },
+    { header: 'Billing Date', accessor: (row: typeof invoices[0]) => <span className="text-slate-600 font-semibold">{row.date}</span> },
+    { header: 'Patient Name', accessor: (row: typeof invoices[0]) => <span className="font-bold text-slate-900">{row.patient}</span> },
+    { header: 'Department', accessor: (row: typeof invoices[0]) => <span className="text-slate-700 font-medium">{row.dept}</span> },
+    { header: 'GST Tax (5%)', accessor: (row: typeof invoices[0]) => <span className="text-slate-500 font-semibold">{row.gst}</span> },
+    { header: 'Total (₹ INR)', accessor: (row: typeof invoices[0]) => <span className="font-black text-slate-900">{row.total}</span> },
     {
-      header: 'Payment Status',
-      accessor: (row: Invoice) => (
+      header: 'Insurance TPA Status',
+      accessor: (row: typeof invoices[0]) => (
         <span
-          className={`px-2.5 py-1 rounded-full text-[10px] font-extrabold uppercase tracking-wider ${
-            row.status === 'paid'
+          className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase ${
+            row.status.includes('Paid')
               ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
-              : row.status === 'pending'
-                ? 'bg-amber-100 text-amber-800 border border-amber-300'
-                : 'bg-rose-100 text-rose-800 border border-rose-300'
+              : 'bg-amber-100 text-amber-900 border border-amber-300'
           }`}
         >
-          {row.status}
+          {row.tpaStatus}
         </span>
+      ),
+    },
+    {
+      header: 'Invoice Actions',
+      accessor: (row: typeof invoices[0]) => (
+        <button
+          onClick={() => handleDownloadInvoice(row.id)}
+          className="px-3 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs rounded-lg border border-slate-300 flex items-center gap-1 cursor-pointer"
+        >
+          <Download className="w-3.5 h-3.5" />
+          <span>GST Invoice PDF</span>
+        </button>
       ),
     },
   ];
@@ -54,51 +78,52 @@ export default function BillingPage() {
   return (
     <AppShell userRole="SUPER_ADMIN">
       <div className="space-y-8 max-w-6xl mx-auto">
-        
-        {/* Page Header */}
+        <PaymentModal
+          isOpen={isPaymentOpen}
+          onClose={() => setIsPaymentOpen(false)}
+          itemTitle={paymentTarget.title}
+          itemCategory="APPOINTMENT"
+          amount={paymentTarget.amount}
+          patientName="Staff / Patient"
+          userRole="SUPER_ADMIN"
+          onPaymentSuccess={() => {}}
+        />
+
+        {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-200 pb-6">
           <div>
             <h1 className="text-2xl font-black text-slate-900 flex items-center gap-2">
-              <CreditCard className="w-6 h-6 text-blue-600" />
-              Financial & Billing Operations
+              <CreditCard className="w-6 h-6 text-emerald-600" />
+              Hospital Billing, Finance & Insurance TPA Claims (₹ INR)
             </h1>
             <p className="text-xs font-semibold text-slate-600 mt-1">
-              Insurance claims processing, patient invoice ledgers, and payment collection telemetry.
+              OPD/IPD billing, Pharmacy & Lab charges, Cashless TPA claims, GST tax invoices, and financial reports.
             </p>
           </div>
-          <button className="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl shadow-md shadow-blue-600/20 flex items-center gap-2 transition-all cursor-pointer">
-            <FileText className="w-4 h-4" />
-            <span>Generate New Invoice</span>
-          </button>
         </div>
 
-        {/* Stats Grid */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-          <StatCard title="Monthly Revenue" value="$128,450" change={16.8} changeLabel="vs last month" />
-          <StatCard title="Pending Claims" value="$24,300" change={-3.2} changeLabel="12 claims processing" />
-          <StatCard title="Collection Rate" value="94.2%" change={2.1} changeLabel="target 95%" />
+        {/* KPI Cards in ₹ */}
+        <div className="grid grid-cols-1 sm:grid-cols-4 gap-6">
+          <StatCard title="Total Monthly Revenue" value="₹1,24,50,000" change={14.2} changeLabel="all branches" icon={Receipt} />
+          <StatCard title="Cashless TPA Claims" value="₹42,80,000" change={8.5} changeLabel="approved claims" icon={ShieldCheck} />
+          <StatCard title="GST Taxes Collected" value="₹6,22,500" change={0.0} changeLabel="5% medical GST" icon={PieChart} />
+          <StatCard title="Pending Receivables" value="₹12,40,000" change={-3.0} changeLabel="due collections" icon={CheckCircle2} />
         </div>
 
         {/* Invoices Table */}
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-black text-slate-900 uppercase tracking-wider">
-              Recent Billing Invoices
-            </h2>
-            <button className="text-xs text-blue-600 font-bold flex items-center gap-1 hover:underline cursor-pointer">
-              <Download className="w-3.5 h-3.5" /> Export Financial Summary
-            </button>
-          </div>
+        <div className="space-y-4">
+          <h2 className="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
+            <Receipt className="w-4 h-4 text-emerald-600" /> Billing Master Ledger & GST Invoices
+          </h2>
 
           <DataTable
             columns={columns}
-            data={mockInvoices}
+            data={invoices}
             currentPage={currentPage}
             totalPages={1}
             onPageChange={(page) => setCurrentPage(page)}
           />
         </div>
-
       </div>
     </AppShell>
   );

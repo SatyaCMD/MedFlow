@@ -85,6 +85,36 @@ export class AuthController {
     }
   };
 
+  forgotPassword = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { email } = req.body;
+      const result = await this.service.forgotPassword(email);
+      res.status(200).json({ success: true, data: result });
+    } catch (err) {
+      next(err);
+    }
+  };
+
+  getDebugForgotOtp = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const email = (req.params.email || req.query.email as string) || '';
+      const debugData = await this.service.getDebugForgotOtp(email);
+      res.status(200).json({ success: true, data: debugData });
+    } catch (err) {
+      next(err);
+    }
+  };
+
+  resetPassword = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { email, code, newPassword } = req.body;
+      const result = await this.service.resetPassword(email, code, newPassword);
+      res.status(200).json({ success: true, data: result });
+    } catch (err) {
+      next(err);
+    }
+  };
+
 
   refresh = async (req: Request, res: Response, next: NextFunction) => {
     try {

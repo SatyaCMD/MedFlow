@@ -2,39 +2,56 @@
 
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
 import React, { useState } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { StatCard } from '../shared/StatCard';
 import { DataTable } from '../shared/DataTable';
+import { EnterpriseCommandCenterModal } from '../shared/EnterpriseCommandCenterModal';
+import { AmbulanceTrackerModal } from '../shared/AmbulanceTrackerModal';
+import { useToast } from '../../context/ToastContext';
 import {
+  Building2,
+  Users,
   ShieldCheck,
   Activity,
-  Users,
-  Database,
-  Building2,
+  Bed,
   DollarSign,
+  Plus,
+  RefreshCw,
+  Search,
+  Sparkles,
+  CheckCircle2,
+  AlertTriangle,
+  UserCheck,
   TrendingUp,
-  Server,
-  Lock,
-  Download
+  SlidersHorizontal,
+  LayoutGrid,
+  Siren,
+  HeartPulse,
+  Receipt
 } from 'lucide-react';
 
 export const SuperAdminDashboard: React.FC = () => {
+  const { showToast } = useToast();
   const [currentPage, setCurrentPage] = useState(1);
 
-  const systemAuditLogs = [
-    { id: '1', time: '06:14 AM', event: 'OWASP Security Scan Passed', user: 'System Worker', tenant: 'HOSP-001', status: 'Passed' },
-    { id: '2', time: '05:48 AM', event: 'New Doctor Workstation Registered', user: 'Dr. House', tenant: 'HOSP-001', status: 'Success' },
-    { id: '3', time: '04:30 AM', event: 'MongoDB Replica Set Backup Completed', user: 'DBA Admin', tenant: 'GLOBAL', status: 'Completed' },
-    { id: '4', time: '02:15 AM', event: 'SHA-256 EMR Block Hashed', user: 'Crypto Engine', tenant: 'HOSP-002', status: 'Sealed' },
-  ];
+  // Modals state
+  const [is44ModulesOpen, setIs44ModulesOpen] = useState(false);
+  const [isAmbulanceTrackerOpen, setIsAmbulanceTrackerOpen] = useState(false);
+
+  const [branches] = useState([
+    { id: 'b1', name: 'MediCore Central Super-Specialty Hospital', location: 'Metropolitan Core', census: '480 / 500 Beds', rev: '₹68,50,000', status: 'Operational' },
+    { id: 'b2', name: 'MediCore North Cardiac & Neuro Institute', location: 'North City District', census: '240 / 250 Beds', rev: '₹34,20,000', status: 'Operational' },
+    { id: 'b3', name: 'MediCore East Trauma & Surgical Center', location: 'East Suburb Hub', census: '190 / 200 Beds', rev: '₹21,80,000', status: 'Operational' },
+  ]);
 
   const columns = [
-    { header: 'Time', accessor: (row: typeof systemAuditLogs[0]) => <span className="font-bold text-blue-600">{row.time}</span> },
-    { header: 'System Event Description', accessor: (row: typeof systemAuditLogs[0]) => <span className="font-bold text-slate-900">{row.event}</span> },
-    { header: 'Initiated By', accessor: (row: typeof systemAuditLogs[0]) => <span className="text-slate-700 font-semibold">{row.user}</span> },
-    { header: 'Tenant Domain', accessor: (row: typeof systemAuditLogs[0]) => <span className="px-2 py-0.5 bg-slate-100 text-slate-800 font-bold rounded border border-slate-300 text-[10px]">{row.tenant}</span> },
+    { header: 'Hospital Unit / Branch', accessor: (row: typeof branches[0]) => <span className="font-black text-slate-900">{row.name}</span> },
+    { header: 'Geographic District', accessor: (row: typeof branches[0]) => <span className="text-slate-600 font-semibold">{row.location}</span> },
+    { header: 'Bed Census Matrix', accessor: (row: typeof branches[0]) => <span className="font-bold text-rose-600">{row.census}</span> },
+    { header: 'Monthly Gross Revenue', accessor: (row: typeof branches[0]) => <span className="font-black text-emerald-600">{row.rev}</span> },
     {
-      header: 'Audit Status',
-      accessor: (row: typeof systemAuditLogs[0]) => (
+      header: 'Operational Health',
+      accessor: (row: typeof branches[0]) => (
         <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-emerald-100 text-emerald-800 border border-emerald-300">
           {row.status}
         </span>
@@ -43,88 +60,79 @@ export const SuperAdminDashboard: React.FC = () => {
   ];
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-8 relative">
+      {/* 44 Enterprise Modules Master Command Center Modal */}
+      <EnterpriseCommandCenterModal
+        isOpen={is44ModulesOpen}
+        onClose={() => setIs44ModulesOpen(false)}
+      />
+
+      {/* Real-Time Live GPS Ambulance Tracker Modal */}
+      <AmbulanceTrackerModal
+        isOpen={isAmbulanceTrackerOpen}
+        onClose={() => setIsAmbulanceTrackerOpen(false)}
+      />
+
       {/* Header Banner */}
       <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-200 pb-6">
         <div>
           <h1 className="text-2xl font-black text-slate-900 flex items-center gap-2">
             <Building2 className="w-6 h-6 text-blue-600" />
-            Super Admin Enterprise Control Center
+            Super Admin Enterprise Control Center & Multi-Hospital Operations
           </h1>
           <p className="text-xs font-semibold text-slate-600 mt-1">
-            Global hospital network telemetry, multi-tenant database performance, and security compliance logs.
+            Global healthcare telemetry, multi-branch management, RBAC access control, and 44 enterprise modules.
           </p>
         </div>
-        <span className="px-3 py-1 bg-emerald-50 text-emerald-700 border border-emerald-200 rounded-full text-xs font-bold flex items-center gap-1.5">
-          <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse" />
-          12 Data Centers Operational
-        </span>
+
+        <div className="flex items-center gap-3">
+          <button
+            onClick={() => setIsAmbulanceTrackerOpen(true)}
+            className="px-3.5 py-2.5 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-xl shadow-md shadow-rose-600/20 flex items-center gap-2 cursor-pointer"
+          >
+            <Siren className="w-4 h-4 animate-pulse" />
+            <span>Live GPS Ambulance Tracker</span>
+          </button>
+
+          <button
+            onClick={() => setIs44ModulesOpen(true)}
+            className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow-md flex items-center gap-2 cursor-pointer"
+          >
+            <LayoutGrid className="w-4 h-4 text-blue-400" />
+            <span>Open 44 Enterprise Modules Hub</span>
+          </button>
+        </div>
       </div>
 
-      {/* KPI Cards */}
+      {/* KPI Cards in ₹ */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard title="Hospital Revenue" value="$128,450" change={16.8} changeLabel="vs last month" icon={DollarSign} />
-        <StatCard title="Active System Users" value="1,248" change={8.4} changeLabel="workstations live" icon={Users} />
-        <StatCard title="EMR Encrypted Storage" value="14,280" change={4.2} changeLabel="SHA-256 blocks" icon={Database} />
-        <StatCard title="Security Posture" value="100%" change={0.0} changeLabel="OWASP Level 3" icon={ShieldCheck} />
+        <StatCard title="Multi-Hospital Branches" value="3 Campuses" change={100.0} changeLabel="all operational" icon={Building2} />
+        <StatCard title="Total Enterprise Revenue" value="₹1,24,50,000" change={14.2} changeLabel="monthly gross" icon={Receipt} />
+        <StatCard title="Active Bed Census" value="910 / 950 Beds" change={95.7} changeLabel="high occupancy" icon={Bed} />
+        <StatCard title="Enterprise Modules" value="44 / 44 Active" change={0.0} changeLabel="full coverage" icon={LayoutGrid} />
       </div>
 
-      {/* Main Grid Section */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
-        {/* Left 2 Cols: Audit Logs */}
-        <div className="lg:col-span-2 space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
-              <Lock className="w-4 h-4 text-blue-600" /> System Security Audit Stream
-            </h2>
-            <button className="text-xs text-blue-600 font-bold flex items-center gap-1 hover:underline cursor-pointer">
-              <Download className="w-3.5 h-3.5" /> Export Compliance Log
-            </button>
-          </div>
-
-          <DataTable
-            columns={columns}
-            data={systemAuditLogs}
-            currentPage={currentPage}
-            totalPages={1}
-            onPageChange={(page) => setCurrentPage(page)}
-          />
+      {/* Multi Hospital Branches Table */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
+            <Building2 className="w-4 h-4 text-blue-600" /> Multi-Hospital Branch Telemetry & Performance
+          </h2>
+          <button
+            onClick={() => setIs44ModulesOpen(true)}
+            className="text-xs text-blue-600 hover:underline font-bold flex items-center gap-1 cursor-pointer"
+          >
+            <LayoutGrid className="w-3.5 h-3.5" /> View All 44 Modules
+          </button>
         </div>
 
-        {/* Right 1 Col: Live Telemetry */}
-        <div className="space-y-4 bg-white border border-slate-200 rounded-2xl p-6 shadow-xs">
-          <h3 className="text-sm font-black text-slate-900 uppercase tracking-wider border-b border-slate-200 pb-3 flex items-center gap-2">
-            <Server className="w-4 h-4 text-blue-600" /> Infrastructure Cluster Health
-          </h3>
-
-          <div className="space-y-4 text-xs font-semibold">
-            <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1">
-              <div className="flex items-center justify-between">
-                <span className="text-slate-900 font-bold">MongoDB Cluster Status</span>
-                <span className="text-emerald-700 font-bold">HEALTHY</span>
-              </div>
-              <p className="text-[11px] text-slate-500 font-medium">Multi-Region Replica Sets Synced</p>
-            </div>
-
-            <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1">
-              <div className="flex items-center justify-between">
-                <span className="text-slate-900 font-bold">Redis Cache Latency</span>
-                <span className="text-blue-600 font-bold">0.14 ms</span>
-              </div>
-              <p className="text-[11px] text-slate-500 font-medium">Session token store operational</p>
-            </div>
-
-            <div className="p-3 bg-slate-50 border border-slate-200 rounded-xl space-y-1">
-              <div className="flex items-center justify-between">
-                <span className="text-slate-900 font-bold">OWASP Hardening Shield</span>
-                <span className="text-emerald-700 font-bold">ACTIVE</span>
-              </div>
-              <p className="text-[11px] text-slate-500 font-medium">Argon2id Salt+Pepper Enforced</p>
-            </div>
-          </div>
-        </div>
-
+        <DataTable
+          columns={columns}
+          data={branches}
+          currentPage={currentPage}
+          totalPages={1}
+          onPageChange={(page) => setCurrentPage(page)}
+        />
       </div>
     </div>
   );

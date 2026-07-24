@@ -23,8 +23,19 @@ import messagingRouter from './modules/messaging/messaging.routes.js';
 import notificationRouter from './modules/notification/notification.routes.js';
 import staffRouter from './modules/staff/staff.routes.js';
 import doctorRouter from './modules/doctor/doctor.routes.js';
+import bloodBankRouter from './modules/bloodBank/bloodBank.routes.js';
+import ambulanceRouter from './modules/ambulance/ambulance.routes.js';
+import { rateLimit } from './middleware/rateLimit.js';
 
 const app = express();
+
+// Global API rate limiter (prevents server & database overload from request flooding)
+const globalApiRateLimiter = rateLimit({
+  windowSeconds: 1, // Every 1 second
+  maxRequests: 50, // Max 50 requests per second per IP
+  keyPrefix: 'global-sec-limit',
+  skipDev: true,
+});
 
 // Enable Observability Metrics
 app.use(metricsMiddleware);
@@ -44,6 +55,9 @@ app.use(express.json());
 // Correlation ID Middleware
 app.use(requestIdMiddleware);
 
+// Apply Global Rate Limiting across all API routes
+app.use('/api/v1', globalApiRateLimiter);
+
 // API Endpoints
 app.use('/api/v1/auth', authRouter);
 app.use('/api/v1/patient', patientRouter);
@@ -53,6 +67,8 @@ app.use('/api/v1/lab', labRouter);
 app.use('/api/v1/billing', billingRouter);
 app.use('/api/v1/pharmacy', pharmacyRouter);
 app.use('/api/v1/inventory', inventoryRouter);
+app.use('/api/v1/blood-bank', bloodBankRouter);
+app.use('/api/v1/ambulance', ambulanceRouter);
 app.use('/api/v1/messaging', messagingRouter);
 app.use('/api/v1/notification', notificationRouter);
 app.use('/api/v1/staff', staffRouter);

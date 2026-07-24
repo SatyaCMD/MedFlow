@@ -1,10 +1,28 @@
 import { z } from 'zod';
 import dotenv from 'dotenv';
 import path from 'path';
+import fs from 'fs';
 
-// Load .env file from workspace root or api directory
-dotenv.config({ path: path.resolve(process.cwd(), '../../.env') });
-dotenv.config(); // fallback to local
+// Load single master .env file from workspace root
+const cwd = process.cwd();
+const possibleEnvPaths = [
+  path.resolve(cwd, '.env'),
+  path.resolve(cwd, '../../.env'),
+  path.resolve(cwd, '../.env'),
+  path.resolve(cwd, '../../../.env'),
+];
+
+let loaded = false;
+for (const envPath of possibleEnvPaths) {
+  if (fs.existsSync(envPath)) {
+    dotenv.config({ path: envPath });
+    loaded = true;
+    break;
+  }
+}
+if (!loaded) {
+  dotenv.config();
+}
 
 const envSchema = z.object({
   PORT: z.coerce.number().default(4000),

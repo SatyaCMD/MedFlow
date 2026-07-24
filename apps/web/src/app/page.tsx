@@ -37,6 +37,7 @@ import { DoctorDashboard } from '../components/dashboards/DoctorDashboard';
 import { NurseDashboard } from '../components/dashboards/NurseDashboard';
 import { PharmacistDashboard } from '../components/dashboards/PharmacistDashboard';
 import { PatientDashboard } from '../components/dashboards/PatientDashboard';
+import { LabTechnicianDashboard } from '../components/dashboards/LabTechnicianDashboard';
 
 export default function Home() {
   const router = useRouter();
@@ -165,7 +166,7 @@ export default function Home() {
             </span>
           </div>
 
-          {/* Render ONLY the logged-in user's assigned role dashboard */}
+          {/* Render assigned role dashboard */}
           {role === 'SUPER_ADMIN' || role === 'HOSPITAL_ADMIN' ? (
             <SuperAdminDashboard />
           ) : role === 'DOCTOR' ? (
@@ -174,6 +175,8 @@ export default function Home() {
             <NurseDashboard />
           ) : role === 'PHARMACIST' ? (
             <PharmacistDashboard />
+          ) : role === 'LAB_TECHNICIAN' ? (
+            <LabTechnicianDashboard />
           ) : (
             <PatientDashboard />
           )}

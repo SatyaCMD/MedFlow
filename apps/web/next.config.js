@@ -1,15 +1,15 @@
 /** @type {import('next').NextConfig} */
 const cspHeader = `
     default-src 'self';
-    script-src 'self' 'unsafe-eval' 'unsafe-inline';
-    style-src 'self' 'unsafe-inline';
-    img-src 'self' blob: data:;
-    font-src 'self';
+    script-src 'self' 'unsafe-eval' 'unsafe-inline' https://maps.googleapis.com https://*.googleapis.com https://*.google.com;
+    style-src 'self' 'unsafe-inline' https://fonts.googleapis.com;
+    img-src 'self' blob: data: https://*.google.com https://*.googleapis.com https://*.gstatic.com https://*.tile.openstreetmap.org https://*.cartocdn.com https://server.arcgisonline.com;
+    font-src 'self' https://fonts.gstatic.com;
     object-src 'none';
     base-uri 'self';
     form-action 'self';
-    frame-ancestors 'none';
-    connect-src 'self' http://localhost:4000 ws://localhost:4000;
+    frame-src 'self' https://*.google.com https://www.google.com;
+    connect-src 'self' http://localhost:4000 ws://localhost:4000 https://*.googleapis.com https://nominatim.openstreetmap.org;
 `;
 
 const nextConfig = {
@@ -25,20 +25,16 @@ const nextConfig = {
             value: cspHeader.replace(/\s{2,}/g, ' ').trim(),
           },
           {
-            key: 'X-Frame-Options',
-            value: 'DENY',
-          },
-          {
             key: 'X-Content-Type-Options',
             value: 'nosniff',
           },
           {
             key: 'Referrer-Policy',
-            value: 'strict-origin-when-cross-origin',
+            value: 'no-referrer-when-downgrade',
           },
           {
             key: 'Permissions-Policy',
-            value: 'camera=(), microphone=(), geolocation=()',
+            value: 'camera=(), microphone=(), geolocation=(self)',
           },
         ],
       },

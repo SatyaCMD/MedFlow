@@ -17,14 +17,12 @@ services:
     networks:
       - medflow-net
 
-  # Backend Express API Service
-  api:
+  # Load-Balanced Backend Express API Cluster Instances
+  api1:
     build:
       context: .
       dockerfile: ./infra/docker/api.prod.Dockerfile
-    container_name: medflow-api
-    ports:
-      - "4000:4000"
+    container_name: medflow-api-1
     environment:
       - PORT=4000
       - NODE_ENV=production
@@ -33,10 +31,46 @@ services:
       - JWT_ACCESS_SECRET=your_production_access_secret_key_32_chars
       - JWT_REFRESH_SECRET=your_production_refresh_secret_key_32_chars
       - APP_PEPPER=your_production_pepper_key_16_chars_chili
-      - SMTP_HOST=mailpit
-      - SMTP_PORT=1025
-      - SMTP_USER=
-      - SMTP_PASS=
+    depends_on:
+      - mongo
+      - redis
+    restart: always
+    networks:
+      - medflow-net
+
+  api2:
+    build:
+      context: .
+      dockerfile: ./infra/docker/api.prod.Dockerfile
+    container_name: medflow-api-2
+    environment:
+      - PORT=4000
+      - NODE_ENV=production
+      - MONGO_URI=mongodb://mongo:27017/medicore?replicaSet=rs0
+      - REDIS_URI=redis://redis:6379
+      - JWT_ACCESS_SECRET=your_production_access_secret_key_32_chars
+      - JWT_REFRESH_SECRET=your_production_refresh_secret_key_32_chars
+      - APP_PEPPER=your_production_pepper_key_16_chars_chili
+    depends_on:
+      - mongo
+      - redis
+    restart: always
+    networks:
+      - medflow-net
+
+  api3:
+    build:
+      context: .
+      dockerfile: ./infra/docker/api.prod.Dockerfile
+    container_name: medflow-api-3
+    environment:
+      - PORT=4000
+      - NODE_ENV=production
+      - MONGO_URI=mongodb://mongo:27017/medicore?replicaSet=rs0
+      - REDIS_URI=redis://redis:6379
+      - JWT_ACCESS_SECRET=your_production_access_secret_key_32_chars
+      - JWT_REFRESH_SECRET=your_production_refresh_secret_key_32_chars
+      - APP_PEPPER=your_production_pepper_key_16_chars_chili
     depends_on:
       - mongo
       - redis

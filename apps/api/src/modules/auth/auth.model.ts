@@ -10,6 +10,10 @@ export interface IUser extends Document {
   lastName: string;
   role: Role;
   hospitalId: string;
+  kycStatus?: 'PENDING' | 'VERIFIED' | 'REJECTED';
+  medicalLicenseNumber?: string;
+  specialty?: string;
+  department?: string;
   deletedAt?: Date | null;
   createdAt: Date;
   updatedAt: Date;
@@ -29,6 +33,14 @@ const userSchema = new Schema<IUser>(
       default: ROLES.PATIENT,
     },
     hospitalId: { type: String, required: true, index: true },
+    kycStatus: {
+      type: String,
+      enum: ['PENDING', 'VERIFIED', 'REJECTED'],
+      default: 'VERIFIED',
+    },
+    medicalLicenseNumber: { type: String, default: null },
+    specialty: { type: String, default: null },
+    department: { type: String, default: null },
     deletedAt: { type: Date, default: null },
   },
   { timestamps: true }

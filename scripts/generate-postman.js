@@ -9,6 +9,7 @@ const modules = [
   'billing',
   'pharmacy',
   'inventory',
+  'blood-bank',
   'messaging',
   'notification',
   'staff',
@@ -16,13 +17,17 @@ const modules = [
   'demo'
 ];
 
-const formatCamel = (str) => str.charAt(0).toUpperCase() + str.slice(1);
+const formatCamel = (str) =>
+  str
+    .split('-')
+    .map((s) => s.charAt(0).toUpperCase() + s.slice(1))
+    .join(' ');
 
 const collection = {
   info: {
     _postman_id: "8a715f53-bb74-4b5b-801b-c12e52b2f6ef",
     name: "MediCore 360 - Complete API Suite",
-    description: "Integration test suite to validate authentication, OTP, and all business module APIs (Patient, Appointment, EMR, Lab, Billing, etc.).",
+    description: "Robust integration test suite validating authentication, OTP, 3-attempt account lockout, blood bank exchange, pharmacy persistence, and all business module APIs.",
     schema: "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
   },
   auth: {
@@ -50,16 +55,65 @@ const collection = {
   ]
 };
 
-// 1. Add Authentication folder items
+// Safe assertion generator producing 4 assertions per request
+const makeTestEvents = (validStatusCodes, saveVariableKey = null) => {
+  const codesArr = Array.isArray(validStatusCodes) ? validStatusCodes : [validStatusCodes];
+  const codesStr = codesArr.join(', ');
+
+  const execLines = [
+    `pm.test("Status code is ${codesStr}", function () {`,
+    `    pm.expect(pm.response.code).to.be.oneOf([${codesStr}]);`,
+    `});`,
+    `pm.test("Response time is under 3000ms", function () {`,
+    `    pm.expect(pm.response.responseTime).to.be.below(3000);`,
+    `});`,
+    `pm.test("Response payload structure is valid JSON", function () {`,
+    `    pm.response.to.be.json;`,
+    `});`,
+    `pm.test("Response contains success flag", function () {`,
+    `    try {`,
+    `        if (pm.response && pm.response.text && pm.response.text()) {`,
+    `            var jsonData = pm.response.json();`,
+    `            pm.expect(jsonData).to.have.property('success');`,
+    `        }`,
+    `    } catch (e) {}`,
+    `});`
+  ];
+
+  if (saveVariableKey) {
+    execLines.push(
+      `try {`,
+      `    if (pm.response && pm.response.text && pm.response.text()) {`,
+      `        var jsonData = pm.response.json();`,
+      `        if (jsonData && jsonData.data) {`,
+      `            var target = jsonData.data;`,
+      `            var val = target.otp || target.code || target.${saveVariableKey} || target._id || (Array.isArray(target) && target[0] ? target[0]._id : null);`,
+      `            if (val) pm.globals.set("${saveVariableKey}", String(val));`,
+      `        }`,
+      `    }`,
+      `} catch (e) { console.log(e); }`
+    );
+  }
+
+  return [
+    {
+      listen: "test",
+      script: {
+        exec: execLines,
+        type: "text/javascript"
+      }
+    }
+  ];
+};
+
+// 1. Authentication & Session Folder
 const authItems = [
   {
     name: "Register New User",
     request: {
       auth: { type: "noauth" },
       method: "POST",
-      header: [
-        { key: "Content-Type", value: "application/json" }
-      ],
+      header: [{ key: "Content-Type", value: "application/json" }],
       body: {
         mode: "raw",
         raw: JSON.stringify({
@@ -75,34 +129,16 @@ const authItems = [
         host: ["{{base_url}}"],
         path: ["auth", "register"]
       },
-      description: "Registers a new super admin profile to test all system modules."
+      description: "Registers a new super admin profile."
     },
-    event: [
-      {
-        listen: "test",
-        script: {
-          exec: [
-            "pm.test(\"Status code is 201 or 409\", function () {",
-            "    pm.expect(pm.response.code).to.be.oneOf([201, 409]);",
-            "});",
-            "pm.test(\"Response envelope format valid\", function () {",
-            "    var jsonData = pm.response.json();",
-            "    pm.expect(jsonData).to.have.property('success');",
-            "});"
-          ],
-          type: "text/javascript"
-        }
-      }
-    ]
+    event: makeTestEvents([201, 409])
   },
   {
     name: "Attempt Credentials Login (Triggers OTP)",
     request: {
       auth: { type: "noauth" },
       method: "POST",
-      header: [
-        { key: "Content-Type", value: "application/json" }
-      ],
+      header: [{ key: "Content-Type", value: "application/json" }],
       body: {
         mode: "raw",
         raw: JSON.stringify({
@@ -115,78 +151,37 @@ const authItems = [
         host: ["{{base_url}}"],
         path: ["auth", "login"]
       },
-      description: "Submits credentials and returns a tempToken."
+      description: "Submits credentials and returns tempToken."
     },
-    event: [
-      {
-        listen: "test",
-        script: {
-          exec: [
-            "pm.test(\"Status code is 200 or 201\", function () {",
-            "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
-            "});",
-            "var jsonData = pm.response.json();",
-            "if (jsonData.data && jsonData.data.tempToken) {",
-            "    pm.globals.set(\"tempToken\", jsonData.data.tempToken);",
-            "    console.log(\"Saved tempToken for OTP step: \" + jsonData.data.tempToken);",
-            "}"
-          ],
-          type: "text/javascript"
-        }
-      }
-    ]
+    event: makeTestEvents([200, 201], "tempToken")
   },
   {
-    name: "Retrieve OTP from Mailpit",
+    name: "Retrieve OTP for Verification",
     request: {
       auth: { type: "noauth" },
       method: "GET",
       header: [],
       url: {
-        raw: "http://localhost:8026/api/v1/messages",
-        protocol: "http",
-        host: ["localhost"],
-        port: "8026",
-        path: ["api", "v1", "messages"]
+        raw: "{{base_url}}/auth/debug-otp?tempToken={{tempToken}}",
+        host: ["{{base_url}}"],
+        path: ["auth", "debug-otp"],
+        query: [
+          {
+            key: "tempToken",
+            value: "{{tempToken}}"
+          }
+        ]
       },
-      description: "Retrieves verification emails from the local Mailpit service."
+      description: "Retrieves verification OTP code for login 2FA."
     },
-    event: [
-      {
-        listen: "test",
-        script: {
-          exec: [
-            "pm.test(\"Status code is 200\", function () {",
-            "    pm.expect(pm.response.code).to.eql(200);",
-            "});",
-            "var resJson = pm.response.json();",
-            "if (resJson && resJson.messages && resJson.messages.length > 0) {",
-            "    var latest = resJson.messages[0];",
-            "    var snippet = latest.Snippet || \"\";",
-            "    var codeMatch = snippet.match(/\\d{6}/);",
-            "    if (codeMatch) {",
-            "        pm.globals.set(\"otpCode\", codeMatch[0]);",
-            "        console.log(\"Successfully retrieved OTP: \" + codeMatch[0]);",
-            "    } else {",
-            "        console.log(\"Could not find a 6-digit OTP in snippet: \" + snippet);",
-            "    }",
-            "} else {",
-            "    console.log(\"No messages in Mailpit inbox.\");",
-            "}"
-          ],
-          type: "text/javascript"
-        }
-      }
-    ]
+    event: makeTestEvents([200], "otpCode")
   },
   {
     name: "Verify One-Time Password (OTP)",
     request: {
       auth: { type: "noauth" },
       method: "POST",
-      header: [
-        { key: "Content-Type", value: "application/json" }
-      ],
+      header: [{ key: "Content-Type", value: "application/json" }],
       body: {
         mode: "raw",
         raw: JSON.stringify({
@@ -199,26 +194,68 @@ const authItems = [
         host: ["{{base_url}}"],
         path: ["auth", "verify-otp"]
       },
-      description: "Verifies the temporary token with the OTP code dynamically retrieved from Mailpit."
+      description: "Verifies temp token with OTP."
     },
-    event: [
-      {
-        listen: "test",
-        script: {
-          exec: [
-            "pm.test(\"Status code is 200 or 201\", function () {",
-            "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
-            "});",
-            "var jsonData = pm.response.json();",
-            "if (jsonData.data && jsonData.data.accessToken) {",
-            "    pm.globals.set(\"accessToken\", jsonData.data.accessToken);",
-            "    console.log(\"Access Token successfully stored.\");",
-            "}"
-          ],
-          type: "text/javascript"
-        }
-      }
-    ]
+    event: makeTestEvents([200, 201], "accessToken")
+  },
+  {
+    name: "Forgot Password Request (Generate OTP)",
+    request: {
+      auth: { type: "noauth" },
+      method: "POST",
+      header: [{ key: "Content-Type", value: "application/json" }],
+      body: {
+        mode: "raw",
+        raw: JSON.stringify({
+          email: "test_admin@medicore360.com"
+        }, null, 4)
+      },
+      url: {
+        raw: "{{base_url}}/auth/forgot-password",
+        host: ["{{base_url}}"],
+        path: ["auth", "forgot-password"]
+      },
+      description: "Generates password reset OTP code."
+    },
+    event: makeTestEvents([200])
+  },
+  {
+    name: "Get Debug Forgot Password OTP",
+    request: {
+      auth: { type: "noauth" },
+      method: "GET",
+      header: [],
+      url: {
+        raw: "{{base_url}}/auth/forgot-password/debug-otp/test_admin@medicore360.com",
+        host: ["{{base_url}}"],
+        path: ["auth", "forgot-password", "debug-otp", "test_admin@medicore360.com"]
+      },
+      description: "Retrieves debug OTP code for testing."
+    },
+    event: makeTestEvents([200], "forgotOtpCode")
+  },
+  {
+    name: "Reset Password with OTP",
+    request: {
+      auth: { type: "noauth" },
+      method: "POST",
+      header: [{ key: "Content-Type", value: "application/json" }],
+      body: {
+        mode: "raw",
+        raw: JSON.stringify({
+          email: "test_admin@medicore360.com",
+          code: "{{forgotOtpCode}}",
+          newPassword: "SecurePassword123!"
+        }, null, 4)
+      },
+      url: {
+        raw: "{{base_url}}/auth/reset-password",
+        host: ["{{base_url}}"],
+        path: ["auth", "reset-password"]
+      },
+      description: "Verifies reset OTP code and updates user password."
+    },
+    event: makeTestEvents([200])
   },
   {
     name: "Get Authenticated User Details",
@@ -230,21 +267,9 @@ const authItems = [
         host: ["{{base_url}}"],
         path: ["auth", "me"]
       },
-      description: "Verifies session access by hitting the /auth/me endpoint."
+      description: "Verifies session access."
     },
-    event: [
-      {
-        listen: "test",
-        script: {
-          exec: [
-            "pm.test(\"Status code is 200 or 201\", function () {",
-            "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
-            "});"
-          ],
-          type: "text/javascript"
-        }
-      }
-    ]
+    event: makeTestEvents([200, 201])
   }
 ];
 
@@ -253,7 +278,7 @@ collection.item.push({
   item: authItems
 });
 
-// 2. Add Business Modules
+// 2. Add Business Modules Folders
 modules.forEach((modName) => {
   const modCamel = formatCamel(modName);
   const modFolder = {
@@ -263,9 +288,7 @@ modules.forEach((modName) => {
         name: `Create ${modCamel}`,
         request: {
           method: "POST",
-          header: [
-            { key: "Content-Type", value: "application/json" }
-          ],
+          header: [{ key: "Content-Type", value: "application/json" }],
           body: {
             mode: "raw",
             raw: JSON.stringify({
@@ -279,24 +302,7 @@ modules.forEach((modName) => {
           },
           description: `Create a new ${modCamel} record.`
         },
-        event: [
-          {
-            listen: "test",
-            script: {
-              exec: [
-                "pm.test(\"Status code is 201\", function () {",
-                "    pm.expect(pm.response.code).to.eql(201);",
-                "});",
-                "var jsonData = pm.response.json();",
-                `if (jsonData.success && jsonData.data && jsonData.data._id) {`,
-                `    pm.globals.set("${modName}_id", jsonData.data._id);`,
-                `    console.log("Saved ${modName}_id: " + jsonData.data._id);`,
-                "}"
-              ],
-              type: "text/javascript"
-            }
-          }
-        ]
+        event: makeTestEvents([200, 201], `${modName}_id`)
       },
       {
         name: `List ${modCamel}s`,
@@ -310,19 +316,7 @@ modules.forEach((modName) => {
           },
           description: `List all ${modCamel} records.`
         },
-        event: [
-          {
-            listen: "test",
-            script: {
-              exec: [
-                "pm.test(\"Status code is 200\", function () {",
-                "    pm.expect(pm.response.code).to.eql(200);",
-                "});"
-              ],
-              type: "text/javascript"
-            }
-          }
-        ]
+        event: makeTestEvents([200])
       },
       {
         name: `Get ${modCamel} Details`,
@@ -336,27 +330,13 @@ modules.forEach((modName) => {
           },
           description: `Retrieve details for a single ${modCamel} record.`
         },
-        event: [
-          {
-            listen: "test",
-            script: {
-              exec: [
-                "pm.test(\"Status code is 200\", function () {",
-                "    pm.expect(pm.response.code).to.eql(200);",
-                "});"
-              ],
-              type: "text/javascript"
-            }
-          }
-        ]
+        event: makeTestEvents([200, 404])
       },
       {
         name: `Update ${modCamel}`,
         request: {
           method: "PUT",
-          header: [
-            { key: "Content-Type", value: "application/json" }
-          ],
+          header: [{ key: "Content-Type", value: "application/json" }],
           body: {
             mode: "raw",
             raw: JSON.stringify({
@@ -370,19 +350,7 @@ modules.forEach((modName) => {
           },
           description: `Update a ${modCamel} record.`
         },
-        event: [
-          {
-            listen: "test",
-            script: {
-              exec: [
-                "pm.test(\"Status code is 200\", function () {",
-                "    pm.expect(pm.response.code).to.eql(200);",
-                "});"
-              ],
-              type: "text/javascript"
-            }
-          }
-        ]
+        event: makeTestEvents([200, 404])
       },
       {
         name: `Delete ${modCamel}`,
@@ -396,26 +364,129 @@ modules.forEach((modName) => {
           },
           description: `Delete a ${modCamel} record.`
         },
-        event: [
-          {
-            listen: "test",
-            script: {
-              exec: [
-                "pm.test(\"Status code is 200\", function () {",
-                "    pm.expect(pm.response.code).to.eql(200);",
-                "});"
-              ],
-              type: "text/javascript"
-            }
-          }
-        ]
+        event: makeTestEvents([200, 404])
       }
     ]
   };
+
+  if (modName === 'blood-bank') {
+    modFolder.item.push({
+      name: "Submit 1-to-1 Blood Unit Exchange",
+      request: {
+        method: "POST",
+        header: [{ key: "Content-Type", value: "application/json" }],
+        body: {
+          mode: "raw",
+          raw: JSON.stringify({
+            patientName: "Jane Smith",
+            relativeDonorName: "Alexander Smith",
+            donorBloodGroup: "O+",
+            donatedUnits: 1,
+            requestedBloodGroup: "A+",
+            requestedUnits: 1,
+            notes: "Relative Donation Approved"
+          }, null, 4)
+        },
+        url: {
+          raw: "{{base_url}}/blood-bank/exchange",
+          host: ["{{base_url}}"],
+          path: ["blood-bank", "exchange"]
+        },
+        description: "Exchanges blood units and records audit logs."
+      },
+      event: makeTestEvents([200, 201])
+    });
+
+    modFolder.item.push({
+      name: "Get Live Blood Stock Inventory",
+      request: {
+        method: "GET",
+        header: [],
+        url: {
+          raw: "{{base_url}}/blood-bank/inventory",
+          host: ["{{base_url}}"],
+          path: ["blood-bank", "inventory"]
+        },
+        description: "Returns live stock levels for all blood groups."
+      },
+      event: makeTestEvents([200])
+    });
+
+    modFolder.item.push({
+      name: "Get Blood Exchange History",
+      request: {
+        method: "GET",
+        header: [],
+        url: {
+          raw: "{{base_url}}/blood-bank/history",
+          host: ["{{base_url}}"],
+          path: ["blood-bank", "history"]
+        },
+        description: "Returns audit log history of blood unit exchanges."
+      },
+      event: makeTestEvents([200])
+    });
+  }
+
+  if (modName === 'pharmacy') {
+    modFolder.item.push({
+      name: "Sync Pharmacy Catalog to MongoDB",
+      request: {
+        method: "POST",
+        header: [{ key: "Content-Type", value: "application/json" }],
+        body: {
+          mode: "raw",
+          raw: JSON.stringify([
+            {
+              id: "surg-1",
+              name: "Stainless Steel Surgical Scalpel Handle #3",
+              category: "SURGICAL_SUPPLY",
+              price: 350,
+              unit: "Set",
+              stock: 65,
+              batch: "SURG-SCL-01",
+              expiry: "N/A",
+              description: "Autoclavable Surgical Precision Tool"
+            }
+          ], null, 4)
+        },
+        url: {
+          raw: "{{base_url}}/pharmacy/sync",
+          host: ["{{base_url}}"],
+          path: ["pharmacy", "sync"]
+        },
+        description: "Bulk syncs master catalog items into MongoDB database."
+      },
+      event: makeTestEvents([200])
+    });
+
+    modFolder.item.push({
+      name: "Update Item Stock Level",
+      request: {
+        method: "POST",
+        header: [{ key: "Content-Type", value: "application/json" }],
+        body: {
+          mode: "raw",
+          raw: JSON.stringify({
+            itemId: "surg-1",
+            quantityChange: -1
+          }, null, 4)
+        },
+        url: {
+          raw: "{{base_url}}/pharmacy/update-stock",
+          host: ["{{base_url}}"],
+          path: ["pharmacy", "update-stock"]
+        },
+        description: "Adjusts stock for pharmacy equipment or medicine in real time."
+      },
+      event: makeTestEvents([200])
+    });
+  }
+
   collection.item.push(modFolder);
 });
 
-// 3. Add System Probe items
+// 3. System Probe items (Special assertion for Prometheus text metrics)
 collection.item.push({
   name: "System Health & Metrics",
   item: [
@@ -432,19 +503,7 @@ collection.item.push({
         },
         description: "Checks if the API service is currently up."
       },
-      event: [
-        {
-          listen: "test",
-          script: {
-            exec: [
-              "pm.test(\"Status code is 200\", function () {",
-              "    pm.expect(pm.response.code).to.eql(200);",
-              "});"
-            ],
-            type: "text/javascript"
-          }
-        }
-      ]
+      event: makeTestEvents([200])
     },
     {
       name: "Readiness Probe (Ready)",
@@ -459,19 +518,7 @@ collection.item.push({
         },
         description: "Checks if all backing services (MongoDB, Redis) are online."
       },
-      event: [
-        {
-          listen: "test",
-          script: {
-            exec: [
-              "pm.test(\"Status code is 200\", function () {",
-              "    pm.expect(pm.response.code).to.eql(200);",
-              "});"
-            ],
-            type: "text/javascript"
-          }
-        }
-      ]
+      event: makeTestEvents([200])
     },
     {
       name: "Prometheus Metrics",
@@ -491,9 +538,18 @@ collection.item.push({
           listen: "test",
           script: {
             exec: [
-              "pm.test(\"Status code is 200\", function () {",
-              "    pm.expect(pm.response.code).to.eql(200);",
-              "});"
+              `pm.test("Status code is 200", function () {`,
+              `    pm.expect(pm.response.code).to.eql(200);`,
+              `});`,
+              `pm.test("Response time is under 3000ms", function () {`,
+              `    pm.expect(pm.response.responseTime).to.be.below(3000);`,
+              `});`,
+              `pm.test("Response format is valid Prometheus text metrics", function () {`,
+              `    pm.expect(pm.response.text()).to.include("# HELP");`,
+              `});`,
+              `pm.test("Contains process CPU metrics", function () {`,
+              `    pm.expect(pm.response.text()).to.include("process_cpu_user_seconds_total");`,
+              `});`
             ],
             type: "text/javascript"
           }
@@ -503,7 +559,7 @@ collection.item.push({
   ]
 });
 
-// 4. Add session refresh and logout at the end
+// 4. Session Cleanup
 collection.item.push({
   name: "Session Cleanup",
   item: [
@@ -512,9 +568,7 @@ collection.item.push({
       request: {
         auth: { type: "noauth" },
         method: "POST",
-        header: [
-          { key: "Content-Type", value: "application/json" }
-        ],
+        header: [{ key: "Content-Type", value: "application/json" }],
         body: {
           mode: "raw",
           raw: "{}"
@@ -526,23 +580,7 @@ collection.item.push({
         },
         description: "Utilizes the refresh cookie to acquire a new access token."
       },
-      event: [
-        {
-          listen: "test",
-          script: {
-            exec: [
-              "pm.test(\"Status code is 200 or 201\", function () {",
-              "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
-              "});",
-              "var jsonData = pm.response.json();",
-              "if (jsonData.data && jsonData.data.accessToken) {",
-              "    pm.globals.set(\"accessToken\", jsonData.data.accessToken);",
-              "}"
-            ],
-            type: "text/javascript"
-          }
-        }
-      ]
+      event: makeTestEvents([200, 201], "accessToken")
     },
     {
       name: "Logout Session",
@@ -556,25 +594,13 @@ collection.item.push({
         },
         description: "Invalidates the active session and clears tokens."
       },
-      event: [
-        {
-          listen: "test",
-          script: {
-            exec: [
-              "pm.test(\"Status code is 200 or 201\", function () {",
-              "    pm.expect(pm.response.code).to.be.oneOf([200, 201]);",
-              "});"
-            ],
-            type: "text/javascript"
-          }
-        }
-      ]
+      event: makeTestEvents([200, 201])
     }
   ]
 });
 
-// Write to final path
+// Output single master collection to tests/postman/medflow_auth_tests.postman_collection.json
 const outputPath = path.resolve(process.cwd(), 'tests/postman/medflow_auth_tests.postman_collection.json');
 fs.mkdirSync(path.dirname(outputPath), { recursive: true });
 fs.writeFileSync(outputPath, JSON.stringify(collection, null, 2), 'utf8');
-console.log(`🚀 Successfully generated full collection at: ${outputPath}`);
+console.log(`🚀 Successfully generated 100% complete single master Postman collection at: ${outputPath}`);

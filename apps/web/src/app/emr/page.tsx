@@ -1,89 +1,183 @@
 'use client';
-/* eslint-disable @typescript-eslint/no-unused-vars */
 
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
 import React, { useState } from 'react';
 import { AppShell } from '../../components/shared/AppShell';
 import { StatCard } from '../../components/shared/StatCard';
 import { DataTable } from '../../components/shared/DataTable';
-import { FileText, ShieldCheck, Lock, Database } from 'lucide-react';
+import { PrescriptionPdfModal } from '../../components/shared/PrescriptionPdfModal';
+import { useToast } from '../../context/ToastContext';
+import {
+  FileText,
+  ShieldCheck,
+  Download,
+  Search,
+  Plus,
+  AlertTriangle,
+  Sparkles,
+  Activity,
+  HeartPulse,
+  Video,
+  Clock,
+  CheckCircle2,
+  FileSignature
+} from 'lucide-react';
 
-interface EMRRecord {
-  id: string;
-  recordId: string;
-  patient: string;
-  diagnosis: string;
-  icdCode: string;
-  doctor: string;
-  lastUpdated: string;
-  hash: string;
-}
-
-export default function EMRPage() {
+export default function EmrPage() {
+  const { showToast } = useToast();
   const [currentPage, setCurrentPage] = useState(1);
+  const [isRxPdfOpen, setIsRxPdfOpen] = useState(false);
+  const [isVideoConsultOpen, setIsVideoConsultOpen] = useState(false);
 
-  const mockEMR: EMRRecord[] = [
-    { id: '1', recordId: 'EMR-9041', patient: 'John Doe', diagnosis: 'Essential Hypertension', icdCode: 'I10', doctor: 'Dr. House', lastUpdated: '2026-07-21 14:30', hash: 'e3b0c442...98fc' },
-    { id: '2', recordId: 'EMR-9042', patient: 'Jane Smith', diagnosis: 'Acute Bronchitis', icdCode: 'J20.9', doctor: 'Dr. Watson', lastUpdated: '2026-07-22 09:15', hash: '8f4a21b...10ab' },
-    { id: '3', recordId: 'EMR-9043', patient: 'Robert Lee', diagnosis: 'Osteoarthritis Right Knee', icdCode: 'M17.11', doctor: 'Dr. Strange', lastUpdated: '2026-07-20 16:45', hash: '7c9e12f...44de' },
-  ];
+  const [emrRecords] = useState([
+    {
+      id: 'emr-101',
+      date: 'Jul 21, 2026',
+      patient: 'Jane Patient (MC-1001)',
+      doctor: 'Dr. Devendra Roy, M.D.',
+      dept: 'Cardiology',
+      diagnosis: 'Essential Hypertension',
+      cdssAlert: 'No Drug Allergies Detected',
+      hash: 'SHA256: 8f92a40b192c78d011fe928410294ab12',
+    },
+    {
+      id: 'emr-102',
+      date: 'Jul 15, 2026',
+      patient: 'John Doe (MC-1002)',
+      doctor: 'Dr. Siddharth Joshi',
+      dept: 'Neurology',
+      diagnosis: 'Acute Migraine Aura',
+      cdssAlert: '⚠️ Penicillin Allergy On File',
+      hash: 'SHA256: 4e91b20a11fc78d099be20194ab99',
+    },
+  ]);
+
+  const handleLaunchVideoConsult = () => {
+    setIsVideoConsultOpen(true);
+    showToast({
+      title: 'Telemedicine Video Room Connected',
+      message: 'Secure 256-bit encrypted WebRTC video consult room active.',
+      type: 'success',
+    });
+  };
 
   const columns = [
-    { header: 'Record ID', accessor: (row: EMRRecord) => <span className="font-bold text-blue-600">{row.recordId}</span> },
-    { header: 'Patient Name', accessor: (row: EMRRecord) => <span className="font-bold text-slate-900">{row.patient}</span> },
-    { header: 'Primary Clinical Diagnosis', accessor: (row: EMRRecord) => <span className="text-slate-800 font-semibold">{row.diagnosis}</span> },
-    { header: 'ICD-10 Code', accessor: (row: EMRRecord) => <span className="px-2 py-0.5 bg-slate-100 text-slate-800 font-bold rounded border border-slate-300 text-xs">{row.icdCode}</span> },
-    { header: 'Authoring Physician', accessor: (row: EMRRecord) => <span className="text-slate-700 font-medium">{row.doctor}</span> },
-    { header: 'Cryptographic Audit Hash', accessor: (row: EMRRecord) => <span className="text-[10px] font-mono text-slate-500">{row.hash}</span> },
+    { header: 'Visit Date', accessor: (row: typeof emrRecords[0]) => <span className="font-bold text-slate-900">{row.date}</span> },
+    { header: 'Patient & MRN', accessor: (row: typeof emrRecords[0]) => <span className="font-bold text-blue-600">{row.patient}</span> },
+    { header: 'Attending Doctor', accessor: (row: typeof emrRecords[0]) => <span className="text-slate-800 font-semibold">{row.doctor}</span> },
+    { header: 'Clinical Diagnosis', accessor: (row: typeof emrRecords[0]) => <span className="text-slate-700 font-medium">{row.diagnosis}</span> },
+    {
+      header: 'CDSS AI Safety Alert',
+      accessor: (row: typeof emrRecords[0]) => (
+        <span
+          className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase ${
+            row.cdssAlert.includes('⚠️')
+              ? 'bg-amber-100 text-amber-900 border border-amber-300'
+              : 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+          }`}
+        >
+          {row.cdssAlert}
+        </span>
+      ),
+    },
+    {
+      header: 'EMR Vault Actions',
+      accessor: (row: typeof emrRecords[0]) => (
+        <button
+          onClick={() => setIsRxPdfOpen(true)}
+          className="px-3 py-1 bg-blue-50 hover:bg-blue-100 text-blue-600 text-xs font-bold rounded-lg border border-blue-200 flex items-center gap-1 transition-all cursor-pointer"
+        >
+          <FileSignature className="w-3.5 h-3.5" />
+          <span>View Signed EMR</span>
+        </button>
+      ),
+    },
   ];
 
   return (
-    <AppShell userRole="SUPER_ADMIN">
+    <AppShell userRole="DOCTOR">
       <div className="space-y-8 max-w-6xl mx-auto">
-        
-        {/* Page Header */}
+        <PrescriptionPdfModal isOpen={isRxPdfOpen} onClose={() => setIsRxPdfOpen(false)} />
+
+        {/* Video Consult Modal Banner */}
+        {isVideoConsultOpen && (
+          <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
+            <div className="bg-slate-900 border border-slate-800 text-white rounded-3xl max-w-2xl w-full p-6 space-y-4">
+              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
+                <div className="flex items-center gap-2">
+                  <Video className="w-5 h-5 text-emerald-400 animate-pulse" />
+                  <span className="font-black text-sm text-emerald-400 uppercase">HD Telemedicine Room Connected</span>
+                </div>
+                <button onClick={() => setIsVideoConsultOpen(false)} className="text-slate-400 hover:text-white">✕</button>
+              </div>
+
+              <div className="h-64 bg-slate-950 rounded-2xl border border-slate-800 flex items-center justify-center relative">
+                <span className="text-xs font-bold text-slate-500">Encrypted WebRTC Audio & Video Stream Active</span>
+              </div>
+
+              <div className="flex items-center justify-between text-xs text-slate-400">
+                <span>Patient: Jane Patient (Online)</span>
+                <button onClick={() => setIsVideoConsultOpen(false)} className="px-4 py-2 bg-rose-600 text-white font-bold rounded-xl cursor-pointer">
+                  End Consultation Call
+                </button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-200 pb-6">
           <div>
             <h1 className="text-2xl font-black text-slate-900 flex items-center gap-2">
               <FileText className="w-6 h-6 text-blue-600" />
-              Electronic Health Records (EHR/EMR) Vault
+              Electronic Medical & Health Records (EMR / EHR Vault)
             </h1>
             <p className="text-xs font-semibold text-slate-600 mt-1">
-              Tamper-evident medical history storage protected by Argon2 encryption and HIPAA compliance checks.
+              Clinical Decision Support System (CDSS), lifetime longitudinal health history, and Telemedicine video consults.
             </p>
           </div>
-          <button className="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl shadow-md shadow-blue-600/20 flex items-center gap-2 transition-all cursor-pointer">
-            <Lock className="w-4 h-4" />
-            <span>Create Encrypted Record</span>
+
+          <button
+            onClick={handleLaunchVideoConsult}
+            className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-md flex items-center gap-2 cursor-pointer"
+          >
+            <Video className="w-4 h-4" />
+            <span>Launch Live Telemedicine Consult</span>
           </button>
         </div>
 
-        {/* Stats Grid */}
+        {/* KPI Cards */}
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-          <StatCard title="Total EMR Archives" value="14,280" change={4.2} changeLabel="encrypted blocks" />
-          <StatCard title="Audit Verifications" value="100%" change={0.0} changeLabel="zero tampered entries" />
-          <StatCard title="ICD-10 Mappings" value="8,920" change={1.5} changeLabel="standardized codes" />
+          <StatCard title="Total EMR Archives" value="14,820 Records" change={100.0} changeLabel="SHA-256 encrypted" icon={FileText} />
+          <StatCard title="CDSS AI Safety Index" value="99.9% Clean" change={0.0} changeLabel="drug interaction engine" icon={Sparkles} />
+          <StatCard title="Telemedicine Consults" value="48 Today" change={14.0} changeLabel="HD Video WebRTC" icon={Video} />
         </div>
 
-        {/* EMR Table */}
-        <div className="space-y-3">
-          <div className="flex items-center justify-between">
-            <h2 className="text-sm font-black text-slate-900 uppercase tracking-wider">
-              Recent Clinical Progress Notes & Diagnostics
-            </h2>
-            <span className="text-xs text-emerald-700 font-bold flex items-center gap-1">
-              <ShieldCheck className="w-4 h-4" /> SHA-256 Audit Sealed
-            </span>
+        {/* CDSS Safety Banner */}
+        <div className="p-4 bg-indigo-50 border border-indigo-200 rounded-2xl flex items-center justify-between text-xs font-semibold text-indigo-950">
+          <div className="flex items-center gap-2">
+            <Sparkles className="w-4 h-4 text-indigo-600" />
+            <span>CDSS Active: Automatic Drug-Drug Interaction & Cross-Allergy Screen Active</span>
           </div>
+          <span className="px-2.5 py-0.5 bg-indigo-200 text-indigo-900 font-extrabold rounded-md text-[10px]">
+            AI ENGINE OPERATIONAL
+          </span>
+        </div>
+
+        {/* EMR Records Table */}
+        <div className="space-y-4">
+          <h2 className="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
+            <Activity className="w-4 h-4 text-blue-600" /> Lifetime Patient EMR Archives
+          </h2>
 
           <DataTable
             columns={columns}
-            data={mockEMR}
+            data={emrRecords}
             currentPage={currentPage}
             totalPages={1}
             onPageChange={(page) => setCurrentPage(page)}
           />
         </div>
-
       </div>
     </AppShell>
   );

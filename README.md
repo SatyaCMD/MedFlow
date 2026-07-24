@@ -269,4 +269,44 @@ The Jenkinsfile looks up a SonarQube Scanner tool definition. If you are using S
 ### 4. Running the Pipeline
 Click **Build Now** in your Jenkins project dashboard. Jenkins will fetch your codebase from `https://github.com/SatyaCMD/MedFlow.git`, run security scans, compile applications, build Docker containers, and trigger production deployments.
 
+---
+
+## ☁️ How to Use Terraform for AWS Cloud KYC Storage (`s3_kyc.tf`)
+
+We created `infra/terraform/s3_kyc.tf` which provisions a HIPAA-compliant AWS S3 Bucket (`medflow-kyc-documents-production`) with KMS Server-Side Encryption and IAM upload policies.
+
+### How to Run Terraform:
+```bash
+# 1. Navigate to terraform directory
+cd infra/terraform
+
+# 2. Initialize AWS providers
+terraform init
+
+# 3. Preview AWS infrastructure plan
+terraform plan
+
+# 4. Deploy to AWS Cloud
+terraform apply
+```
+
+---
+
+## 🐛 Troubleshooting: Docker Compose Port 4000 Error
+
+### Why It Happened:
+Port `4000` is occupied because `pnpm dev` (the local Express API process) is running on your host machine in your terminal. Docker Compose tries to bind container port `4000` to host port `4000`, causing Windows socket bind error `bind: Only one usage of each socket address is normally permitted`.
+
+### Solution:
+
+*   **Option A (If running dev server locally via `pnpm dev`)**: Start database containers in Docker without the duplicate API container:
+    ```bash
+    docker compose up redis mongo mailpit
+    ```
+*   **Option B (If running full Docker container suite)**: Stop `pnpm dev` (`Ctrl + C`) in your terminal first, then run:
+    ```bash
+    docker compose up -d
+    ```
+
+
 

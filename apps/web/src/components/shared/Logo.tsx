@@ -1,4 +1,5 @@
 'use client';
+/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
 
 import React from 'react';
 import { motion } from 'framer-motion';
@@ -6,9 +7,10 @@ import { motion } from 'framer-motion';
 interface LogoProps {
   className?: string;
   size?: number;
+  textVisible?: boolean;
 }
 
-export const Logo: React.FC<LogoProps> = ({ className = '', size = 32 }) => {
+export const Logo: React.FC<LogoProps> = ({ className = '', size = 32, textVisible = true }) => {
   return (
     <motion.div
       className={`relative flex items-center justify-center ${className}`}
