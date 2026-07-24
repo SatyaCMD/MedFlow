@@ -36,7 +36,9 @@ import {
   Activity,
   ShieldCheck,
   Search,
-  FileSpreadsheet
+  FileSpreadsheet,
+  Download,
+  Printer
 } from 'lucide-react';
 
 export const DoctorDashboard: React.FC = () => {
@@ -67,16 +69,18 @@ export const DoctorDashboard: React.FC = () => {
   const [isPrescribeStudioOpen, setIsPrescribeStudioOpen] = useState(false);
   const [isRescheduleModalOpen, setIsRescheduleModalOpen] = useState(false);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
+  const [isLabReportsModalOpen, setIsLabReportsModalOpen] = useState(false);
 
-  // Selected Patient for Prescribing / History
+  // Selected Patient & Search Queries
   const [activePatient, setActivePatient] = useState<any>(null);
   const [historySearchQuery, setHistorySearchQuery] = useState('');
+  const [labReportSearchQuery, setLabReportSearchQuery] = useState('');
   const [newTimeSlot, setNewTimeSlot] = useState('Tomorrow 03:30 PM');
 
   useEffect(() => {
     setClinicalRecords(getClinicalRecords());
     setLabOrders(getLabOrders());
-  }, [isPrescribeStudioOpen, isHistoryModalOpen]);
+  }, [isPrescribeStudioOpen, isHistoryModalOpen, isLabReportsModalOpen]);
 
   const handleApprove = (apptId: string, patientName: string) => {
     setAppointments((prev) =>
@@ -121,6 +125,12 @@ export const DoctorDashboard: React.FC = () => {
     setIsHistoryModalOpen(true);
   };
 
+  const openLabReportsModal = (patientName: string, mrn: string) => {
+    setActivePatient({ name: patientName, mrn });
+    setLabReportSearchQuery(mrn);
+    setIsLabReportsModalOpen(true);
+  };
+
   // Filter Clinical Records by Search / Patient
   const filteredHistoryRecords = clinicalRecords.filter((r) => {
     if (!historySearchQuery) return true;
@@ -130,6 +140,19 @@ export const DoctorDashboard: React.FC = () => {
       r.mrn.toLowerCase().includes(q) ||
       r.diagnosis.toLowerCase().includes(q) ||
       r.rxNumber.toLowerCase().includes(q)
+    );
+  });
+
+  // Filter Lab Orders / Reports for Doctor Review
+  const filteredLabReports = labOrders.filter((l) => {
+    if (!labReportSearchQuery) return true;
+    const q = labReportSearchQuery.toLowerCase();
+    return (
+      l.patientName.toLowerCase().includes(q) ||
+      l.mrn.toLowerCase().includes(q) ||
+      l.testName.toLowerCase().includes(q) ||
+      l.doctorName.toLowerCase().includes(q) ||
+      l.date.toLowerCase().includes(q)
     );
   });
 
@@ -177,11 +200,11 @@ export const DoctorDashboard: React.FC = () => {
     {
       header: 'Doctor Actions',
       accessor: (row: typeof appointments[0]) => (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-1.5 flex-wrap">
           {row.status.includes('Pending') && (
             <button
               onClick={() => handleApprove(row.id, row.patient)}
-              className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold rounded-lg shadow-2xs flex items-center gap-1 cursor-pointer"
+              className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold rounded-lg shadow-2xs flex items-center gap-1 cursor-pointer transition-all"
             >
               <Check className="w-3.5 h-3.5" />
               <span>Approve</span>
@@ -190,15 +213,23 @@ export const DoctorDashboard: React.FC = () => {
 
           <button
             onClick={() => openPrescribeStudio(row.patient, row.mrn)}
-            className="px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white text-[11px] font-bold rounded-lg shadow-2xs flex items-center gap-1 cursor-pointer"
+            className="px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white text-[11px] font-bold rounded-lg shadow-2xs flex items-center gap-1 cursor-pointer transition-all"
           >
             <Pill className="w-3.5 h-3.5" />
             <span>Prescribe Rx</span>
           </button>
 
           <button
+            onClick={() => openLabReportsModal(row.patient, row.mrn)}
+            className="px-2.5 py-1 bg-cyan-600 hover:bg-cyan-500 text-white text-[11px] font-bold rounded-lg shadow-2xs flex items-center gap-1 cursor-pointer transition-all"
+          >
+            <FlaskConical className="w-3.5 h-3.5" />
+            <span>View Reports</span>
+          </button>
+
+          <button
             onClick={() => openPatientHistory(row.patient, row.mrn)}
-            className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-[11px] font-bold rounded-lg border border-indigo-200 flex items-center gap-1 cursor-pointer"
+            className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-[11px] font-bold rounded-lg border border-indigo-200 flex items-center gap-1 cursor-pointer transition-all"
           >
             <History className="w-3.5 h-3.5 text-indigo-600" />
             <span>History</span>
@@ -206,7 +237,7 @@ export const DoctorDashboard: React.FC = () => {
 
           <button
             onClick={() => openReschedule(row)}
-            className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-bold rounded-lg border border-slate-300 flex items-center gap-1 cursor-pointer"
+            className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-bold rounded-lg border border-slate-300 flex items-center gap-1 cursor-pointer transition-all"
           >
             <RefreshCw className="w-3 h-3 text-slate-500" />
             <span>Reschedule</span>
@@ -218,51 +249,145 @@ export const DoctorDashboard: React.FC = () => {
 
   return (
     <div className="space-y-8 relative">
-      {/* Physician E-Prescribing Studio Modal */}
-      <DoctorPrescribeStudioModal
-        isOpen={isPrescribeStudioOpen}
-        onClose={() => setIsPrescribeStudioOpen(false)}
-        patientName={activePatient?.name || 'Sarah Connor'}
-        patientMrn={activePatient?.mrn || 'MC-1001'}
-        doctorName={doctorDisplayName}
-        doctorSpecialty="Department of Cardiology & Clinical Medicine"
-        onPrescriptionIssued={(rxData) => {
-          // Immediately update appointment status to 'Completed & Prescribed'
-          setAppointments((prev) =>
-            prev.map((a) =>
-              a.mrn === rxData.mrn || a.patient === rxData.patientName
-                ? { ...a, status: 'Completed & Prescribed' }
-                : a
-            )
-          );
+      {/* Doctor E-Prescribing Studio Modal */}
+      {activePatient && (
+        <DoctorPrescribeStudioModal
+          isOpen={isPrescribeStudioOpen}
+          onClose={() => setIsPrescribeStudioOpen(false)}
+          patientName={activePatient.name}
+          patientMrn={activePatient.mrn}
+          doctorName={doctorDisplayName}
+          doctorSpecialty="Department of Cardiology & Internal Medicine"
+          onPrescriptionIssued={() => {
+            if (activePatient) {
+              setAppointments((prev) =>
+                prev.map((a) =>
+                  a.mrn === activePatient.mrn ? { ...a, status: 'Completed & Prescribed' } : a
+                )
+              );
+            }
+          }}
+        />
+      )}
 
-          // Save to shared medical history store
-          const newRecord: ClinicalRecord = {
-            id: `cr-${Date.now()}`,
-            rxNumber: rxData.rxNumber,
-            patientName: rxData.patientName,
-            mrn: rxData.mrn,
-            doctorName: doctorDisplayName,
-            department: 'Department of Cardiology',
-            date: new Date().toISOString().split('T')[0],
-            timestamp: Date.now(),
-            diagnosis: rxData.diagnosis,
-            medications: rxData.medications,
-            labTests: rxData.labTests,
-            signatureHash: rxData.signatureHash,
-          };
-          saveClinicalRecord(newRecord);
-          setClinicalRecords(getClinicalRecords());
+      {/* Patient Diagnostic Lab & Pathology Reports Review Modal */}
+      <AnimatePresence>
+        {isLabReportsModalOpen && (
+          <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.94 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.94 }}
+              className="bg-white border border-slate-200 rounded-3xl max-w-4xl w-full p-6 sm:p-8 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto"
+            >
+              <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-cyan-50 border border-cyan-200 flex items-center justify-center text-cyan-600 shadow-sm">
+                    <FlaskConical className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <h3 className="font-black text-base text-slate-900 flex items-center gap-2">
+                      Patient Diagnostic Lab Reports & Pathology Findings
+                      {activePatient && (
+                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-cyan-100 text-cyan-800 border border-cyan-300">
+                          {activePatient.name} ({activePatient.mrn})
+                        </span>
+                      )}
+                    </h3>
+                    <p className="text-xs font-semibold text-slate-500">Review lab technician findings, diagnostic parameter values, and pathologist notes</p>
+                  </div>
+                </div>
+                <button onClick={() => setIsLabReportsModalOpen(false)} className="text-slate-400 hover:text-slate-600 p-2 rounded-xl cursor-pointer">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
 
-          showToast({
-            title: 'Prescription & Lab Orders Dispatched!',
-            message: `Rx #${rxData.rxNumber} issued to ${rxData.patientName}. Status updated to Completed.`,
-            type: 'success',
-          });
-        }}
-      />
+              {/* Search filter for lab reports */}
+              <div className="relative">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
+                <input
+                  type="text"
+                  value={labReportSearchQuery}
+                  onChange={(e) => setLabReportSearchQuery(e.target.value)}
+                  placeholder="Filter lab reports by Patient Name, MRN Code, Test Name or Date..."
+                  className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 outline-none focus:ring-2 focus:ring-cyan-500/20"
+                />
+              </div>
 
-      {/* Patient Clinical History & EMR Vault Modal */}
+              {/* List of Diagnostic Reports */}
+              <div className="space-y-4">
+                {filteredLabReports.map((report) => (
+                  <div key={report.id} className="p-5 bg-slate-50 border border-slate-200 rounded-2xl space-y-3 text-xs shadow-2xs">
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 pb-3">
+                      <div>
+                        <span className="font-black text-slate-900 text-base block">{report.testName}</span>
+                        <span className="text-xs font-bold text-cyan-700 block">
+                          Category: {report.category} • Specimen: {report.specimen}
+                        </span>
+                      </div>
+                      <div className="text-right">
+                        <span
+                          className={`px-3 py-1 rounded-full text-[10px] font-black uppercase inline-block ${
+                            report.status === 'REPORT_SUBMITTED'
+                              ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                              : 'bg-amber-100 text-amber-800 border border-amber-300 animate-pulse'
+                          }`}
+                        >
+                          {report.status === 'REPORT_SUBMITTED' ? '✓ REPORT VERIFIED & DISPATCHED' : 'Sample Processing in Lab'}
+                        </span>
+                        <span className="text-[10px] text-slate-500 font-semibold block mt-1">Prescribed: {report.date}</span>
+                      </div>
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3 text-slate-700 font-semibold bg-white p-3 border border-slate-200 rounded-xl">
+                      <div><span className="text-slate-400 block text-[10px] font-bold">PATIENT NAME & MRN</span><strong className="text-slate-900">{report.patientName} ({report.mrn})</strong></div>
+                      <div><span className="text-slate-400 block text-[10px] font-bold">ORDERING PHYSICIAN</span><strong className="text-slate-900">{report.doctorName} ({report.department})</strong></div>
+                      <div><span className="text-slate-400 block text-[10px] font-bold">FASTING REQUIREMENT</span><strong>{report.fastingRequirement}</strong></div>
+                      <div><span className="text-slate-400 block text-[10px] font-bold">SAMPLE SPECIMEN</span><strong>{report.specimen}</strong></div>
+                    </div>
+
+                    {/* Submitted Lab Findings & Pathologist Impressions */}
+                    {report.report ? (
+                      <div className="p-4 bg-emerald-50/70 border border-emerald-200 rounded-xl space-y-2 text-slate-900">
+                        <div className="flex items-center justify-between text-emerald-950 font-black text-xs">
+                          <span className="flex items-center gap-1.5"><FileCheck2 className="w-4 h-4 text-emerald-600" /> LAB TECHNICIAN FINDINGS & PARAMETER VALUES</span>
+                          <span className="text-[10px] font-mono text-emerald-800">ISO-15189 Verified</span>
+                        </div>
+
+                        <div className="p-3 bg-white border border-emerald-200 rounded-lg text-xs font-bold text-slate-900">
+                          {report.report.findings}
+                        </div>
+
+                        <div className="text-xs font-semibold text-slate-700 italic">
+                          <strong>Pathologist Remarks:</strong> {report.report.notes}
+                        </div>
+
+                        <div className="text-[10px] text-slate-500 font-bold flex items-center justify-between pt-1 border-t border-emerald-200/60">
+                          <span>Report Generated By: {report.report.technicianName}</span>
+                          <span>Dispatched At: {report.report.submittedAt}</span>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-amber-900 text-xs font-bold flex items-center justify-between">
+                        <span>⏳ Specimen collected and undergoing pathology diagnostic evaluation in lab...</span>
+                        <span className="text-[10px] bg-amber-200 text-amber-900 px-2 py-0.5 rounded-md">Pending Report</span>
+                      </div>
+                    )}
+                  </div>
+                ))}
+
+                {filteredLabReports.length === 0 && (
+                  <div className="p-8 text-center text-slate-400 text-xs font-bold border border-dashed border-slate-200 rounded-2xl">
+                    No lab test reports found matching "{labReportSearchQuery}".
+                  </div>
+                )}
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* Patient History Modal */}
       <AnimatePresence>
         {isHistoryModalOpen && (
           <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm">
@@ -272,51 +397,41 @@ export const DoctorDashboard: React.FC = () => {
               exit={{ opacity: 0, scale: 0.94 }}
               className="bg-white border border-slate-200 rounded-3xl max-w-4xl w-full p-6 sm:p-8 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto"
             >
-              {/* Modal Topbar */}
               <div className="flex items-center justify-between border-b border-slate-100 pb-4">
                 <div className="flex items-center gap-3">
                   <div className="w-10 h-10 rounded-2xl bg-indigo-50 border border-indigo-200 flex items-center justify-center text-indigo-600 shadow-sm">
                     <History className="w-5 h-5" />
                   </div>
                   <div>
-                    <h3 className="font-black text-base text-slate-900 flex items-center gap-2">
-                      Patient Clinical History & EMR Vault
-                    </h3>
-                    <p className="text-xs font-semibold text-slate-500">
-                      Search patient MRN/Name to inspect previous diagnoses, prescribed drugs, and lab test reports
-                    </p>
+                    <h3 className="font-black text-base text-slate-900">Patient EMR Vault & Clinical History</h3>
+                    <p className="text-xs font-semibold text-slate-500">Query previous diagnoses, prescribed medications, and diagnostic lab reports by MRN or Name</p>
                   </div>
                 </div>
-                <button
-                  onClick={() => setIsHistoryModalOpen(false)}
-                  className="text-slate-400 hover:text-slate-600 p-2 rounded-xl hover:bg-slate-100 cursor-pointer"
-                >
+                <button onClick={() => setIsHistoryModalOpen(false)} className="text-slate-400 hover:text-slate-600 p-2 rounded-xl cursor-pointer">
                   <X className="w-5 h-5" />
                 </button>
               </div>
 
-              {/* Search Bar */}
               <div className="relative">
                 <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
                 <input
                   type="text"
                   value={historySearchQuery}
                   onChange={(e) => setHistorySearchQuery(e.target.value)}
-                  placeholder="Search patient history by MRN (e.g. MC-1001), Name, Diagnosis..."
-                  className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 outline-none focus:ring-2 focus:ring-indigo-500/20 focus:border-indigo-600"
+                  placeholder="Search EMR Vault by Patient Name, MRN Code, Diagnosis, or Rx #..."
+                  className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 outline-none focus:ring-2 focus:ring-indigo-500/20"
                 />
               </div>
 
-              {/* Clinical History Timeline */}
               <div className="space-y-4">
                 {filteredHistoryRecords.map((rec) => (
-                  <div key={rec.id} className="p-5 bg-slate-50/70 border border-slate-200 rounded-2xl space-y-4 shadow-2xs">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 pb-3">
+                  <div key={rec.id} className="p-5 bg-slate-50 border border-slate-200 rounded-2xl space-y-3 text-xs shadow-2xs">
+                    <div className="flex items-center justify-between border-b border-slate-200 pb-2.5">
                       <div>
-                        <span className="font-black text-sm text-slate-900">{rec.patientName} ({rec.mrn})</span>
-                        <span className="text-xs font-semibold text-slate-500 block">Rx #{rec.rxNumber} • Attending: {rec.doctorName} ({rec.department})</span>
+                        <span className="font-black text-slate-900 text-base block">{rec.patientName} ({rec.mrn})</span>
+                        <span className="text-xs font-bold text-indigo-700 block">Rx #{rec.rxNumber} • Attending: {rec.doctorName}</span>
                       </div>
-                      <span className="px-3 py-1 bg-blue-100 text-blue-800 text-xs font-black rounded-lg border border-blue-200 self-start sm:self-auto">
+                      <span className="px-3 py-1 bg-blue-100 text-blue-800 text-xs font-black rounded-lg border border-blue-200">
                         Date: {rec.date}
                       </span>
                     </div>
@@ -407,6 +522,17 @@ export const DoctorDashboard: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-3">
+          <button
+            onClick={() => {
+              setLabReportSearchQuery('');
+              setIsLabReportsModalOpen(true);
+            }}
+            className="px-3.5 py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs rounded-xl shadow-md shadow-cyan-600/20 flex items-center gap-2 cursor-pointer transition-all"
+          >
+            <FlaskConical className="w-4 h-4 text-cyan-200" />
+            <span>Diagnostic Lab Reports Hub</span>
+          </button>
+
           <button
             onClick={() => {
               setHistorySearchQuery('');
