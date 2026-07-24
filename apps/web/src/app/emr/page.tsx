@@ -6,6 +6,7 @@ import { AppShell } from '../../components/shared/AppShell';
 import { StatCard } from '../../components/shared/StatCard';
 import { DataTable } from '../../components/shared/DataTable';
 import { PrescriptionPdfModal } from '../../components/shared/PrescriptionPdfModal';
+import { TelemedicineConsultationModal } from '../../components/shared/TelemedicineConsultationModal';
 import { useToast } from '../../context/ToastContext';
 import {
   FileText,
@@ -99,31 +100,14 @@ export default function EmrPage() {
       <div className="space-y-8 max-w-6xl mx-auto">
         <PrescriptionPdfModal isOpen={isRxPdfOpen} onClose={() => setIsRxPdfOpen(false)} />
 
-        {/* Video Consult Modal Banner */}
-        {isVideoConsultOpen && (
-          <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-slate-950/80 backdrop-blur-md">
-            <div className="bg-slate-900 border border-slate-800 text-white rounded-3xl max-w-2xl w-full p-6 space-y-4">
-              <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                <div className="flex items-center gap-2">
-                  <Video className="w-5 h-5 text-emerald-400 animate-pulse" />
-                  <span className="font-black text-sm text-emerald-400 uppercase">HD Telemedicine Room Connected</span>
-                </div>
-                <button onClick={() => setIsVideoConsultOpen(false)} className="text-slate-400 hover:text-white">✕</button>
-              </div>
-
-              <div className="h-64 bg-slate-950 rounded-2xl border border-slate-800 flex items-center justify-center relative">
-                <span className="text-xs font-bold text-slate-500">Encrypted WebRTC Audio & Video Stream Active</span>
-              </div>
-
-              <div className="flex items-center justify-between text-xs text-slate-400">
-                <span>Patient: Jane Patient (Online)</span>
-                <button onClick={() => setIsVideoConsultOpen(false)} className="px-4 py-2 bg-rose-600 text-white font-bold rounded-xl cursor-pointer">
-                  End Consultation Call
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        {/* High-Industry Standard WebRTC Telemedicine Suite Modal with Live Doctor Webcam Access */}
+        <TelemedicineConsultationModal
+          isOpen={isVideoConsultOpen}
+          onClose={() => setIsVideoConsultOpen(false)}
+          patientName="Jane Patient"
+          patientMrn="MC-1001"
+          doctorName="Dr. Anup Singh"
+        />
 
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-200 pb-6">
@@ -139,9 +123,9 @@ export default function EmrPage() {
 
           <button
             onClick={handleLaunchVideoConsult}
-            className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-md flex items-center gap-2 cursor-pointer"
+            className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-md flex items-center gap-2 cursor-pointer transition-all"
           >
-            <Video className="w-4 h-4" />
+            <Video className="w-4 h-4 text-emerald-200" />
             <span>Launch Live Telemedicine Consult</span>
           </button>
         </div>
