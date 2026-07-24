@@ -27,6 +27,13 @@ import {
   Droplet,
   KeyRound,
   Siren,
+  Stethoscope,
+  FlaskConical,
+  Pill,
+  HeartPulse,
+  Building2,
+  ShoppingBag,
+  Home
 } from 'lucide-react';
 import { Logo } from './Logo';
 import { useAuth } from '../../hooks/useAuth';
@@ -37,6 +44,7 @@ import { BloodBankModal } from './BloodBankModal';
 import { ForgotPasswordModal } from './ForgotPasswordModal';
 import { BookDoctorVisitModal } from './BookDoctorVisitModal';
 import { PaymentModal } from './PaymentModal';
+import { PharmacyPurchaseModal } from './PharmacyPurchaseModal';
 
 interface AppShellProps {
   children: React.ReactNode;
@@ -58,16 +66,18 @@ export const AppShell: React.FC<AppShellProps> = ({ children, userRole = 'DOCTOR
   // 1. 30-Minute Patient Session Timeout State (1800 Seconds)
   const [sessionTimeLeft, setSessionTimeLeft] = useState(1800);
 
-  // 2. KYC Verification & 5-Minute Hold Queue State (300 Seconds)
+  // Modals state
   const [isKycModalOpen, setIsKycModalOpen] = useState(false);
   const [is44ModulesOpen, setIs44ModulesOpen] = useState(false);
   const [isBloodBankOpen, setIsBloodBankOpen] = useState(false);
   const [isForgotPasswordOpen, setIsForgotPasswordOpen] = useState(false);
   const [isBookVisitOpen, setIsBookVisitOpen] = useState(false);
   const [isPaymentOpen, setIsPaymentOpen] = useState(false);
+  const [isPharmacyOpen, setIsPharmacyOpen] = useState(false);
+
   const [paymentTarget, setPaymentTarget] = useState({
     title: '',
-    category: 'APPOINTMENT' as 'APPOINTMENT' | 'LAB_TEST' | 'HOSPITAL_SUPPLY',
+    category: 'APPOINTMENT' as 'APPOINTMENT' | 'LAB_TEST' | 'BLOOD_BANK' | 'PHARMACY' | 'HOSPITAL_SUPPLY',
     amount: '₹1,500',
     patientName: 'Alex Care',
   });
@@ -108,14 +118,14 @@ export const AppShell: React.FC<AppShellProps> = ({ children, userRole = 'DOCTOR
     showToastRef.current = showToast;
   }, [logout, showToast]);
 
-  // Session timeout countdown timer (Runs once continuously without reset)
+  // Session timeout countdown timer
   useEffect(() => {
     const interval = setInterval(() => {
       setSessionTimeLeft((prev) => {
         if (prev <= 1) {
           if (logoutRef.current) logoutRef.current();
           if (showToastRef.current) {
-            showToastRef.current({ title: 'Session Expired', message: '30-minute inactivity security window elapsed.', type: 'warning' });
+            showToastRef.current({ title: 'Session Expired', message: '30-minute security window elapsed.', type: 'warning' });
           }
           return 0;
         }
@@ -131,16 +141,100 @@ export const AppShell: React.FC<AppShellProps> = ({ children, userRole = 'DOCTOR
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   };
 
-  const navItems = [
-    { label: 'Workstation', href: '/', icon: Activity },
-    { label: 'Patients', href: '/patients', icon: Users },
-    { label: 'Appointments', href: '/appointments', icon: Calendar },
-    { label: 'Ambulance & Dispatch', href: '/ambulance', icon: Siren },
-    { label: 'Blood Bank', href: '/blood-bank', icon: Droplet },
-    { label: 'EMR / EHR Vault', href: '/emr', icon: FileText },
-    { label: 'Billing & Finance', href: '/billing', icon: CreditCard },
-    { label: 'System Settings', href: '/settings', icon: Settings },
-  ];
+  // Dynamic Role-Specific Side Panel Navigation Config
+  const getNavConfigForRole = (role: string) => {
+    switch (role) {
+      case 'PATIENT':
+        return {
+          badge: 'PATIENT PORTAL NAV',
+          badgeBg: 'bg-emerald-100 text-emerald-800 border-emerald-300',
+          items: [
+            { label: 'My Health Portal', href: '/', icon: Home },
+            { label: 'My Consultations', href: '/appointments', icon: Calendar },
+            { label: 'My Medical Records & Rx', href: '/emr', icon: FileText },
+            { label: 'E-Pharmacy Store', href: '#pharmacy', icon: Pill, onClick: () => setIsPharmacyOpen(true) },
+            { label: 'Blood Bank Reserve', href: '#bloodbank', icon: Droplet, onClick: () => setIsBloodBankOpen(true) },
+            { label: 'Live Ambulance GPS', href: '/ambulance', icon: Siren },
+            { label: 'My Billing & Invoices', href: '/billing', icon: CreditCard },
+            { label: 'Account Settings', href: '/settings', icon: Settings },
+          ],
+        };
+      case 'DOCTOR':
+        return {
+          badge: 'PHYSICIAN WORKSTATION NAV',
+          badgeBg: 'bg-blue-100 text-blue-800 border-blue-300',
+          items: [
+            { label: 'OPD Clinical Workstation', href: '/', icon: Stethoscope },
+            { label: 'My Patient Roster', href: '/patients', icon: Users },
+            { label: 'Appointment Schedule', href: '/appointments', icon: Calendar },
+            { label: 'Signed EMR Vault', href: '/emr', icon: FileText },
+            { label: 'Blood Bank Transfusions', href: '#bloodbank', icon: Droplet, onClick: () => setIsBloodBankOpen(true) },
+            { label: 'Emergency Alerts', href: '/ambulance', icon: Siren },
+            { label: 'Clinical Settings', href: '/settings', icon: Settings },
+          ],
+        };
+      case 'NURSE':
+        return {
+          badge: 'NURSING & VITALS NAV',
+          badgeBg: 'bg-rose-100 text-rose-800 border-rose-300',
+          items: [
+            { label: 'Inpatient Nursing Station', href: '/', icon: HeartPulse },
+            { label: 'Inpatient Ward Patients', href: '/patients', icon: Users },
+            { label: 'Ward Consultations', href: '/appointments', icon: Calendar },
+            { label: 'Ward Supplies E-Store', href: '#pharmacy', icon: ShoppingBag, onClick: () => setIsPharmacyOpen(true) },
+            { label: 'Blood Bank Reserve', href: '#bloodbank', icon: Droplet, onClick: () => setIsBloodBankOpen(true) },
+            { label: 'Emergency Response', href: '/ambulance', icon: Siren },
+            { label: 'Ward Settings', href: '/settings', icon: Settings },
+          ],
+        };
+      case 'LAB_TECHNICIAN':
+        return {
+          badge: 'PATHOLOGY LAB NAV',
+          badgeBg: 'bg-indigo-100 text-indigo-800 border-indigo-300',
+          items: [
+            { label: 'Diagnostic Lab Queue', href: '/', icon: FlaskConical },
+            { label: 'Patient Specimen Search', href: '/patients', icon: Users },
+            { label: 'Diagnostic Orders', href: '/appointments', icon: Calendar },
+            { label: 'Pathology Reports Vault', href: '/emr', icon: FileText },
+            { label: 'Blood Bank Screening', href: '#bloodbank', icon: Droplet, onClick: () => setIsBloodBankOpen(true) },
+            { label: 'Lab Supplies E-Store', href: '#pharmacy', icon: Building2, onClick: () => setIsPharmacyOpen(true) },
+            { label: 'Lab Workstation Settings', href: '/settings', icon: Settings },
+          ],
+        };
+      case 'PHARMACIST':
+        return {
+          badge: 'PHARMACY DISPENSARY NAV',
+          badgeBg: 'bg-amber-100 text-amber-800 border-amber-300',
+          items: [
+            { label: 'Pharmacy Stock Master', href: '/', icon: Pill },
+            { label: 'Patient Prescriptions', href: '/patients', icon: Users },
+            { label: 'Dispensary Orders', href: '/appointments', icon: Calendar },
+            { label: 'Prescription Audit Vault', href: '/emr', icon: FileText },
+            { label: 'Dispensary Billing & GST', href: '/billing', icon: CreditCard },
+            { label: 'Pharmacy Settings', href: '/settings', icon: Settings },
+          ],
+        };
+      case 'SUPER_ADMIN':
+      case 'HOSPITAL_ADMIN':
+      default:
+        return {
+          badge: 'COMMAND CENTER NAV',
+          badgeBg: 'bg-purple-100 text-purple-800 border-purple-300',
+          items: [
+            { label: 'Enterprise Command Center', href: '/', icon: LayoutGrid },
+            { label: 'Hospital Staff & Users', href: '/patients', icon: Users },
+            { label: 'Global Consultations', href: '/appointments', icon: Calendar },
+            { label: 'Ambulance GPS Fleet', href: '/ambulance', icon: Siren },
+            { label: 'Blood Bank Operations', href: '#bloodbank', icon: Droplet, onClick: () => setIsBloodBankOpen(true) },
+            { label: 'Global EMR Audit Vault', href: '/emr', icon: FileText },
+            { label: 'Billing & Financial Claims', href: '/billing', icon: CreditCard },
+            { label: 'System Security & Settings', href: '/settings', icon: Settings },
+          ],
+        };
+    }
+  };
+
+  const navConfig = getNavConfigForRole(currentRole);
 
   return (
     <div className="min-h-screen bg-slate-50 flex overflow-hidden">
@@ -154,6 +248,14 @@ export const AppShell: React.FC<AppShellProps> = ({ children, userRole = 'DOCTOR
       <BloodBankModal
         isOpen={isBloodBankOpen}
         onClose={() => setIsBloodBankOpen(false)}
+      />
+
+      {/* E-Pharmacy & Medical Supplies Purchase Modal */}
+      <PharmacyPurchaseModal
+        isOpen={isPharmacyOpen}
+        onClose={() => setIsPharmacyOpen(false)}
+        patientName={user ? `${user.firstName} ${user.lastName}` : 'Alex Care'}
+        userRole={currentRole}
       />
 
       {/* Forgot Password OTP Modal */}
@@ -186,6 +288,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children, userRole = 'DOCTOR
         itemCategory={paymentTarget.category}
         amount={paymentTarget.amount}
         patientName={paymentTarget.patientName}
+        userRole={currentRole}
         onPaymentSuccess={() => {
           showToast({ title: 'Appointment Booked!', message: 'Consultation session verified & scheduled.', type: 'success' });
         }}
@@ -221,7 +324,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children, userRole = 'DOCTOR
           isCollapsed ? 'w-20' : 'w-64'
         } ${isMobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
       >
-        <div className="space-y-6 p-4">
+        <div className="space-y-5 p-4">
           <div className="flex items-center justify-between">
             <Logo textVisible={!isCollapsed} />
             <button
@@ -232,13 +335,36 @@ export const AppShell: React.FC<AppShellProps> = ({ children, userRole = 'DOCTOR
             </button>
           </div>
 
+          {/* Role-Specific Side Panel Badge */}
+          {!isCollapsed && (
+            <div className="px-1">
+              <span className={`px-2.5 py-1 rounded-full text-[9.5px] font-black uppercase border tracking-wider block text-center ${navConfig.badgeBg}`}>
+                {navConfig.badge}
+              </span>
+            </div>
+          )}
+
           <nav className="space-y-1">
-            {navItems.map((item) => {
-              const isActive = pathname === item.href;
+            {navConfig.items.map((item) => {
+              const isActive = pathname === item.href && !item.onClick;
               const Icon = item.icon;
+
+              if (item.onClick) {
+                return (
+                  <button
+                    key={item.label}
+                    onClick={item.onClick}
+                    className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl font-bold text-xs text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all text-left cursor-pointer"
+                  >
+                    <Icon className="w-4 h-4 shrink-0 text-blue-600" />
+                    {!isCollapsed && <span>{item.label}</span>}
+                  </button>
+                );
+              }
+
               return (
                 <Link
-                  key={item.href}
+                  key={item.href + item.label}
                   href={item.href}
                   className={`flex items-center gap-3 px-3.5 py-2.5 rounded-2xl font-bold text-xs transition-all ${
                     isActive
@@ -271,75 +397,62 @@ export const AppShell: React.FC<AppShellProps> = ({ children, userRole = 'DOCTOR
               </button>
             </div>
           )}
+
+          {/* Session Expiry Ribbon */}
+          <div className="flex items-center justify-between text-[11px] font-semibold text-slate-500 px-1">
+            <span className="flex items-center gap-1">
+              <Clock className="w-3.5 h-3.5 text-blue-600" />
+              Session
+            </span>
+            <span className="font-mono font-bold text-slate-700">{formatTimer(sessionTimeLeft)}</span>
+          </div>
         </div>
       </aside>
 
-      {/* Main Content Workspace */}
-      <div className="flex-1 flex flex-col min-w-0 h-screen overflow-hidden">
+      {/* Main Right Content Workspace */}
+      <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Top Navbar */}
-        <header className="h-16 bg-white border-b border-slate-200/80 px-6 flex items-center justify-between shrink-0">
-          <div className="flex items-center gap-4">
+        <header className="h-16 bg-white border-b border-slate-200/80 px-4 sm:px-6 flex items-center justify-between gap-4 shrink-0">
+          <div className="flex items-center gap-3">
             <button
               onClick={() => setIsMobileOpen(true)}
-              className="lg:hidden p-2 rounded-xl text-slate-500 hover:bg-slate-100"
+              className="lg:hidden p-2 rounded-xl text-slate-600 hover:bg-slate-100"
             >
               <Menu className="w-5 h-5" />
             </button>
 
+            {/* Quick Command Center Module Launcher */}
             <button
               onClick={() => setIs44ModulesOpen(true)}
-              className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs rounded-xl shadow-2xs flex items-center gap-1.5 transition-all cursor-pointer"
+              className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-black flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
             >
-              <LayoutGrid className="w-4 h-4 text-blue-400" />
-              <span className="hidden sm:inline">44 Enterprise Modules Hub</span>
+              <LayoutGrid className="w-3.5 h-3.5 text-blue-400" />
+              <span className="hidden sm:inline">44 Enterprise Modules</span>
             </button>
           </div>
 
-          {/* Topbar Right Badges */}
           <div className="flex items-center gap-3">
-            <button
-              onClick={() => setIsBloodBankOpen(true)}
-              className="px-3 py-1.5 bg-rose-50 hover:bg-rose-100 border border-rose-200 text-rose-700 font-extrabold text-xs rounded-xl flex items-center gap-1.5 transition-all cursor-pointer"
-            >
-              <Droplet className="w-3.5 h-3.5 fill-rose-600 text-rose-600" />
-              <span className="hidden sm:inline">Blood Bank Exchange</span>
-            </button>
-
-            <button
-              onClick={() => setIsForgotPasswordOpen(true)}
-              className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 border border-blue-200 text-blue-700 font-extrabold text-xs rounded-xl flex items-center gap-1.5 transition-all cursor-pointer"
-            >
-              <KeyRound className="w-3.5 h-3.5 text-blue-600" />
-              <span className="hidden sm:inline">Reset Password OTP</span>
-            </button>
-
-            {/* 30-Minute Patient Countdown Badge */}
-            {currentRole === 'PATIENT' && (
-              <div className="px-3 py-1 bg-amber-50 border border-amber-200 text-amber-800 rounded-full text-xs font-black flex items-center gap-1.5 shadow-2xs">
-                <Clock className="w-3.5 h-3.5 text-amber-600" />
-                <span>Session: {formatTimer(sessionTimeLeft)}</span>
+            {/* User Profile Badge */}
+            <div className="flex items-center gap-2 pl-2 border-l border-slate-200">
+              <div className="w-8 h-8 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-600 font-black text-xs">
+                {user?.firstName ? user.firstName[0] : 'U'}
               </div>
-            )}
-
-            {/* 5-Minute Hold Queue Badge */}
-            {!isSuperAdmin && kycSubmitted && !isApproved && (
-              <div className="px-3 py-1 bg-blue-50 border border-blue-200 text-blue-800 rounded-full text-xs font-black flex items-center gap-1.5 shadow-2xs animate-pulse">
-                <ShieldCheck className="w-3.5 h-3.5 text-blue-600" />
-                <span>KYC Review (Hold: {formatTimer(holdTimeLeft)})</span>
+              <div className="hidden sm:block text-left">
+                <span className="font-black text-xs text-slate-900 block leading-tight">
+                  {user?.firstName || 'User'} {user?.lastName || ''}
+                </span>
+                <span className="text-[10px] font-bold uppercase text-slate-500 block leading-tight">
+                  {currentRole}
+                </span>
               </div>
-            )}
-
-            {!isSuperAdmin && isApproved && (
-              <div className="px-3 py-1 bg-emerald-50 border border-emerald-200 text-emerald-800 rounded-full text-xs font-black flex items-center gap-1 shadow-2xs">
-                <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                <span>KYC Approved</span>
-              </div>
-            )}
+            </div>
           </div>
         </header>
 
-        {/* Page Viewport */}
-        <main className="flex-1 overflow-y-auto p-6 sm:p-8">{children}</main>
+        {/* Page Children Container */}
+        <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
+          {children}
+        </main>
       </div>
     </div>
   );
