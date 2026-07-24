@@ -95,9 +95,8 @@ const DRIVER_DATASET: DriverProfile[] = [
   },
 ];
 
-// Fetch Google Maps API Key from environment variable
-const GOOGLE_MAPS_API_KEY =
-  process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || 'AIzaSyDRGkaOfA_KEonBclFxFzt5BGnZmeeC_W0';
+// Fetch Google Maps API Key strictly from environment variables (NEXT_PUBLIC_GOOGLE_MAPS_API_KEY)
+const GOOGLE_MAPS_API_KEY = process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY || '';
 
 interface AmbulanceTrackerModalProps {
   isOpen: boolean;
