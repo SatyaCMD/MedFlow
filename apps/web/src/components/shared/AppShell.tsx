@@ -421,14 +421,16 @@ export const AppShell: React.FC<AppShellProps> = ({ children, userRole = 'DOCTOR
               <Menu className="w-5 h-5" />
             </button>
 
-            {/* Quick Command Center Module Launcher */}
-            <button
-              onClick={() => setIs44ModulesOpen(true)}
-              className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-black flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
-            >
-              <LayoutGrid className="w-3.5 h-3.5 text-blue-400" />
-              <span className="hidden sm:inline">44 Enterprise Modules</span>
-            </button>
+            {/* Quick Command Center Module Launcher (Admin Only) */}
+            {isSuperAdmin && (
+              <button
+                onClick={() => setIs44ModulesOpen(true)}
+                className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-black flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
+              >
+                <LayoutGrid className="w-3.5 h-3.5 text-blue-400" />
+                <span className="hidden sm:inline">44 Enterprise Modules</span>
+              </button>
+            )}
           </div>
 
           <div className="flex items-center gap-3">
