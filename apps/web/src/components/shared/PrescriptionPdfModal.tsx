@@ -59,12 +59,12 @@ export const PrescriptionPdfModal: React.FC<PrescriptionPdfModalProps> = ({
 
   const sampleDefaultData: PrescriptionData = {
     rxNumber: 'RX-2026-88912',
-    patientName: 'Sarah Connor',
+    patientName: 'Jane Patient',
     mrn: 'MC-1001',
     age: '42 Yrs',
     gender: 'Female',
     bloodGroup: 'O+',
-    doctorName: 'Dr. Devendra Roy, M.D.',
+    doctorName: 'Dr. Gregory House, M.D.',
     department: 'Department of Cardiology & Diagnostic Medicine',
     date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),
     diagnosis: 'Essential Hypertension & Cardiac Risk Profiling',
@@ -77,7 +77,7 @@ export const PrescriptionPdfModal: React.FC<PrescriptionPdfModalProps> = ({
       height: '175 cm',
       bmi: '22.9 kg/m²',
       glucose: '95 mg/dL',
-      nurseName: 'Nurse Anita Sharma, R.N.',
+      nurseName: 'Nurse Clara, R.N.',
     },
     medications: [
       { name: 'Amoxicillin 500mg Capsules', dosage: '1 Capsule TID (Every 8 Hours)', instructions: 'Take after food for 7 consecutive days' },
@@ -103,50 +103,185 @@ export const PrescriptionPdfModal: React.FC<PrescriptionPdfModalProps> = ({
     const printWindow = window.open('', '_blank');
     if (printWindow) {
       printWindow.document.write(`
+        <!DOCTYPE html>
         <html>
           <head>
+            <meta charset="utf-8" />
             <title>MediCore 360 - Official Digital Prescription ${data.rxNumber}</title>
             <style>
-              body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; padding: 40px; color: #0f172a; max-width: 800px; margin: 0 auto; }
-              .header { border-bottom: 3px solid #2563eb; padding-bottom: 15px; margin-bottom: 25px; display: flex; justify-content: space-between; align-items: center; }
-              .brand { font-size: 26px; font-weight: 900; color: #1e3a8a; }
+              @import url('https://fonts.googleapis.com/css2?family=Great+Vibes&family=Dancing+Script:wght@700&family=Inter:wght@400;600;700;800;900&display=swap');
+              
+              * { box-sizing: border-box; margin: 0; padding: 0; }
+              body {
+                font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+                padding: 40px;
+                color: #0f172a;
+                max-width: 800px;
+                margin: 0 auto;
+                background: #ffffff;
+                -webkit-print-color-adjust: exact;
+                print-color-adjust: exact;
+              }
+              .header {
+                border-bottom: 3px solid #2563eb;
+                padding-bottom: 15px;
+                margin-bottom: 25px;
+                display: flex;
+                justify-content: space-between;
+                align-items: center;
+              }
+              .brand { font-size: 26px; font-weight: 900; color: #1e3a8a; letter-spacing: -0.5px; }
               .subtitle { font-size: 12px; color: #64748b; font-weight: 600; }
-              .meta-grid { display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 12px; background: #f8fafc; padding: 18px; border-radius: 12px; border: 1px solid #e2e8f0; margin-bottom: 25px; }
+              
+              .meta-grid {
+                display: grid;
+                grid-template-columns: 1fr 1fr 1fr;
+                gap: 14px;
+                background: #f8fafc;
+                padding: 20px;
+                border-radius: 16px;
+                border: 1px solid #e2e8f0;
+                margin-bottom: 25px;
+              }
               .meta-item { font-size: 13px; }
               .meta-label { color: #64748b; font-weight: bold; }
               .meta-val { font-weight: bold; color: #0f172a; }
 
-              .vitals-box { background: #fff1f2; border: 1px solid #fecdd3; padding: 15px; border-radius: 12px; margin-bottom: 25px; }
-              .vitals-header { font-size: 13px; font-weight: 900; color: #9f1239; margin-bottom: 10px; text-transform: uppercase; }
-              .vitals-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 10px; font-size: 12px; }
+              .vitals-box {
+                background: #fff1f2;
+                border: 1px solid #fecdd3;
+                padding: 16px 20px;
+                border-radius: 16px;
+                margin-bottom: 25px;
+              }
+              .vitals-header {
+                font-size: 12px;
+                font-weight: 900;
+                color: #9f1239;
+                margin-bottom: 12px;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+                display: flex;
+                align-items: center;
+                gap: 6px;
+              }
+              .vitals-grid {
+                display: grid;
+                grid-template-columns: repeat(4, 1fr);
+                gap: 12px;
+                font-size: 12px;
+              }
 
-              .rx-title { font-size: 14px; font-weight: 900; color: #1e293b; margin-bottom: 12px; text-transform: uppercase; letter-spacing: 1px; }
-              .med-card { border: 1px solid #cbd5e1; border-radius: 8px; padding: 12px 16px; margin-bottom: 10px; background: #fff; }
+              .rx-title {
+                font-size: 13px;
+                font-weight: 900;
+                color: #0f172a;
+                margin-bottom: 14px;
+                text-transform: uppercase;
+                letter-spacing: 1px;
+              }
+              .med-card {
+                border: 1px solid #cbd5e1;
+                border-radius: 12px;
+                padding: 14px 18px;
+                margin-bottom: 12px;
+                background: #ffffff;
+              }
               .med-name { font-size: 14px; font-weight: bold; color: #2563eb; }
-              .med-dosage { font-size: 13px; font-weight: 600; color: #334155; margin-top: 2px; }
+              .med-dosage { font-size: 13px; font-weight: 600; color: #334155; margin-top: 3px; }
               .med-inst { font-size: 12px; color: #64748b; font-style: italic; margin-top: 4px; }
               
-              .test-card { border: 1px solid #bae6fd; border-radius: 8px; padding: 10px 14px; margin-bottom: 8px; background: #f0f9ff; }
+              .test-card {
+                border: 1px solid #bae6fd;
+                border-radius: 12px;
+                padding: 12px 16px;
+                margin-bottom: 10px;
+                background: #f0f9ff;
+              }
               .test-name { font-size: 13px; font-weight: bold; color: #0369a1; }
               .test-meta { font-size: 11px; color: #0284c7; margin-top: 2px; }
 
-              .signature-box { margin-top: 35px; padding-top: 20px; border-top: 2px dashed #cbd5e1; display: flex; justify-content: space-between; align-items: flex-end; }
-              .sig-img { font-family: 'Brush Script MT', cursive, sans-serif; font-size: 28px; color: #1e3a8a; }
-              .stamp { font-size: 10px; color: #059669; font-weight: bold; border: 2px solid #059669; padding: 4px 8px; border-radius: 6px; text-transform: uppercase; }
+              /* Signature & Doctor Medical Seal Section */
+              .signature-box {
+                margin-top: 35px;
+                padding-top: 20px;
+                border-top: 2px dashed #cbd5e1;
+                display: flex;
+                justify-content: space-between;
+                align-items: flex-end;
+              }
+              
+              /* Realistic Cursive Handwritten Signature */
+              .sig-img {
+                font-family: 'Great Vibes', 'Dancing Script', 'Brush Script MT', cursive;
+                font-size: 34px;
+                font-weight: 700;
+                color: #1e3a8a;
+                font-style: italic;
+                letter-spacing: 1px;
+                line-height: 1;
+              }
+
+              /* Small Doctor Registration Stamp / Seal */
+              .doctor-stamp {
+                margin-top: 6px;
+                display: inline-block;
+                border: 2px double #1e3a8a;
+                border-radius: 8px;
+                padding: 4px 10px;
+                background: rgba(30, 58, 138, 0.03);
+                text-align: center;
+              }
+              .stamp-line1 {
+                font-size: 8px;
+                font-weight: 900;
+                color: #1e3a8a;
+                text-transform: uppercase;
+                letter-spacing: 0.5px;
+              }
+              .stamp-line2 {
+                font-size: 9px;
+                font-weight: 800;
+                color: #0f172a;
+                margin: 1px 0;
+              }
+              .stamp-line3 {
+                font-size: 8px;
+                font-weight: 700;
+                color: #2563eb;
+                font-family: monospace;
+              }
+
+              .verification-badge {
+                font-size: 10px;
+                color: #059669;
+                font-weight: 800;
+                border: 2px solid #059669;
+                padding: 6px 12px;
+                border-radius: 8px;
+                text-transform: uppercase;
+                display: inline-block;
+              }
+
+              @media print {
+                body { padding: 0; }
+              }
             </style>
           </head>
           <body>
+            <!-- Brand Header -->
             <div class="header">
               <div>
                 <div class="brand">MEDICORE 360 EHMS</div>
                 <div class="subtitle">Official Electronic Medical Prescription • Hospital License #HOSP-88901</div>
               </div>
               <div style="text-align: right;">
-                <div style="font-size: 16px; font-weight: 900; color: #2563eb;">${data.rxNumber}</div>
-                <div style="font-size: 12px; color: #64748b;">${data.date}</div>
+                <div style="font-size: 18px; font-weight: 900; color: #2563eb;">${data.rxNumber}</div>
+                <div style="font-size: 12px; color: #64748b; font-weight: 600;">${data.date}</div>
               </div>
             </div>
 
+            <!-- Patient & Doctor Info Grid -->
             <div class="meta-grid">
               <div class="meta-item"><span class="meta-label">Patient Name:</span> <span class="meta-val">${data.patientName}</span></div>
               <div class="meta-item"><span class="meta-label">MRN Code:</span> <span class="meta-val">${data.mrn}</span></div>
@@ -156,11 +291,12 @@ export const PrescriptionPdfModal: React.FC<PrescriptionPdfModalProps> = ({
               <div class="meta-item" style="grid-column: span 3;"><span class="meta-label">Clinical Diagnosis:</span> <span class="meta-val" style="color: #2563eb;">${data.diagnosis}</span></div>
             </div>
 
+            <!-- Pre-Consultation Vitals Check -->
             ${
               data.nurseVitals
                 ? `
               <div class="vitals-box">
-                <div class="vitals-header">❤️ Pre-Consultation Vitals Check (Recorded by ${data.nurseVitals.nurseName})</div>
+                <div class="vitals-header">❤️ PRE-CONSULTATION VITALS CHECK (RECORDED BY ${data.nurseVitals.nurseName.toUpperCase()})</div>
                 <div class="vitals-grid">
                   <div><span style="color: #64748b;">Blood Pressure:</span> <strong>${data.nurseVitals.bp}</strong></div>
                   <div><span style="color: #64748b;">Pulse / HR:</span> <strong>${data.nurseVitals.pulse}</strong></div>
@@ -175,7 +311,8 @@ export const PrescriptionPdfModal: React.FC<PrescriptionPdfModalProps> = ({
                 : ''
             }
 
-            <div class="rx-title">Rx Prescribed Medications & Dosing Schedule</div>
+            <!-- RX Prescribed Medications -->
+            <div class="rx-title">RX PRESCRIBED MEDICATIONS & DOSING SCHEDULE</div>
 
             ${data.medications
               ?.map(
@@ -192,7 +329,7 @@ export const PrescriptionPdfModal: React.FC<PrescriptionPdfModalProps> = ({
             ${
               data.labTests && data.labTests.length > 0
                 ? `
-              <div class="rx-title" style="margin-top: 25px; color: #0284c7;">🔬 Prescribed Diagnostic Lab Tests & Investigations</div>
+              <div class="rx-title" style="margin-top: 25px; color: #0284c7;">🔬 PRESCRIBED DIAGNOSTIC LAB TESTS & INVESTIGATIONS</div>
               ${data.labTests
                 .map(
                   (t) => `
@@ -208,19 +345,35 @@ export const PrescriptionPdfModal: React.FC<PrescriptionPdfModalProps> = ({
                 : ''
             }
 
+            <!-- Signature Box with Handwritten Cursive Signature & Doctor Seal -->
             <div class="signature-box">
               <div>
-                <div class="stamp">✓ Cryptographically Verified Multi-Role Signature</div>
-                <div style="font-size: 10px; color: #94a3b8; margin-top: 6px;">Hash: ${data.signatureHash}</div>
-                <div style="font-size: 10px; color: #94a3b8;">Issued At: ${new Date().toLocaleString()}</div>
+                <div class="verification-badge">✓ CRYPTOGRAPHICALLY VERIFIED MULTI-ROLE SIGNATURE</div>
+                <div style="font-size: 10px; color: #64748b; margin-top: 6px; font-family: monospace;">Hash: ${data.signatureHash}</div>
+                <div style="font-size: 10px; color: #64748b; margin-top: 2px;">Issued At: ${new Date().toLocaleString()}</div>
               </div>
+
               <div style="text-align: right;">
+                <!-- Clear Handwritten Cursive Signature -->
                 <div class="sig-img">${data.doctorName}</div>
-                <div style="font-size: 12px; font-weight: bold; color: #475569; margin-top: 4px;">Digital Signature & Stamp</div>
+                
+                <!-- Official Small Doctor Registration Stamp -->
+                <div class="doctor-stamp">
+                  <div class="stamp-line1">★ REGISTERED MEDICAL PRACTITIONER ★</div>
+                  <div class="stamp-line2">${data.doctorName}</div>
+                  <div class="stamp-line3">REG NO: MCI-889012 • DEPT OF MEDICINE</div>
+                </div>
+                <div style="font-size: 11px; font-weight: bold; color: #64748b; margin-top: 4px;">Digital Signature & Official Stamp</div>
               </div>
             </div>
 
-            <script>window.print();</script>
+            <script>
+              window.onload = function() {
+                setTimeout(function() {
+                  window.print();
+                }, 400);
+              };
+            </script>
           </body>
         </html>
       `);
@@ -339,6 +492,7 @@ export const PrescriptionPdfModal: React.FC<PrescriptionPdfModalProps> = ({
             </div>
           )}
 
+          {/* In-App Signature & Small Doctor Seal Block */}
           <div className="pt-3 border-t border-slate-200 flex items-center justify-between text-xs">
             <div className="space-y-0.5">
               <span className="text-[10px] font-black text-emerald-700 uppercase flex items-center gap-1">
@@ -347,9 +501,18 @@ export const PrescriptionPdfModal: React.FC<PrescriptionPdfModalProps> = ({
               <span className="text-[10px] font-mono text-slate-400 block">{data.signatureHash}</span>
               <span className="text-[10px] text-slate-500 block">Issued: {data.date}</span>
             </div>
+
             <div className="text-right">
-              <span className="font-serif italic font-black text-blue-900 text-base block">{data.doctorName}</span>
-              <span className="text-[10px] font-bold text-slate-500">Digital Signature & License Stamp</span>
+              {/* Handwritten Cursive Signature Font */}
+              <span className="font-serif italic font-black text-blue-900 text-xl block tracking-wide" style={{ fontFamily: 'cursive' }}>
+                {data.doctorName}
+              </span>
+              {/* Small Doctor Registration Seal */}
+              <div className="mt-1 px-2.5 py-1 border-2 border-double border-blue-900 rounded-lg text-[9px] font-black text-slate-800 uppercase inline-block bg-blue-50/50">
+                <div className="text-blue-900 font-bold text-[8px]">★ REGISTERED MEDICAL PRACTITIONER ★</div>
+                <div className="text-slate-900 font-extrabold">{data.doctorName}</div>
+                <div className="text-blue-700 font-mono text-[7.5px]">REG NO: MCI-889012 • CARDIOLOGY</div>
+              </div>
             </div>
           </div>
         </div>
