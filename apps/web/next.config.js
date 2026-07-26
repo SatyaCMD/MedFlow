@@ -14,7 +14,7 @@ const cspHeader = `
 
 const nextConfig = {
   reactStrictMode: true,
-  // output: 'standalone',
+  output: 'standalone',
   async headers() {
     return [
       {
