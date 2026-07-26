@@ -162,7 +162,9 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
           ? 'pay_rzp'
           : 'ch_str';
 
-      const transactionId = `${txPrefix}_${Math.random().toString(36).substring(2, 11)}`;
+      const txArr = new Uint32Array(2);
+      window.crypto.getRandomValues(txArr);
+      const transactionId = `${txPrefix}_${txArr[0].toString(36)}${txArr[1].toString(36)}`;
       const timestamp = new Date().toLocaleString('en-US', { year: 'numeric', month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
 
       // Clean raw numeric price string

@@ -362,8 +362,13 @@ export const DoctorPrescribeStudioModal: React.FC<DoctorPrescribeStudioModalProp
       return;
     }
 
+    const rxNumArr = new Uint32Array(1);
+    const sigArr = new Uint32Array(2);
+    window.crypto.getRandomValues(rxNumArr);
+    window.crypto.getRandomValues(sigArr);
+
     const rxData = {
-      rxNumber: `RX-STUDIO-${Math.floor(100000 + Math.random() * 900000)}`,
+      rxNumber: `RX-STUDIO-${(rxNumArr[0] % 900000) + 100000}`,
       patientName,
       mrn: patientMrn,
       doctorName,
@@ -382,7 +387,7 @@ export const DoctorPrescribeStudioModal: React.FC<DoctorPrescribeStudioModalProp
         instructions: `${t.fastingRequirement} • Turnaround: ${t.turnaroundTime}`,
         price: t.price,
       })),
-      signatureHash: `SHA256: ${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 15)}`,
+      signatureHash: `SHA256: ${sigArr[0].toString(16)}${sigArr[1].toString(16)}`,
     };
 
     onPrescriptionIssued(rxData);

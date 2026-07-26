@@ -116,7 +116,9 @@ export default function SignupPage() {
   const strengthScore = calculatePasswordStrength(password);
 
   const handleFillSample = () => {
-    const randomNum = Math.floor(1000 + Math.random() * 9000);
+    const randomArray = new Uint32Array(1);
+    window.crypto.getRandomValues(randomArray);
+    const randomNum = (randomArray[0] % 9000) + 1000;
     if (role === 'DOCTOR') {
       setFirstName('Gregory');
       setLastName('House');

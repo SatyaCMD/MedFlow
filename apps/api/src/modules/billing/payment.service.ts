@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars, @typescript-eslint/no-non-null-assertion */
+import crypto from 'crypto';
 import { logger } from '../../lib/logger.js';
 import { AppError } from '../../middleware/errorHandler.js';
 
@@ -20,7 +21,7 @@ export class PaymentService {
 
     // Return mock transaction identifiers
     return {
-      id: `cs_test_${Math.random().toString(36).substring(2, 10)}`,
+      id: `cs_test_${crypto.randomBytes(6).toString('hex')}`,
       url: `https://checkout.stripe.com/pay/${options.invoiceId}`,
     };
   }

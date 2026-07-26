@@ -67,7 +67,9 @@ export const Footer: React.FC = () => {
   useEffect(() => {
     const interval = setInterval(() => {
       setDbLatency(prev => {
-        const change = Math.floor(Math.random() * 9) - 4;
+        const randArr = new Uint32Array(1);
+        window.crypto.getRandomValues(randArr);
+        const change = (randArr[0] % 9) - 4;
         const next = prev + change;
         return Math.max(12, Math.min(65, next));
       });

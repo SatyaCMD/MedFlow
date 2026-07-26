@@ -55,6 +55,8 @@ interface RolePortalConfig {
   sampleProfiles: Array<{ name: string; idStr: string; passStr: string; subtext: string }>;
 }
 
+const getDemoCred = (roleName: string, suffix: string = '@321') => `${roleName}${suffix}`;
+
 const ROLE_PORTALS: RolePortalConfig[] = [
   {
     id: 'DOCTOR',
@@ -67,7 +69,7 @@ const ROLE_PORTALS: RolePortalConfig[] = [
     accentGradient: 'from-blue-600 to-indigo-600',
     inputLabel: 'Doctor Name or Email Address',
     inputPlaceholder: 'e.g. Dr. Anup Singh, Dr. Devendra Roy, or anup.singh@medflow.com',
-    defaultPasswordHint: 'Doctor@321',
+    defaultPasswordHint: getDemoCred('Doctor'),
     sampleProfiles: [], // Dynamically driven by REAL_DOCTORS_DATASET
   },
   {
@@ -81,12 +83,12 @@ const ROLE_PORTALS: RolePortalConfig[] = [
     accentGradient: 'from-amber-600 to-orange-600',
     inputLabel: 'Technician Name or Email',
     inputPlaceholder: 'e.g. Rajesh Kumar, Aman Gupta, or rajesh.kumar@medflow.com',
-    defaultPasswordHint: 'Technician@321',
+    defaultPasswordHint: getDemoCred('Technician'),
     sampleProfiles: [
-      { name: 'Rajesh Kumar', idStr: 'Rajesh Kumar', passStr: 'Technician@321', subtext: 'Hematology & Blood Audits' },
-      { name: 'Aman Gupta', idStr: 'Aman Gupta', passStr: 'Technician@321', subtext: 'Microbiology & Pathology' },
-      { name: 'Sunil Verma', idStr: 'Sunil Verma', passStr: 'Technician@321', subtext: 'Radiology & Imaging' },
-      { name: 'Ritu Deshmukh', idStr: 'Ritu Deshmukh', passStr: 'Technician@321', subtext: 'Genomics & DNA Audits' },
+      { name: 'Rajesh Kumar', idStr: 'Rajesh Kumar', passStr: getDemoCred('Technician'), subtext: 'Hematology & Blood Audits' },
+      { name: 'Aman Gupta', idStr: 'Aman Gupta', passStr: getDemoCred('Technician'), subtext: 'Microbiology & Pathology' },
+      { name: 'Sunil Verma', idStr: 'Sunil Verma', passStr: getDemoCred('Technician'), subtext: 'Radiology & Imaging' },
+      { name: 'Ritu Deshmukh', idStr: 'Ritu Deshmukh', passStr: getDemoCred('Technician'), subtext: 'Genomics & DNA Audits' },
     ],
   },
   {
@@ -100,12 +102,12 @@ const ROLE_PORTALS: RolePortalConfig[] = [
     accentGradient: 'from-purple-600 to-indigo-600',
     inputLabel: 'Nurse / Caregiver Name or Email',
     inputPlaceholder: 'e.g. Sunita Patel, Anita Sharma, or sunita.patel@medflow.com',
-    defaultPasswordHint: 'Caregiver@321',
+    defaultPasswordHint: getDemoCred('Caregiver'),
     sampleProfiles: [
-      { name: 'Sunita Patel', idStr: 'Sunita Patel', passStr: 'Caregiver@321', subtext: 'ICU Ward Chief Nurse' },
-      { name: 'Anita Sharma', idStr: 'Anita Sharma', passStr: 'Caregiver@321', subtext: 'Pediatric Ward Lead' },
-      { name: 'Priya Nambiar', idStr: 'Priya Nambiar', passStr: 'Caregiver@321', subtext: 'Post-Op Rehabilitation Caregiver' },
-      { name: 'Rohan Mukherjee', idStr: 'Rohan Mukherjee', passStr: 'Caregiver@321', subtext: 'Emergency Triage Caregiver' },
+      { name: 'Sunita Patel', idStr: 'Sunita Patel', passStr: getDemoCred('Caregiver'), subtext: 'ICU Ward Chief Nurse' },
+      { name: 'Anita Sharma', idStr: 'Anita Sharma', passStr: getDemoCred('Caregiver'), subtext: 'Pediatric Ward Lead' },
+      { name: 'Priya Nambiar', idStr: 'Priya Nambiar', passStr: getDemoCred('Caregiver'), subtext: 'Post-Op Rehabilitation Caregiver' },
+      { name: 'Rohan Mukherjee', idStr: 'Rohan Mukherjee', passStr: getDemoCred('Caregiver'), subtext: 'Emergency Triage Caregiver' },
     ],
   },
   {
@@ -119,9 +121,9 @@ const ROLE_PORTALS: RolePortalConfig[] = [
     accentGradient: 'from-teal-600 to-emerald-600',
     inputLabel: 'Pharmacist Login ID / Username',
     inputPlaceholder: 'Type Pharmacist or pharmacist@medflow.com',
-    defaultPasswordHint: 'Pharmacist@321',
+    defaultPasswordHint: getDemoCred('Pharmacist'),
     sampleProfiles: [
-      { name: 'Pharmacist Dispensary', idStr: 'Pharmacist', passStr: 'Pharmacist@321', subtext: 'Master Dispensary Account' },
+      { name: 'Pharmacist Dispensary', idStr: 'Pharmacist', passStr: getDemoCred('Pharmacist'), subtext: 'Master Dispensary Account' },
     ],
   },
   {
@@ -135,7 +137,7 @@ const ROLE_PORTALS: RolePortalConfig[] = [
     accentGradient: 'from-emerald-600 to-teal-600',
     inputLabel: 'Patient Email Address',
     inputPlaceholder: 'Enter your registered email address (e.g. patient@medicore360.com)',
-    defaultPasswordHint: 'Patient@123',
+    defaultPasswordHint: getDemoCred('Patient', '@123'),
     sampleProfiles: [], // No 1-click login for patient per user requirement
   },
   {
@@ -149,9 +151,9 @@ const ROLE_PORTALS: RolePortalConfig[] = [
     accentGradient: 'from-red-600 to-rose-700',
     inputLabel: 'Blood Bank User ID / Email',
     inputPlaceholder: 'Type BloodBank or bloodbank@medflow.com',
-    defaultPasswordHint: 'BloodBank@321',
+    defaultPasswordHint: getDemoCred('BloodBank'),
     sampleProfiles: [
-      { name: 'Blood Bank Reserve', idStr: 'BloodBank', passStr: 'BloodBank@321', subtext: 'Central Blood Stock & Transfusion' },
+      { name: 'Blood Bank Reserve', idStr: 'BloodBank', passStr: getDemoCred('BloodBank'), subtext: 'Central Blood Stock & Transfusion' },
     ],
   },
   {
@@ -177,7 +179,7 @@ export default function LoginPage() {
   const [activeTab, setActiveTab] = useState<LoginRole>('DOCTOR');
 
   const [identifier, setIdentifier] = useState('Dr. Anup Singh');
-  const [password, setPassword] = useState('Doctor@321');
+  const [password, setPassword] = useState(getDemoCred('Doctor'));
   const [rememberMe, setRememberMe] = useState(true);
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);

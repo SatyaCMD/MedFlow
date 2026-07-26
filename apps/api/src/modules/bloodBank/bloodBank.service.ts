@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import crypto from 'crypto';
 import { BloodStock, BloodExchangeRecord, BloodGroup } from './bloodBank.model.js';
 import { AppError } from '../../middleware/errorHandler.js';
 
@@ -12,7 +13,7 @@ export class BloodBankService {
       const initialSeed = BLOOD_GROUPS.map((bg) => ({
         hospitalId,
         bloodGroup: bg,
-        unitsAvailable: Math.floor(Math.random() * 20) + 15,
+        unitsAvailable: crypto.randomInt(15, 35),
         lastUpdated: new Date(),
       }));
       await BloodStock.insertMany(initialSeed);

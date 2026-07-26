@@ -227,7 +227,7 @@ export class AuthService {
 
     // Generate OTP and temporary token
     const tempToken = uuidv4();
-    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpCode = crypto.randomInt(100000, 1000000).toString();
 
     // Save active OTP in Redis for 5 minutes
     await redis.set(
@@ -277,7 +277,7 @@ export class AuthService {
       return { success: true, message: 'If registered, an OTP code has been sent to your email.' };
     }
 
-    const otpCode = Math.floor(100000 + Math.random() * 900000).toString();
+    const otpCode = crypto.randomInt(100000, 1000000).toString();
     await redis.set(`forgot_otp:${normEmail}`, JSON.stringify({ email: normEmail, code: otpCode }), 'EX', 600); // 10 mins
 
     try {

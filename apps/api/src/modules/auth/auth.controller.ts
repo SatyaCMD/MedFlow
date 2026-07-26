@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars, @typescript-eslint/no-non-null-assertion */
 import { Request, Response, NextFunction } from 'express';
 import { AuthService } from './auth.service.js';
+import { logger } from '../../lib/logger.js';
 
 export class AuthController {
   private service = new AuthService();
@@ -150,7 +151,7 @@ export class AuthController {
         await this.service.logout(req.user.userId, req.user.sessionId);
       }
     } catch (err) {
-      req.log?.warn?.({ err }, 'Session invalidation notice during logout');
+      logger.warn({ err }, 'Session invalidation notice during logout');
     } finally {
       res.clearCookie('refreshToken');
       res.status(200).json({ success: true, data: null, message: 'Logged out successfully' });

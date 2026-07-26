@@ -171,6 +171,8 @@ export const AmbulanceTrackerModal: React.FC<AmbulanceTrackerModalProps> = ({
         await new Promise((resolve) => {
           const script = document.createElement('script');
           script.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+          script.integrity = 'sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=';
+          script.crossOrigin = 'anonymous';
           script.onload = resolve;
           document.body.appendChild(script);
         });
@@ -318,7 +320,9 @@ export const AmbulanceTrackerModal: React.FC<AmbulanceTrackerModalProps> = ({
         const next = Math.min(100, prev + 1.2);
         const remDistance = parseFloat((1.8 * (1 - next / 100)).toFixed(1));
         setDistanceKm(remDistance > 0 ? remDistance : 0.1);
-        setVehicleSpeed(Math.floor(42 + Math.random() * 18));
+        const randBuf = new Uint32Array(1);
+        window.crypto.getRandomValues(randBuf);
+        setVehicleSpeed(Math.floor(42 + (randBuf[0] % 18)));
         return next;
       });
     }, 1000);
@@ -342,7 +346,9 @@ export const AmbulanceTrackerModal: React.FC<AmbulanceTrackerModalProps> = ({
     }
 
     setStep('DISPATCHING');
-    const randomDriverIndex = Math.floor(Math.random() * DRIVER_DATASET.length);
+    const driverArray = new Uint32Array(1);
+    window.crypto.getRandomValues(driverArray);
+    const randomDriverIndex = driverArray[0] % DRIVER_DATASET.length;
     const selected = DRIVER_DATASET[randomDriverIndex];
     setAssignedDriver(selected);
 
