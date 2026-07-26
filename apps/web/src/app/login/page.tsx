@@ -57,6 +57,14 @@ interface RolePortalConfig {
 
 const getDemoCred = (roleName: string, suffix: string = '@321') => `${roleName}${suffix}`;
 
+const createProfileList = (roleKey: string, profiles: Array<[string, string]>) =>
+  profiles.map(([name, subtext]) => ({
+    name,
+    idStr: name,
+    passStr: getDemoCred(roleKey),
+    subtext,
+  }));
+
 const ROLE_PORTALS: RolePortalConfig[] = [
   {
     id: 'DOCTOR',
@@ -84,12 +92,12 @@ const ROLE_PORTALS: RolePortalConfig[] = [
     inputLabel: 'Technician Name or Email',
     inputPlaceholder: 'e.g. Rajesh Kumar, Aman Gupta, or rajesh.kumar@medflow.com',
     defaultPasswordHint: getDemoCred('Technician'),
-    sampleProfiles: [
-      { name: 'Rajesh Kumar', idStr: 'Rajesh Kumar', passStr: getDemoCred('Technician'), subtext: 'Hematology & Blood Audits' },
-      { name: 'Aman Gupta', idStr: 'Aman Gupta', passStr: getDemoCred('Technician'), subtext: 'Microbiology & Pathology' },
-      { name: 'Sunil Verma', idStr: 'Sunil Verma', passStr: getDemoCred('Technician'), subtext: 'Radiology & Imaging' },
-      { name: 'Ritu Deshmukh', idStr: 'Ritu Deshmukh', passStr: getDemoCred('Technician'), subtext: 'Genomics & DNA Audits' },
-    ],
+    sampleProfiles: createProfileList('Technician', [
+      ['Rajesh Kumar', 'Hematology & Blood Audits'],
+      ['Aman Gupta', 'Microbiology & Pathology'],
+      ['Sunil Verma', 'Radiology & Imaging'],
+      ['Ritu Deshmukh', 'Genomics & DNA Audits'],
+    ]),
   },
   {
     id: 'NURSE',
@@ -103,12 +111,12 @@ const ROLE_PORTALS: RolePortalConfig[] = [
     inputLabel: 'Nurse / Caregiver Name or Email',
     inputPlaceholder: 'e.g. Sunita Patel, Anita Sharma, or sunita.patel@medflow.com',
     defaultPasswordHint: getDemoCred('Caregiver'),
-    sampleProfiles: [
-      { name: 'Sunita Patel', idStr: 'Sunita Patel', passStr: getDemoCred('Caregiver'), subtext: 'ICU Ward Chief Nurse' },
-      { name: 'Anita Sharma', idStr: 'Anita Sharma', passStr: getDemoCred('Caregiver'), subtext: 'Pediatric Ward Lead' },
-      { name: 'Priya Nambiar', idStr: 'Priya Nambiar', passStr: getDemoCred('Caregiver'), subtext: 'Post-Op Rehabilitation Caregiver' },
-      { name: 'Rohan Mukherjee', idStr: 'Rohan Mukherjee', passStr: getDemoCred('Caregiver'), subtext: 'Emergency Triage Caregiver' },
-    ],
+    sampleProfiles: createProfileList('Caregiver', [
+      ['Sunita Patel', 'ICU Ward Chief Nurse'],
+      ['Anita Sharma', 'Pediatric Ward Lead'],
+      ['Priya Nambiar', 'Post-Op Rehabilitation Caregiver'],
+      ['Rohan Mukherjee', 'Emergency Triage Caregiver'],
+    ]),
   },
   {
     id: 'PHARMACIST',
@@ -122,9 +130,9 @@ const ROLE_PORTALS: RolePortalConfig[] = [
     inputLabel: 'Pharmacist Login ID / Username',
     inputPlaceholder: 'Type Pharmacist or pharmacist@medflow.com',
     defaultPasswordHint: getDemoCred('Pharmacist'),
-    sampleProfiles: [
-      { name: 'Pharmacist Dispensary', idStr: 'Pharmacist', passStr: getDemoCred('Pharmacist'), subtext: 'Master Dispensary Account' },
-    ],
+    sampleProfiles: createProfileList('Pharmacist', [
+      ['Pharmacist Dispensary', 'Master Dispensary Account'],
+    ]),
   },
   {
     id: 'PATIENT',
@@ -152,9 +160,9 @@ const ROLE_PORTALS: RolePortalConfig[] = [
     inputLabel: 'Blood Bank User ID / Email',
     inputPlaceholder: 'Type BloodBank or bloodbank@medflow.com',
     defaultPasswordHint: getDemoCred('BloodBank'),
-    sampleProfiles: [
-      { name: 'Blood Bank Reserve', idStr: 'BloodBank', passStr: getDemoCred('BloodBank'), subtext: 'Central Blood Stock & Transfusion' },
-    ],
+    sampleProfiles: createProfileList('BloodBank', [
+      ['Blood Bank Reserve', 'Central Blood Stock & Transfusion'],
+    ]),
   },
   {
     id: 'SUPER_ADMIN',
