@@ -36,6 +36,7 @@ export class AuthService {
     const seedUsers = [
       { email: 'superadmin54@gmail.com', pass: 'Saisatya@772', firstName: 'Super', lastName: 'Admin', role: ROLES.SUPER_ADMIN, hospitalId: 'HOSP-001', kycStatus: 'VERIFIED' },
       { email: 'pharmacist@medflow.com', pass: 'Pharmacist@321', firstName: 'Pharmacist', lastName: 'Dispensary', role: ROLES.PHARMACIST, hospitalId: 'HOSP-001', kycStatus: 'VERIFIED' },
+      { email: 'bloodbank@medflow.com', pass: 'BloodBank@321', firstName: 'BloodBank', lastName: 'Station', role: (ROLES as any).BLOOD_BANK || 'BLOOD_BANK', hospitalId: 'HOSP-001', kycStatus: 'VERIFIED', department: 'Blood Bank', specialty: 'Transfusion & Blood Reserve' },
       
       // Doctors (Password: Doctor@321)
       { email: 'anup.singh@medflow.com', pass: 'Doctor@321', firstName: 'Anup', lastName: 'Singh', role: ROLES.DOCTOR, hospitalId: 'HOSP-001', kycStatus: 'VERIFIED', department: 'Cardiology', specialty: 'Interventional Cardiology' },
@@ -161,7 +162,7 @@ export class AuthService {
       deletedAt: null,
       $or: [
         { email: normInput },
-        { email: normInput === 'pharmacist' ? 'pharmacist@medflow.com' : normInput },
+        { email: normInput === 'pharmacist' ? 'pharmacist@medflow.com' : normInput === 'bloodbank' ? 'bloodbank@medflow.com' : normInput },
         { firstName: new RegExp(`^${cleanName}$`, 'i') },
         { lastName: new RegExp(`^${cleanName}$`, 'i') },
         {

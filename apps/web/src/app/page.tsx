@@ -38,6 +38,7 @@ import { NurseDashboard } from '../components/dashboards/NurseDashboard';
 import { PharmacistDashboard } from '../components/dashboards/PharmacistDashboard';
 import { PatientDashboard } from '../components/dashboards/PatientDashboard';
 import { LabTechnicianDashboard } from '../components/dashboards/LabTechnicianDashboard';
+import { BloodBankDashboard } from '../components/dashboards/BloodBankDashboard';
 
 export default function Home() {
   const router = useRouter();
@@ -134,6 +135,8 @@ export default function Home() {
           return { label: '❤️ INPATIENT NURSING STATION', bg: 'bg-rose-100 text-rose-800 border-rose-200' };
         case 'PHARMACIST':
           return { label: '💊 DISPENSARY & PHARMACY', bg: 'bg-amber-100 text-amber-800 border-amber-200' };
+        case 'BLOOD_BANK':
+          return { label: '🩸 BLOOD BANK & TRANSFUSION', bg: 'bg-red-100 text-red-800 border-red-200' };
         case 'PATIENT':
         default:
           return { label: '👤 PATIENT PERSONAL PORTAL', bg: 'bg-emerald-100 text-emerald-800 border-emerald-200' };
@@ -177,6 +180,8 @@ export default function Home() {
             <PharmacistDashboard />
           ) : role === 'LAB_TECHNICIAN' ? (
             <LabTechnicianDashboard />
+          ) : role === 'BLOOD_BANK' ? (
+            <BloodBankDashboard />
           ) : (
             <PatientDashboard />
           )}

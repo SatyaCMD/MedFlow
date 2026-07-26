@@ -122,6 +122,7 @@ export const TelemedicineConsultationModal: React.FC<TelemedicineConsultationMod
           videoRef.current.srcObject = stream;
         }
       } catch (err: any) {
+        // eslint-disable-next-line no-console
         console.warn('Webcam permission note:', err);
         setCameraError('Browser webcam permission pending or virtual camera active.');
       }

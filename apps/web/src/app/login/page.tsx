@@ -30,14 +30,15 @@ import {
   Check,
   X,
   ChevronRight,
-  ChevronLeft
+  ChevronLeft,
+  Droplets
 } from 'lucide-react';
 import { api } from '../../lib/axios';
 import { Logo } from '../../components/shared/Logo';
 import { AuthSidebar } from '../../components/shared/AuthSidebar';
 import { REAL_DOCTORS_DATASET, DoctorProfile } from '../../data/medicalCatalog';
 
-type LoginRole = 'DOCTOR' | 'LAB_TECHNICIAN' | 'NURSE' | 'PHARMACIST' | 'PATIENT' | 'SUPER_ADMIN';
+type LoginRole = 'DOCTOR' | 'LAB_TECHNICIAN' | 'NURSE' | 'PHARMACIST' | 'PATIENT' | 'BLOOD_BANK' | 'SUPER_ADMIN';
 
 interface RolePortalConfig {
   id: LoginRole;
@@ -132,6 +133,21 @@ const ROLE_PORTALS: RolePortalConfig[] = [
     sampleProfiles: [], // No 1-click login for patient per user requirement
   },
   {
+    id: 'BLOOD_BANK',
+    title: 'Blood Bank & Transfusion Command',
+    subtitle: 'Monitor blood reserves, donor registries, blood matching & emergency supply',
+    badge: 'Blood Reserve Workstation',
+    badgeStyle: 'bg-red-100 text-red-700 border-red-200',
+    icon: Droplets,
+    accentGradient: 'from-red-600 to-rose-700',
+    inputLabel: 'Blood Bank User ID / Email',
+    inputPlaceholder: 'Type BloodBank or bloodbank@medflow.com',
+    defaultPasswordHint: 'BloodBank@321',
+    sampleProfiles: [
+      { name: 'Blood Bank Reserve', idStr: 'BloodBank', passStr: 'BloodBank@321', subtext: 'Central Blood Stock & Transfusion' },
+    ],
+  },
+  {
     id: 'SUPER_ADMIN',
     title: 'Super Admin Command Center',
     subtitle: 'System-wide multi-tenant configuration, security audits, and tenant control',
@@ -141,7 +157,7 @@ const ROLE_PORTALS: RolePortalConfig[] = [
     accentGradient: 'from-slate-900 to-rose-900',
     inputLabel: 'Super Admin Email Address',
     inputPlaceholder: 'superadmin54@gmail.com',
-    defaultPasswordHint: 'Saisatya@772',
+    defaultPasswordHint: '',
     sampleProfiles: [
       { name: 'Super Admin Command', idStr: 'superadmin54@gmail.com', passStr: 'Saisatya@772', subtext: 'Full Enterprise Privileges' },
     ],
@@ -287,7 +303,7 @@ export default function LoginPage() {
             <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 mb-2">
               Select Workstation Portal View
             </label>
-            <div className="grid grid-cols-3 gap-1.5 p-1.5 bg-slate-100 rounded-2xl border border-slate-200/80">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 p-1.5 bg-slate-100 rounded-2xl border border-slate-200/80">
               {ROLE_PORTALS.map((portal) => {
                 const isActive = activeTab === portal.id;
                 const IconComp = portal.icon;
@@ -561,7 +577,7 @@ export default function LoginPage() {
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
               </div>
-              {activeTab !== 'PATIENT' && (
+              {activeTab !== 'PATIENT' && activeTab !== 'SUPER_ADMIN' && activePortal.defaultPasswordHint && (
                 <p className="text-[10px] text-slate-500 font-semibold mt-1 flex items-center gap-1">
                   <Lock className="w-3 h-3 text-slate-400" />
                   Default Preset Password: <strong className="text-slate-800 font-mono">{activePortal.defaultPasswordHint}</strong>
@@ -818,7 +834,7 @@ export default function LoginPage() {
                 <p>Lab Tech: <strong className="text-amber-600">Technician@321</strong></p>
                 <p>Caregiver: <strong className="text-purple-600">Caregiver@321</strong></p>
                 <p>Pharmacist: <strong className="text-teal-600">Pharmacist@321</strong></p>
-                <p>Super Admin: <strong className="text-rose-600">Saisatya@772</strong></p>
+                <p>Blood Bank: <strong className="text-red-600">BloodBank@321</strong></p>
               </div>
               <button
                 onClick={() => setShowForgotModal(false)}

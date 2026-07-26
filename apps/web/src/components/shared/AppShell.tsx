@@ -213,6 +213,19 @@ export const AppShell: React.FC<AppShellProps> = ({ children, userRole = 'DOCTOR
             { label: 'Pharmacy Settings', href: '/settings', icon: Settings },
           ],
         };
+      case 'BLOOD_BANK':
+        return {
+          badge: 'BLOOD BANK CONTROL NAV',
+          badgeBg: 'bg-red-100 text-red-800 border-red-300',
+          items: [
+            { label: 'Blood Reserve Inventory', href: '/', icon: Droplet, onClick: () => setIsBloodBankOpen(true) },
+            { label: 'Donor Directory', href: '/patients', icon: Users },
+            { label: 'Transfusion Orders', href: '/appointments', icon: Calendar },
+            { label: 'Cross-Match Reports', href: '/emr', icon: FileText },
+            { label: 'Emergency Billing', href: '/billing', icon: CreditCard },
+            { label: 'Blood Bank Settings', href: '/settings', icon: Settings },
+          ],
+        };
       case 'SUPER_ADMIN':
       case 'HOSPITAL_ADMIN':
       default:
