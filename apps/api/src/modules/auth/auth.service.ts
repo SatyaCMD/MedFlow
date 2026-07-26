@@ -1,6 +1,6 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars, @typescript-eslint/no-non-null-assertion */
 import argon2 from 'argon2';
-import crypto from 'crypto';
+import crypto from 'node:crypto';
 import { v4 as uuidv4 } from 'uuid';
 import { User, IUser } from './auth.model.js';
 import { signAccessToken, signRefreshToken, verifyRefreshToken, TokenPayload } from '../../lib/jwt.js';

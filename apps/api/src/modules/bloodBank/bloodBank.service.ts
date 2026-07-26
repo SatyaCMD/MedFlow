@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import crypto from 'crypto';
+import crypto from 'node:crypto';
 import { BloodStock, BloodExchangeRecord, BloodGroup } from './bloodBank.model.js';
 import { AppError } from '../../middleware/errorHandler.js';
 

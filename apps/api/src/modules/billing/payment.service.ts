@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars, @typescript-eslint/no-non-null-assertion */
-import crypto from 'crypto';
+import crypto from 'node:crypto';
 import { logger } from '../../lib/logger.js';
 import { AppError } from '../../middleware/errorHandler.js';
 
