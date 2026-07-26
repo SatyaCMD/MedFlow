@@ -318,16 +318,16 @@ export default function LoginPage() {
           className="w-full max-w-lg bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-8 shadow-xl relative z-10 space-y-5 my-auto"
         >
           {/* Mobile Brand Title */}
-          <div className="flex flex-col items-center mb-2 lg:hidden" onClick={() => router.push('/')}>
+          <button type="button" className="flex flex-col items-center mb-2 lg:hidden w-full focus:outline-none" onClick={() => router.push('/')}>
             <Logo size={44} className="mb-1" />
             <h2 className="text-xl font-black text-slate-900 tracking-wider">MediCore 360</h2>
-          </div>
+          </button>
 
           {/* DEDICATED ROLE PORTAL TAB SELECTOR BAR */}
           <div>
-            <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 mb-2">
+            <span className="block text-[11px] font-black uppercase tracking-wider text-slate-500 mb-2">
               Select Workstation Portal View
-            </label>
+            </span>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 p-1.5 bg-slate-100/90 rounded-2xl border border-slate-200/80">
               {ROLE_PORTALS.map((portal) => {
                 const isActive = activeTab === portal.id;
@@ -550,7 +550,7 @@ export default function LoginPage() {
           <form onSubmit={handleSubmit} className="space-y-4">
             {/* Dynamic Identifier Input */}
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+              <label htmlFor="loginIdentifierInput" className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
                 {activePortal.inputLabel} <span className="text-rose-500">*</span>
               </label>
               <div className="relative">
@@ -558,6 +558,7 @@ export default function LoginPage() {
                   <User className="w-4 h-4 text-slate-400" />
                 </span>
                 <input
+                  id="loginIdentifierInput"
                   type="text"
                   required
                   value={identifier}
@@ -571,7 +572,7 @@ export default function LoginPage() {
             {/* Password Field */}
             <div>
               <div className="flex items-center justify-between mb-1.5">
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-600">
+                <label htmlFor="loginPasswordInput" className="block text-xs font-bold uppercase tracking-wider text-slate-600">
                   Password <span className="text-rose-500">*</span>
                 </label>
                 <button
@@ -587,6 +588,7 @@ export default function LoginPage() {
                   <Lock className="w-4 h-4" />
                 </span>
                 <input
+                  id="loginPasswordInput"
                   type={showPassword ? 'text' : 'password'}
                   required
                   value={password}
@@ -772,13 +774,14 @@ export default function LoginPage() {
                 {filteredDoctors.map((doc) => {
                   const isSelected = identifier.toLowerCase() === doc.name.toLowerCase() || identifier.toLowerCase() === doc.name.replace('Dr. ', '').toLowerCase();
                   return (
-                    <div
+                    <button
+                      type="button"
                       key={doc.id}
                       onClick={() => {
                         handleSelectDoctor(doc);
                         setShowAllDoctorsModal(false);
                       }}
-                      className={`p-3 rounded-2xl border transition-all cursor-pointer flex items-start gap-3 ${
+                      className={`p-3 rounded-2xl border transition-all cursor-pointer flex items-start gap-3 w-full text-left ${
                         isSelected
                           ? 'bg-blue-50/90 border-blue-600 ring-2 ring-blue-500/20'
                           : 'bg-white hover:bg-slate-50 border-slate-200 hover:border-blue-300'
@@ -801,7 +804,7 @@ export default function LoginPage() {
                           <span className="truncate">{doc.hospitalUnit}</span>
                         </div>
                       </div>
-                    </div>
+                    </button>
                   );
                 })}
 

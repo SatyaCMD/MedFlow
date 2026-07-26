@@ -150,8 +150,8 @@ export const AmbulanceTrackerModal: React.FC<AmbulanceTrackerModalProps> = ({
         );
         const data = await res.json();
         if (data && data[0] && isMounted) {
-          const lat = parseFloat(data[0].lat);
-          const lon = parseFloat(data[0].lon);
+          const lat = Number.parseFloat(data[0].lat);
+          const lon = Number.parseFloat(data[0].lon);
           setCoords([lat, lon]);
         }
       } catch (err) {
@@ -318,7 +318,7 @@ export const AmbulanceTrackerModal: React.FC<AmbulanceTrackerModalProps> = ({
 
       setProgressPercent((prev) => {
         const next = Math.min(100, prev + 1.2);
-        const remDistance = parseFloat((1.8 * (1 - next / 100)).toFixed(1));
+        const remDistance = Number.parseFloat((1.8 * (1 - next / 100)).toFixed(1));
         setDistanceKm(remDistance > 0 ? remDistance : 0.1);
         const randBuf = new Uint32Array(1);
         window.crypto.getRandomValues(randBuf);
@@ -445,9 +445,9 @@ export const AmbulanceTrackerModal: React.FC<AmbulanceTrackerModalProps> = ({
 
             {/* Ambulance Unit Selection */}
             <div>
-              <label className="block text-xs font-extrabold uppercase tracking-wider text-slate-700 mb-2">
+              <span className="block text-xs font-extrabold uppercase tracking-wider text-slate-700 mb-2">
                 Select Ambulance Response Unit
-              </label>
+              </span>
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-2.5">
                 <button
                   type="button"

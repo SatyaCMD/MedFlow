@@ -9,8 +9,8 @@ export class DemoController {
     try {
       const hospitalId = req.user!.hospitalId;
       
-      const page = req.query.page ? parseInt(req.query.page as string, 10) : undefined;
-      const limit = req.query.limit ? parseInt(req.query.limit as string, 10) : undefined;
+      const page = req.query.page ? Number.parseInt(req.query.page as string, 10) : undefined;
+      const limit = req.query.limit ? Number.parseInt(req.query.limit as string, 10) : undefined;
       const sortBy = req.query.sortBy as string | undefined;
       const sortOrder = req.query.sortOrder as 'asc' | 'desc' | undefined;
 

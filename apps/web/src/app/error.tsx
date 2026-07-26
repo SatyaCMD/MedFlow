@@ -4,7 +4,7 @@ import React, { useEffect } from 'react';
 import { RefreshCw, AlertTriangle } from 'lucide-react';
 import { Logo } from '../components/shared/Logo';
 
-export default function Error({
+export default function GlobalErrorPage({
   error,
   reset,
 }: {

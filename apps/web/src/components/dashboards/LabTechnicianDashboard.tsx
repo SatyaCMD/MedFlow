@@ -308,10 +308,11 @@ export const LabTechnicianDashboard: React.FC = () => {
 
               <form onSubmit={handleReportSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
+                  <label htmlFor="labFindings" className="block text-xs font-bold uppercase text-slate-700 mb-1">
                     LAB FINDINGS & TEST VALUES
                   </label>
                   <textarea
+                    id="labFindings"
                     required
                     rows={3}
                     value={findings}
@@ -322,10 +323,11 @@ export const LabTechnicianDashboard: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-bold uppercase text-slate-700 mb-1">
+                  <label htmlFor="pathologistNotes" className="block text-xs font-bold uppercase text-slate-700 mb-1">
                     PATHOLOGIST CLINICAL IMPRESSION & REMARKS
                   </label>
                   <input
+                    id="pathologistNotes"
                     type="text"
                     required
                     value={notes}

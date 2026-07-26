@@ -362,10 +362,11 @@ export const AmbulanceManagementModule: React.FC = () => {
 
               <form onSubmit={handleRegisterAmbulanceSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-extrabold uppercase tracking-wider text-slate-700 mb-1">
+                  <label htmlFor="newPlate" className="block text-xs font-extrabold uppercase tracking-wider text-slate-700 mb-1">
                     Vehicle Registration Plate
                   </label>
                   <input
+                    id="newPlate"
                     type="text"
                     required
                     placeholder="e.g. MH-02-EQ-8812"
@@ -377,10 +378,11 @@ export const AmbulanceManagementModule: React.FC = () => {
 
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="block text-xs font-extrabold uppercase tracking-wider text-slate-700 mb-1">
+                    <label htmlFor="newUnitType" className="block text-xs font-extrabold uppercase tracking-wider text-slate-700 mb-1">
                       Unit Category
                     </label>
                     <select
+                      id="newUnitType"
                       value={newUnitType}
                       onChange={(e: any) => setNewUnitType(e.target.value)}
                       className="w-full px-3 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900"
@@ -391,10 +393,11 @@ export const AmbulanceManagementModule: React.FC = () => {
                     </select>
                   </div>
                   <div>
-                    <label className="block text-xs font-extrabold uppercase tracking-wider text-slate-700 mb-1">
+                    <label htmlFor="newModel" className="block text-xs font-extrabold uppercase tracking-wider text-slate-700 mb-1">
                       Vehicle Model
                     </label>
                     <input
+                      id="newModel"
                       type="text"
                       required
                       placeholder="e.g. Force Traveler"
@@ -406,10 +409,11 @@ export const AmbulanceManagementModule: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-extrabold uppercase tracking-wider text-slate-700 mb-1">
+                  <label htmlFor="newDriverName" className="block text-xs font-extrabold uppercase tracking-wider text-slate-700 mb-1">
                     Assigned Certified Driver Name
                   </label>
                   <input
+                    id="newDriverName"
                     type="text"
                     required
                     placeholder="e.g. Ramesh Varma"
@@ -420,10 +424,11 @@ export const AmbulanceManagementModule: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-extrabold uppercase tracking-wider text-slate-700 mb-1">
+                  <label htmlFor="newDriverPhone" className="block text-xs font-extrabold uppercase tracking-wider text-slate-700 mb-1">
                     Driver Phone Contact
                   </label>
                   <input
+                    id="newDriverPhone"
                     type="tel"
                     placeholder="+91 98765 00112"
                     value={newDriverPhone}
@@ -480,10 +485,11 @@ export const AmbulanceManagementModule: React.FC = () => {
 
               <form onSubmit={handleLogMaintenanceSubmit} className="space-y-4">
                 <div>
-                  <label className="block text-xs font-extrabold uppercase tracking-wider text-slate-700 mb-1">
+                  <label htmlFor="maintPlate" className="block text-xs font-extrabold uppercase tracking-wider text-slate-700 mb-1">
                     Select Vehicle Plate
                   </label>
                   <select
+                    id="maintPlate"
                     value={maintPlate}
                     onChange={(e) => setMaintPlate(e.target.value)}
                     className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900"
@@ -497,10 +503,11 @@ export const AmbulanceManagementModule: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-extrabold uppercase tracking-wider text-slate-700 mb-1">
+                  <label htmlFor="maintDesc" className="block text-xs font-extrabold uppercase tracking-wider text-slate-700 mb-1">
                     Service Description
                   </label>
                   <input
+                    id="maintDesc"
                     type="text"
                     required
                     placeholder="e.g. Brake Pad Replacement & Oxygen Tank Inspection"
@@ -511,10 +518,11 @@ export const AmbulanceManagementModule: React.FC = () => {
                 </div>
 
                 <div>
-                  <label className="block text-xs font-extrabold uppercase tracking-wider text-slate-700 mb-1">
+                  <label htmlFor="maintCost" className="block text-xs font-extrabold uppercase tracking-wider text-slate-700 mb-1">
                     Maintenance Cost (₹ INR)
                   </label>
                   <input
+                    id="maintCost"
                     type="text"
                     required
                     placeholder="e.g. ₹18,500"
@@ -551,7 +559,7 @@ export const AmbulanceManagementModule: React.FC = () => {
           <div className="flex items-center gap-2">
             <span className="px-3 py-1 bg-rose-500/20 text-rose-300 font-extrabold text-xs rounded-full border border-rose-400/30 flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-rose-400 animate-ping" />
-              Emergency Response Dispatch Active
+              <span>Emergency Response Dispatch Active</span>
             </span>
             <span className="text-xs font-semibold text-slate-400">• GPS Server: Redis 2ms Cache</span>
           </div>

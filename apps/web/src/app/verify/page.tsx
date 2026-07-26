@@ -208,10 +208,10 @@ function VerifyPageContent() {
           </button>
 
           {/* Mobile Brand Header */}
-          <div className="flex flex-col items-center mb-4 lg:hidden" onClick={() => router.push('/')}>
+          <button type="button" className="flex flex-col items-center mb-4 lg:hidden w-full focus:outline-none cursor-pointer" onClick={() => router.push('/')}>
             <Logo size={48} className="mb-2" />
             <h2 className="text-xl font-black text-slate-900 tracking-wider">MediCore 360</h2>
-          </div>
+          </button>
 
           <div>
             <div className="flex items-center justify-between">
@@ -278,9 +278,9 @@ function VerifyPageContent() {
           <form onSubmit={handleSubmit} className="space-y-6">
             {/* 6 Individual PIN Digit Input Boxes */}
             <div>
-              <label className="block text-xs font-black uppercase tracking-wider text-slate-700 mb-3 text-center">
+              <span className="block text-xs font-black uppercase tracking-wider text-slate-700 mb-3 text-center">
                 Enter 6-Digit Code Below
-              </label>
+              </span>
               <div className="flex justify-between items-center gap-2">
                 {pin.map((digit, index) => (
                   <input

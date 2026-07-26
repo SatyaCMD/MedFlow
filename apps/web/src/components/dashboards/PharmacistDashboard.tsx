@@ -69,10 +69,10 @@ export const PharmacistDashboard: React.FC = () => {
       name: newItemName,
       category: newItemCategory === 'MEDICINE' ? 'Medicine' : 'Hospital Consumable',
       batch: newItemBatch,
-      stock: parseInt(newItemStock, 10),
+      stock: Number.parseInt(newItemStock, 10),
       unit: 'Units',
       expiry: newItemExpiry,
-      status: parseInt(newItemStock, 10) < 50 ? 'Low Stock Alert (<50)' : 'In Stock',
+      status: Number.parseInt(newItemStock, 10) < 50 ? 'Low Stock Alert (<50)' : 'In Stock',
     };
     setInventory([newItem, ...inventory]);
     setIsAddItemModalOpen(false);

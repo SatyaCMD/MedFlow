@@ -43,8 +43,9 @@ export default function SettingsPage() {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-700">Hospital Facility Name</label>
+                <label htmlFor="hospitalNameInput" className="text-xs font-bold text-slate-700">Hospital Facility Name</label>
                 <input
+                  id="hospitalNameInput"
                   type="text"
                   value={hospitalName}
                   onChange={(e) => setHospitalName(e.target.value)}
@@ -53,8 +54,9 @@ export default function SettingsPage() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-700">Tenant UUID Domain Scope</label>
+                <label htmlFor="tenantIdInput" className="text-xs font-bold text-slate-700">Tenant UUID Domain Scope</label>
                 <input
+                  id="tenantIdInput"
                   type="text"
                   value={tenantId}
                   disabled
@@ -90,8 +92,9 @@ export default function SettingsPage() {
               </div>
 
               <div className="space-y-1.5">
-                <label className="text-xs font-bold text-slate-700">Session Inactivity Timeout (Minutes)</label>
+                <label htmlFor="sessionTimeout" className="text-xs font-bold text-slate-700">Session Inactivity Timeout (Minutes)</label>
                 <select
+                  id="sessionTimeout"
                   value={sessionTimeout}
                   onChange={(e) => setSessionTimeout(e.target.value)}
                   className="w-full px-3.5 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500"

@@ -376,7 +376,7 @@ export default function Home() {
                     <span>LIVE SYSTEM MONITOR</span>
                     <span className="text-emerald-400 flex items-center gap-1">
                       <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-                      CONNECTED
+                      {' CONNECTED'}
                     </span>
                   </div>
                   <p className="text-blue-400">[INFO] MongoDB cluster replica set health OK (0ms delay)</p>

@@ -152,10 +152,11 @@ export const BloodBankModal: React.FC<BloodBankModalProps> = ({ isOpen, onClose 
         <form onSubmit={handleExchange} className="space-y-4 pt-2">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+              <label htmlFor="patientRecipientName" className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
                 Patient Recipient Name
               </label>
               <input
+                id="patientRecipientName"
                 type="text"
                 required
                 value={patientName}
@@ -166,10 +167,11 @@ export const BloodBankModal: React.FC<BloodBankModalProps> = ({ isOpen, onClose 
             </div>
 
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+              <label htmlFor="relativeDonorName" className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
                 Relative Donor Name
               </label>
               <input
+                id="relativeDonorName"
                 type="text"
                 required
                 value={relativeDonorName}

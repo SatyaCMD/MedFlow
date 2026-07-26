@@ -200,10 +200,10 @@ export default function SignupPage() {
           className="w-full max-w-lg bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-8 shadow-xl relative z-10 space-y-5 my-auto"
         >
           {/* Mobile Brand Header */}
-          <div className="flex flex-col items-center mb-3 lg:hidden" onClick={() => router.push('/')}>
+          <button type="button" className="flex flex-col items-center mb-3 lg:hidden w-full focus:outline-none" onClick={() => router.push('/')}>
             <Logo size={44} className="mb-1" />
             <h2 className="text-xl font-black text-slate-900 tracking-wider">MediCore 360</h2>
-          </div>
+          </button>
 
           {/* Form Header */}
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
@@ -227,9 +227,9 @@ export default function SignupPage() {
 
           {/* ROLE SELECTOR GRID (Strictly 4 Allowed Public Roles - No Admin / No Pharmacist) */}
           <div>
-            <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 mb-2">
+            <span className="block text-[11px] font-black uppercase tracking-wider text-slate-500 mb-2">
               Select Registration Scope (Hospital Admin & Pharmacist Restricted)
-            </label>
+            </span>
             <div className="grid grid-cols-2 gap-2">
               {PUBLIC_ROLES.map((r) => {
                 const isSelected = role === r.value;
@@ -286,10 +286,11 @@ export default function SignupPage() {
             {/* First & Last Name */}
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
+                <label htmlFor="signupFirstNameInput" className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
                   First Name <span className="text-rose-500">*</span>
                 </label>
                 <input
+                  id="signupFirstNameInput"
                   type="text"
                   required
                   value={firstName}
@@ -299,10 +300,11 @@ export default function SignupPage() {
                 />
               </div>
               <div>
-                <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
+                <label htmlFor="signupLastNameInput" className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
                   Last Name <span className="text-rose-500">*</span>
                 </label>
                 <input
+                  id="signupLastNameInput"
                   type="text"
                   required
                   value={lastName}
@@ -315,7 +317,7 @@ export default function SignupPage() {
 
             {/* Email Address */}
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
+              <label htmlFor="signupEmailInput" className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
                 Work Email Address <span className="text-rose-500">*</span>
               </label>
               <div className="relative">
@@ -323,6 +325,7 @@ export default function SignupPage() {
                   <Mail className="w-4 h-4" />
                 </span>
                 <input
+                  id="signupEmailInput"
                   type="email"
                   required
                   value={email}
@@ -335,7 +338,7 @@ export default function SignupPage() {
 
             {/* Password */}
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
+              <label htmlFor="signupPasswordInput" className="block text-xs font-bold uppercase tracking-wider text-slate-500 mb-1">
                 Account Password <span className="text-rose-500">*</span>
               </label>
               <div className="relative">
@@ -343,6 +346,7 @@ export default function SignupPage() {
                   <Lock className="w-4 h-4" />
                 </span>
                 <input
+                  id="signupPasswordInput"
                   type={showPassword ? 'text' : 'password'}
                   required
                   value={password}
@@ -392,10 +396,11 @@ export default function SignupPage() {
             {role === 'DOCTOR' && (
               <div className="grid grid-cols-2 gap-3 p-3 bg-blue-50/50 border border-blue-100 rounded-2xl">
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-blue-900 mb-1">
+                  <label htmlFor="signupMedicalLicenseInput" className="block text-[10px] font-bold uppercase tracking-wider text-blue-900 mb-1">
                     Medical Council License #
                   </label>
                   <input
+                    id="signupMedicalLicenseInput"
                     type="text"
                     value={medicalLicense}
                     onChange={(e) => setMedicalLicense(e.target.value)}
@@ -404,10 +409,11 @@ export default function SignupPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-blue-900 mb-1">
+                  <label htmlFor="signupSpecialtySelect" className="block text-[10px] font-bold uppercase tracking-wider text-blue-900 mb-1">
                     Clinical Specialty
                   </label>
                   <select
+                    id="signupSpecialtySelect"
                     value={specialty}
                     onChange={(e) => setSpecialty(e.target.value)}
                     className="w-full px-3 py-1.5 bg-white border border-blue-200 rounded-xl text-xs font-bold text-slate-900 outline-none cursor-pointer"
@@ -426,10 +432,11 @@ export default function SignupPage() {
             {role === 'NURSE' && (
               <div className="grid grid-cols-2 gap-3 p-3 bg-purple-50/50 border border-purple-100 rounded-2xl">
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-purple-900 mb-1">
+                  <label htmlFor="signupNurseLicenseInput" className="block text-[10px] font-bold uppercase tracking-wider text-purple-900 mb-1">
                     Nursing Council Reg #
                   </label>
                   <input
+                    id="signupNurseLicenseInput"
                     type="text"
                     value={medicalLicense}
                     onChange={(e) => setMedicalLicense(e.target.value)}
@@ -438,10 +445,11 @@ export default function SignupPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-purple-900 mb-1">
+                  <label htmlFor="signupAssignedWardSelect" className="block text-[10px] font-bold uppercase tracking-wider text-purple-900 mb-1">
                     Assigned Hospital Ward
                   </label>
                   <select
+                    id="signupAssignedWardSelect"
                     value={assignedWard}
                     onChange={(e) => setAssignedWard(e.target.value)}
                     className="w-full px-3 py-1.5 bg-white border border-purple-200 rounded-xl text-xs font-bold text-slate-900 outline-none cursor-pointer"
@@ -458,10 +466,11 @@ export default function SignupPage() {
             {role === 'LAB_TECHNICIAN' && (
               <div className="grid grid-cols-2 gap-3 p-3 bg-amber-50/50 border border-amber-100 rounded-2xl">
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-amber-900 mb-1">
+                  <label htmlFor="labAccreditation" className="block text-[10px] font-bold uppercase tracking-wider text-amber-900 mb-1">
                     Lab Accreditation License #
                   </label>
                   <input
+                    id="labAccreditation"
                     type="text"
                     value={labAccreditation}
                     onChange={(e) => setLabAccreditation(e.target.value)}
@@ -470,10 +479,11 @@ export default function SignupPage() {
                   />
                 </div>
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-amber-900 mb-1">
+                  <label htmlFor="labSpecialty" className="block text-[10px] font-bold uppercase tracking-wider text-amber-900 mb-1">
                     Lab Specialty
                   </label>
                   <select
+                    id="labSpecialty"
                     value={specialty}
                     onChange={(e) => setSpecialty(e.target.value)}
                     className="w-full px-3 py-1.5 bg-white border border-amber-200 rounded-xl text-xs font-bold text-slate-900 outline-none cursor-pointer"
@@ -490,10 +500,11 @@ export default function SignupPage() {
             {role === 'PATIENT' && (
               <div className="grid grid-cols-2 gap-3 p-3 bg-emerald-50/50 border border-emerald-100 rounded-2xl">
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-emerald-900 mb-1">
+                  <label htmlFor="bloodGroup" className="block text-[10px] font-bold uppercase tracking-wider text-emerald-900 mb-1">
                     Blood Group
                   </label>
                   <select
+                    id="bloodGroup"
                     value={bloodGroup}
                     onChange={(e) => setBloodGroup(e.target.value)}
                     className="w-full px-3 py-1.5 bg-white border border-emerald-200 rounded-xl text-xs font-bold text-slate-900 outline-none cursor-pointer"
@@ -506,10 +517,11 @@ export default function SignupPage() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-[10px] font-bold uppercase tracking-wider text-emerald-900 mb-1">
+                  <label htmlFor="emergencyPhone" className="block text-[10px] font-bold uppercase tracking-wider text-emerald-900 mb-1">
                     Emergency Contact Phone
                   </label>
                   <input
+                    id="emergencyPhone"
                     type="tel"
                     value={emergencyPhone}
                     onChange={(e) => setEmergencyPhone(e.target.value)}

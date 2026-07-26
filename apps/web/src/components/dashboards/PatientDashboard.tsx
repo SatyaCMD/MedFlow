@@ -191,7 +191,7 @@ export const PatientDashboard: React.FC = () => {
           <div className="flex items-center gap-2">
             <span className="px-3 py-1 bg-blue-500/20 text-blue-300 font-extrabold text-xs rounded-full border border-blue-400/30 flex items-center gap-1.5">
               <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
-              Patient Health Portal Active
+              <span>Patient Health Portal Active</span>
             </span>
             <span className="text-xs font-semibold text-slate-400">• ABHA ID: 91-8821-4920</span>
           </div>
@@ -365,7 +365,7 @@ export const PatientDashboard: React.FC = () => {
                   </div>
                   <div>
                     <h3 className="font-black text-base text-slate-900 flex items-center gap-2">
-                      My Medical & Prescription History
+                      <span>My Medical & Prescription History</span>
                       <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-indigo-100 text-indigo-800 border border-indigo-300">
                         1 Year Window (365 Days)
                       </span>
