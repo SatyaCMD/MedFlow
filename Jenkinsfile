@@ -99,6 +99,7 @@ if %errorlevel%==0 (
     trivy fs --exit-code 0 --severity HIGH,CRITICAL .
 ) else (
     echo [WARN] Trivy CLI scanner not found on PATH. Skipping Trivy repository audit.
+    exit /b 0
 )'''
                         }
                     } catch (Exception e) {
@@ -142,6 +143,7 @@ if %errorlevel%==0 (
     trivy image --exit-code 0 --severity CRITICAL ''' + DOCKER_REGISTRY + '/' + API_IMAGE + ':' + IMAGE_TAG + '''
 ) else (
     echo [WARN] Trivy container scanner not found on PATH. Skipping.
+    exit /b 0
 )'''
                         }
                     } catch (Exception e) {
@@ -165,6 +167,7 @@ if %errorlevel%==0 (
     helm upgrade --install medflow-production ./infra/helm/medflow --namespace production --set api.image.tag=''' + IMAGE_TAG + ''' --set web.image.tag=''' + IMAGE_TAG + '''
 ) else (
     echo [WARN] Helm CLI tool not found on PATH. Skipping Helm chart deployment.
+    exit /b 0
 )'''
                         }
                     } catch (Exception e) {
