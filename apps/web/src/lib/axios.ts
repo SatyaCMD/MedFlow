@@ -35,7 +35,14 @@ api.interceptors.request.use(
   (config: InternalAxiosRequestConfig) => {
     const requestId = typeof crypto !== 'undefined' && crypto.randomUUID
       ? crypto.randomUUID()
-      : Math.random().toString(36).substring(2, 15);
+      : (() => {
+          const reqArr = new Uint32Array(1);
+          if (typeof window !== 'undefined' && window.crypto) {
+            window.crypto.getRandomValues(reqArr);
+            return reqArr[0].toString(36);
+          }
+          return 'req_static_id_001';
+        })();
       
     config.headers['x-request-id'] = requestId;
     return config;

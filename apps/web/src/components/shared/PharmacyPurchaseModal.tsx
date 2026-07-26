@@ -82,8 +82,10 @@ export const PharmacyPurchaseModal: React.FC<PharmacyPurchaseModalProps> = ({
 
   const handlePaymentSuccess = (receipt: any) => {
     setIsPaymentOpen(false);
+    const ordArr = new Uint32Array(1);
+    window.crypto.getRandomValues(ordArr);
     const orderData = {
-      orderId: `ORD-RX-${Math.floor(100000 + Math.random() * 900000)}`,
+      orderId: `ORD-RX-${(ordArr[0] % 900000) + 100000}`,
       receipt,
       items: cart,
       subtotal: `₹${subtotal.toFixed(2)}`,

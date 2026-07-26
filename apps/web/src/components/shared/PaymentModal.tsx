@@ -183,7 +183,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
         gstTax: `₹${gstTax}`,
         patientName,
         timestamp,
-        receiptNumber: `REC-${Math.floor(100000 + Math.random() * 900000)}`,
+        receiptNumber: `REC-${(txArr[0] % 900000) + 100000}`,
         userRole,
         hsnCode: '999312 (Healthcare Services)',
         gstin: '27AABCM8819Q1ZM',
