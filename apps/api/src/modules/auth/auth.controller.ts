@@ -149,9 +149,9 @@ export class AuthController {
       if (req.user) {
         await this.service.logout(req.user.userId, req.user.sessionId);
       }
-      res.clearCookie('refreshToken');
-      res.status(200).json({ success: true, data: null, message: 'Logged out successfully' });
-    } catch (_err) {
+    } catch (err) {
+      req.log?.warn?.({ err }, 'Session invalidation notice during logout');
+    } finally {
       res.clearCookie('refreshToken');
       res.status(200).json({ success: true, data: null, message: 'Logged out successfully' });
     }
