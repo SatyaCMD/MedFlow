@@ -91,7 +91,7 @@ pipeline {
                         if (isUnix()) {
                             sh 'trivy fs --exit-code 0 --severity HIGH,CRITICAL .'
                         } else {
-                            bat 'if exist "C:\\Users\\SATYA\\AppData\\Local\\Microsoft\\WinGet\\Links\\trivy.exe" ("C:\\Users\\SATYA\\AppData\\Local\\Microsoft\\WinGet\\Links\\trivy.exe" fs --exit-code 0 --severity HIGH,CRITICAL .) else (trivy fs --exit-code 0 --severity HIGH,CRITICAL .)'
+                            bat 'trivy fs --exit-code 0 --severity HIGH,CRITICAL .'
                         }
                     } catch (Exception e) {
                         echo "[WARN] Trivy repository audit skipped: ${e.message}"
@@ -128,7 +128,8 @@ pipeline {
                             sh "trivy image --exit-code 0 --severity CRITICAL ${DOCKER_REGISTRY}/${API_IMAGE}:${IMAGE_TAG}"
                             sh "trivy image --exit-code 0 --severity CRITICAL ${DOCKER_REGISTRY}/${WEB_IMAGE}:${IMAGE_TAG}"
                         } else {
-                            bat 'if exist "C:\\Users\\SATYA\\AppData\\Local\\Microsoft\\WinGet\\Links\\trivy.exe" ("C:\\Users\\SATYA\\AppData\\Local\\Microsoft\\WinGet\\Links\\trivy.exe" image --exit-code 0 --severity CRITICAL ' + DOCKER_REGISTRY + '/' + API_IMAGE + ':' + IMAGE_TAG + ') else (trivy image --exit-code 0 --severity CRITICAL ' + DOCKER_REGISTRY + '/' + API_IMAGE + ':' + IMAGE_TAG + ')'
+                            bat "trivy image --exit-code 0 --severity CRITICAL ${DOCKER_REGISTRY}/${API_IMAGE}:${IMAGE_TAG}"
+                            bat "trivy image --exit-code 0 --severity CRITICAL ${DOCKER_REGISTRY}/${WEB_IMAGE}:${IMAGE_TAG}"
                         }
                     } catch (Exception e) {
                         echo "[WARN] Trivy container scan skipped: ${e.message}"
@@ -145,7 +146,7 @@ pipeline {
                         if (isUnix()) {
                             sh "helm upgrade --install medflow-production ./infra/helm/medflow --namespace production --set api.image.tag=${IMAGE_TAG} --set web.image.tag=${IMAGE_TAG}"
                         } else {
-                            bat 'if exist "C:\\Users\\SATYA\\AppData\\Local\\Microsoft\\WinGet\\Links\\helm.exe" ("C:\\Users\\SATYA\\AppData\\Local\\Microsoft\\WinGet\\Links\\helm.exe" upgrade --install medflow-production ./infra/helm/medflow --namespace production --set api.image.tag=' + IMAGE_TAG + ' --set web.image.tag=' + IMAGE_TAG + ') else (helm upgrade --install medflow-production ./infra/helm/medflow --namespace production --set api.image.tag=' + IMAGE_TAG + ' --set web.image.tag=' + IMAGE_TAG + ')'
+                            bat "helm upgrade --install medflow-production ./infra/helm/medflow --namespace production --set api.image.tag=${IMAGE_TAG} --set web.image.tag=${IMAGE_TAG}"
                         }
                     } catch (Exception e) {
                         echo "[WARN] Helm deployment skipped: ${e.message}"

@@ -45,3 +45,7 @@ Thumbs.db
 *.tfstate.backup
 *.tfvars
 
+# SonarQube Scanner Temp Directories
+.scannerwork/
+.sonar/
+
