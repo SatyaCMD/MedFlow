@@ -42,6 +42,7 @@ type LoginRole = 'DOCTOR' | 'LAB_TECHNICIAN' | 'NURSE' | 'PHARMACIST' | 'PATIENT
 
 interface RolePortalConfig {
   id: LoginRole;
+  tabLabel: string;
   title: string;
   subtitle: string;
   badge: string;
@@ -57,6 +58,7 @@ interface RolePortalConfig {
 const ROLE_PORTALS: RolePortalConfig[] = [
   {
     id: 'DOCTOR',
+    tabLabel: 'Doctor',
     title: 'Physician / Doctor Workstation',
     subtitle: 'Access patient EMRs, prescription studio, and scheduled OPD queues',
     badge: 'Clinical OPD Workstation',
@@ -70,6 +72,7 @@ const ROLE_PORTALS: RolePortalConfig[] = [
   },
   {
     id: 'LAB_TECHNICIAN',
+    tabLabel: 'Lab Tech',
     title: 'Lab & Diagnostics Portal',
     subtitle: 'Manage specimen audits, pathology results, and diagnostic uploads',
     badge: 'Diagnostic Audit Portal',
@@ -88,6 +91,7 @@ const ROLE_PORTALS: RolePortalConfig[] = [
   },
   {
     id: 'NURSE',
+    tabLabel: 'Nurse',
     title: 'Nurse & Caregiver Station',
     subtitle: 'Log bedside vitals, triage ward rounds, and monitor inpatient care',
     badge: 'Inpatient Ward Station',
@@ -106,6 +110,7 @@ const ROLE_PORTALS: RolePortalConfig[] = [
   },
   {
     id: 'PHARMACIST',
+    tabLabel: 'Pharmacy',
     title: 'Pharmacist Dispensary Portal',
     subtitle: 'Manage prescription fulfillment, inventory stock, and drug dispensing',
     badge: 'Dispensary & Inventory Scope',
@@ -121,6 +126,7 @@ const ROLE_PORTALS: RolePortalConfig[] = [
   },
   {
     id: 'PATIENT',
+    tabLabel: 'Patient',
     title: 'Patient & Family Health Vault',
     subtitle: 'View consultation history, lab test reports, and upcoming appointments',
     badge: 'Personal Health Portal',
@@ -134,6 +140,7 @@ const ROLE_PORTALS: RolePortalConfig[] = [
   },
   {
     id: 'BLOOD_BANK',
+    tabLabel: 'Blood Bank',
     title: 'Blood Bank & Transfusion Command',
     subtitle: 'Monitor blood reserves, donor registries, blood matching & emergency supply',
     badge: 'Blood Reserve Workstation',
@@ -149,6 +156,7 @@ const ROLE_PORTALS: RolePortalConfig[] = [
   },
   {
     id: 'SUPER_ADMIN',
+    tabLabel: 'Super Admin',
     title: 'Super Admin Command Center',
     subtitle: 'System-wide multi-tenant configuration, security audits, and tenant control',
     badge: 'Enterprise Super Admin',
@@ -159,7 +167,7 @@ const ROLE_PORTALS: RolePortalConfig[] = [
     inputPlaceholder: 'superadmin54@gmail.com',
     defaultPasswordHint: '',
     sampleProfiles: [
-      { name: 'Super Admin Command', idStr: 'superadmin54@gmail.com', passStr: 'Saisatya@772', subtext: 'Full Enterprise Privileges' },
+      { name: 'Super Admin Command', idStr: 'superadmin54@gmail.com', passStr: '', subtext: 'Full Enterprise Privileges (Manual Password Input)' },
     ],
   },
 ];
@@ -225,6 +233,9 @@ export default function LoginPage() {
       const firstCardiology = REAL_DOCTORS_DATASET.find(d => d.department === 'Cardiology') || REAL_DOCTORS_DATASET[0];
       setIdentifier(firstCardiology.name);
       setPassword('Doctor@321');
+    } else if (roleId === 'SUPER_ADMIN') {
+      setIdentifier('superadmin54@gmail.com');
+      setPassword(''); // Password must be manually typed by Super Admin
     } else if (roleId === 'PATIENT') {
       setIdentifier('');
       setPassword('');
@@ -246,7 +257,11 @@ export default function LoginPage() {
 
   const handleSelectProfile = (prof: { idStr: string; passStr: string }) => {
     setIdentifier(prof.idStr);
-    setPassword(prof.passStr);
+    if (activeTab === 'SUPER_ADMIN') {
+      setPassword(''); // Keep password empty for manual entry
+    } else {
+      setPassword(prof.passStr);
+    }
     if (error) setError(null);
   };
 
@@ -303,7 +318,7 @@ export default function LoginPage() {
             <label className="block text-[11px] font-black uppercase tracking-wider text-slate-500 mb-2">
               Select Workstation Portal View
             </label>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 p-1.5 bg-slate-100 rounded-2xl border border-slate-200/80">
+            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 p-1.5 bg-slate-100/90 rounded-2xl border border-slate-200/80">
               {ROLE_PORTALS.map((portal) => {
                 const isActive = activeTab === portal.id;
                 const IconComp = portal.icon;
@@ -312,14 +327,14 @@ export default function LoginPage() {
                     key={portal.id}
                     type="button"
                     onClick={() => handleTabChange(portal.id)}
-                    className={`py-2 px-2 rounded-xl text-xs font-black transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                    className={`py-2 px-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
                       isActive
                         ? 'bg-white text-slate-900 shadow-md border border-slate-200/80 scale-[1.02]'
                         : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
                     }`}
                   >
-                    <IconComp className={`w-3.5 h-3.5 ${isActive ? 'text-blue-600' : 'text-slate-400'}`} />
-                    <span className="truncate">{portal.id.replace('_', ' ')}</span>
+                    <IconComp className={`w-3.5 h-3.5 shrink-0 ${isActive ? 'text-blue-600' : 'text-slate-400'}`} />
+                    <span className="whitespace-nowrap font-bold text-xs">{portal.tabLabel}</span>
                   </button>
                 );
               })}
