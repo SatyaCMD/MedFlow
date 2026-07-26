@@ -25,7 +25,7 @@ router.post('/forgot-password', authRateLimiter, controller.forgotPassword);
 router.get('/forgot-password/debug-otp/:email', controller.getDebugForgotOtp);
 router.post('/reset-password', authRateLimiter, controller.resetPassword);
 router.post('/refresh', controller.refresh);
-router.post('/logout', authenticate, controller.logout);
+router.post('/logout', controller.logout);
 router.get('/me', authenticate, controller.me);
 
 export default router;

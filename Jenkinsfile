@@ -71,24 +71,13 @@ pipeline {
                 echo 'Executing SonarQube static code analysis...'
                 script {
                     try {
-                        withSonarQubeEnv('SonarQubeServer') {
-                            if (isUnix()) {
-                                sh 'npx sonar-scanner'
-                            } else {
-                                bat 'npx sonar-scanner'
-                            }
+                        if (isUnix()) {
+                            sh 'npx sonar-scanner -Dsonar.projectKey=MedFlow -Dsonar.sources=. -Dsonar.host.url=http://127.0.0.1:9000 -Dsonar.token=sqp_ff029e764892b9077514d42070035e2c1243c93b'
+                        } else {
+                            bat 'npx sonar-scanner -Dsonar.projectKey=MedFlow -Dsonar.sources=. -Dsonar.host.url=http://127.0.0.1:9000 -Dsonar.token=sqp_ff029e764892b9077514d42070035e2c1243c93b'
                         }
                     } catch (Exception e) {
-                        echo "[WARN] SonarQube Server environment 'SonarQubeServer' not configured in Jenkins. Running fallback scan..."
-                        try {
-                            if (isUnix()) {
-                                sh 'npx sonar-scanner -Dsonar.projectKey=MedFlow -Dsonar.sources=.'
-                            } else {
-                                bat 'npx sonar-scanner -Dsonar.projectKey=MedFlow -Dsonar.sources=.'
-                            }
-                        } catch (Exception ex) {
-                            echo "[WARN] SonarQube scan skipped: SonarQube server is offline or not configured in Jenkins System settings."
-                        }
+                        echo "[WARN] SonarQube scan skipped or failed: ${e.message}"
                     }
                 }
             }

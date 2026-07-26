@@ -1,5 +1,3 @@
-version: '3.8'
-
 services:
   # Backend Express API Service
   api:
@@ -12,8 +10,8 @@ services:
     environment:
       - PORT=4000
       - NODE_ENV=production
-      - MONGO_URI=mongodb://mongo:27017/medicore?replicaSet=rs0
-      - REDIS_URI=redis://redis:6379
+      - MONGO_URI=${MONGO_URI:-mongodb+srv://satyacmddeveloper_db_user:r6VRZSLVzjPtzvVk@cluster0.nzujdwy.mongodb.net/?appName=Cluster0}
+      - REDIS_URI=${REDIS_URI:-redis://redis:6379}
       - JWT_ACCESS_SECRET=your_production_access_secret_key_32_chars
       - JWT_REFRESH_SECRET=your_production_refresh_secret_key_32_chars
       - APP_PEPPER=your_production_pepper_key_16_chars_chili
@@ -22,7 +20,6 @@ services:
       - SMTP_USER=
       - SMTP_PASS=
     depends_on:
-      - mongo
       - redis
     restart: always
     networks:
@@ -74,8 +71,6 @@ services:
       - prometheus_data:/prometheus
     ports:
       - "9090:9090"
-    depends_on:
-      - api
     restart: always
     networks:
       - medflow-backend-net

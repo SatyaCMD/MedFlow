@@ -144,14 +144,16 @@ export class AuthController {
     }
   };
 
-  logout = async (req: Request, res: Response, next: NextFunction) => {
+  logout = async (req: Request, res: Response) => {
     try {
-      const user = req.user!;
-      await this.service.logout(user.userId, user.sessionId);
+      if (req.user) {
+        await this.service.logout(req.user.userId, req.user.sessionId);
+      }
       res.clearCookie('refreshToken');
-      res.status(200).json({ success: true, data: null });
-    } catch (err) {
-      next(err);
+      res.status(200).json({ success: true, data: null, message: 'Logged out successfully' });
+    } catch (_err) {
+      res.clearCookie('refreshToken');
+      res.status(200).json({ success: true, data: null, message: 'Logged out successfully' });
     }
   };
 

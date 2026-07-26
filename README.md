@@ -240,10 +240,20 @@ The repository includes a production-grade `Jenkinsfile` pipeline that automatic
 To connect your project to a Jenkins server running on **port 8080**:
 
 ### 1. Prerequisite Installations on Jenkins Host
-Ensure the following tools are installed and configured on the machine where Jenkins is running:
-*   **Docker Engine**: Required to build and package production-ready images.
-*   **Trivy Security Scanner**: Used for vulnerability scans on libraries and built container layers.
-*   **Helm CLI**: Used to package and release charts to Kubernetes.
+Ensure the following tools are installed and configured on your machine:
+*   **Docker Engine / Docker Desktop**: Required to build and package production-ready images.
+*   **Helm CLI**: Kubernetes Package Manager CLI.
+    * Install on Windows via PowerShell:
+      ```powershell
+      winget install Helm.Helm
+      ```
+    * Verify installation: `helm version`
+*   **Trivy Security Scanner**: Vulnerability & secret scanner for filesystem and container layers.
+    * Install on Windows via PowerShell:
+      ```powershell
+      winget install AquaSecurity.Trivy
+      ```
+    * Verify installation: `trivy --version`
 
 ### 2. Configure Jenkins Pipeline Job
 1. Open your Jenkins console at [http://localhost:8080](http://localhost:8080).
@@ -258,18 +268,131 @@ Ensure the following tools are installed and configured on the machine where Jen
    * **Script Path**: Verify it is set to `Jenkinsfile`.
 5. Click **Save**.
 
-### 3. Pipeline Tool Configuration (Global Tool Configuration)
-The Jenkinsfile looks up a SonarQube Scanner tool definition. If you are using SonarQube:
-1. Go to **Manage Jenkins** -> **Tools**.
-2. Scroll to **SonarQube Scanner** installations.
-3. Click **Add SonarQube Scanner**, set the name to `SonarScanner`, and enable automatic installer or specify its installation path.
+### 3. Pipeline & SonarQube Server Setup (http://localhost:9000)
 
-*Note: If you do not have SonarQube or Trivy installed yet and want to bypass these stages for initial testing, you can comment out the `SonarQube Static Scan`, `Trivy Repository Audit`, and `Trivy Container Scan` stages in the [Jenkinsfile](file:///c:/Users/SATYA/OneDrive/Desktop/MedFlow/Jenkinsfile).*
+#### A. Configure SonarQube Project:
+1. Open your SonarQube dashboard at [http://localhost:9000](http://localhost:9000) (Log in with `admin` / `admin`).
+2. On the screen **"How do you want to create your project?"**, click **Create a local project** at the bottom.
+3. Fill in the project parameters:
+   * **Project Display Name**: `MedFlow`
+   * **Project Key**: `MedFlow` *(matches `sonar.projectKey` in `sonar-project.properties`)*
+   * **Main branch name**: `main`
+4. Click **Next** $\rightarrow$ select **Use global setting** $\rightarrow$ click **Create project**.
+5. Under **How do you want to analyze your repository?**, select **Locally** (or **With Jenkins**).
+6. Enter a Token Name (e.g. `jenkins-scanner-token`) $\rightarrow$ click **Generate** $\rightarrow$ Copy the generated token string (`sqp_...`).
 
-### 4. Running the Pipeline
-Click **Build Now** in your Jenkins project dashboard. Jenkins will fetch your codebase from `https://github.com/SatyaCMD/MedFlow.git`, run security scans, compile applications, build Docker containers, and trigger production deployments.
+#### B. Configure SonarQube Scanner in Jenkins:
+1. Go to your Jenkins console at [http://localhost:8080](http://localhost:8080).
+2. Go to **Manage Jenkins** $\rightarrow$ **System** $\rightarrow$ Scroll to **SonarQube servers**.
+3. Click **Add SonarQube**, set:
+   * **Name**: `SonarQubeServer`
+   * **Server URL**: `http://127.0.0.1:9000`
+   * **Server authentication token**: Add Secret Text credential with your generated token `sqp_...`.
+4. Go to **Manage Jenkins** $\rightarrow$ **Tools** $\rightarrow$ Scroll to **SonarQube Scanner** installations.
+5. Click **Add SonarQube Scanner**, set the name to `SonarScanner`, enable **Install automatically**, select version `SonarQube Scanner 8.1.0.6389`, and click **Save**.
+
+### 4. Running Infrastructure & Observability Stack (Docker Compose)
+
+To launch your backend databases, monitoring (Prometheus & Grafana), Mailpit, and SonarQube quality scanner:
+
+```powershell
+docker compose -f docker-compose.backend.yml up -d mongo redis mailpit prometheus grafana sonarqube
+```
+
+| Service | Access URL | Default Credentials |
+| :--- | :--- | :--- |
+| **MedFlow Web App** | [http://localhost:3000](http://localhost:3000) | Workstation Login |
+| **Jenkins CI/CD** | [http://localhost:8080](http://localhost:8080) | Local Windows Jenkins |
+| **Prometheus Telemetry** | [http://localhost:9090](http://localhost:9090) | Public Metrics Scraper |
+| **Grafana Dashboards** | [http://localhost:3005](http://localhost:3005) | User: `admin` \| Pass: `admin` |
+| **SonarQube Scanner** | [http://localhost:9000](http://localhost:9000) | User: `admin` \| Pass: `admin` |
+| **Mailpit SMTP Portal** | [http://localhost:8025](http://localhost:8025) | Web Mail Inspector |
+
+### 5. Grafana Setup (http://localhost:3005)
+
+#### A. Add Prometheus Data Source:
+1. Open Grafana at [http://localhost:3005](http://localhost:3005) (Default login: `admin` / `admin`).
+2. Click **Connections** $\rightarrow$ **Data Sources** on the left menu.
+3. Click **Add data source** and select **Prometheus**.
+4. In the **Prometheus server URL** field, enter: `http://medflow-prometheus:9090`.
+5. Scroll down to the bottom and click **Save & test**. You will see a green badge: **"Data source is working"**.
+
+#### B. Import the MedFlow Telemetry Dashboard:
+1. In Grafana, click the **`+`** icon at the top right $\rightarrow$ select **Import dashboard**.
+2. Click **Upload dashboard JSON file**.
+3. Browse and select the file from your workspace: `C:\Users\SATYA\OneDrive\Desktop\MedFlow\infra\monitoring\medflow-dashboard.json`.
+4. **Crucial Step**: At the bottom dropdown under **Prometheus**, select your **Prometheus** data source (instead of leaving it default).
+5. Click **Import**.
+6. *(If panels show "No data", click **Dashboard Settings** ⚙ at top right $\rightarrow$ select your **Prometheus** data source $\rightarrow$ click **Save**).*
+7. You will now see live color graphs for **HTTP Request Volume**, **p95 Response Latencies**, **Success vs Errors**, and **Process Memory & CPU Usage**!
+
+### 6. Prometheus Verification (http://localhost:9090)
+1. Open Prometheus at [http://localhost:9090](http://localhost:9090).
+2. Click **Status** on the top menu bar $\rightarrow$ select **Targets**.
+3. You will see your active scrape targets (`prometheus` and `medflow-api`) with state **UP**.
+4. To test a metric query:
+   * In the search bar, type `up` and click **Execute**. It will return `1` indicating services are healthy.
+
+### 7. Mailpit Email Inspector (http://localhost:8025)
+1. Open Mailpit at [http://localhost:8025](http://localhost:8025).
+2. This is your local SMTP mail server. Whenever you log in or request a 6-digit OTP code in MedFlow, the email will appear instantly in this inbox for verification testing.
+
+### 8. Running Your Jenkins CI/CD Pipeline
+
+Now that Helm, Trivy, Docker, Prometheus, and Grafana are ready, trigger your pipeline:
+
+#### Step 1: Push latest code to GitHub
+Run the following commands in your PowerShell terminal:
+```powershell
+git add .
+git commit -m "ci(jenkins): finalize pipeline stages, telemetry metrics, and devsecops tools"
+git push origin main
+```
+
+#### Step 2: Run Pipeline in Jenkins
+1. Open Jenkins at [http://localhost:8080](http://localhost:8080).
+2. Click your **MediCore360** project.
+3. Click **Build Now** on the left menu.
+4. All pipeline stages (**Checkout**, **Dependencies**, **Lint**, **Build**, **SonarQube**, **Trivy**, **Docker**, **Trivy Container**, **Helm Deployment**, and **Prometheus/Grafana Monitoring**) will run smoothly!
 
 ---
+
+## ⚡ How to Connect a Production Redis Instance
+
+To switch from local Redis (`redis://localhost:6380`) to **Production Redis**, update line 10 in your [.env](file:///c:/Users/SATYA/OneDrive/Desktop/MedFlow/.env) file with your production Redis connection URI.
+
+Here are the 3 standard options depending on your cloud provider:
+
+### Option 1: Upstash Serverless Redis (Recommended & Easiest)
+Upstash provides a free, serverless Cloud Redis with TLS encryption:
+1. Create a free database at [upstash.com](https://upstash.com).
+2. Copy your connection string and paste it into your `.env` file:
+   ```env
+   REDIS_URI=rediss://default:YOUR_UPSTASH_PASSWORD@your-db-name.upstash.io:6379
+   ```
+   *Note the `rediss://` protocol (with double `s`) which enables TLS/SSL encryption for cloud connections.*
+
+### Option 2: Redis Cloud / Redis Labs
+If using Redis Cloud (Redis Enterprise):
+1. Create a free database at [redis.com/try-free](https://redis.com/try-free).
+2. Copy your endpoint host, port, and password.
+3. Update `.env`:
+   ```env
+   REDIS_URI=redis://default:YOUR_REDIS_CLOUD_PASSWORD@redis-12345.c1.cloud.redislabs.com:12345
+   ```
+
+### Option 3: Managed Production Server / AWS ElastiCache / Azure Cache
+If deploying Redis on your cloud server with a password:
+```env
+REDIS_URI=redis://:YOUR_SECURE_PASSWORD@your-production-server-ip:6379
+```
+
+### How MedFlow API Handles Production Redis Automatically:
+MedFlow's backend driver in `apps/api/src/lib/redis.ts` uses `ioredis`. As soon as you paste your production `REDIS_URI` into `.env`, `ioredis` automatically:
+* Handles SSL/TLS encryption (`rediss://`)
+* Authenticates cloud passwords
+* Manages connection retry strategies
+* Executes all session lockouts, failed login counters, and OTP caching in production!
 
 ## ☁️ How to Use Terraform for AWS Cloud KYC Storage (`s3_kyc.tf`)
 

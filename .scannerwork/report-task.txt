@@ -1,0 +1,6 @@
+projectKey=MedFlow
+serverUrl=http://127.0.0.1:9000
+serverVersion=26.7.0.124771
+dashboardUrl=http://127.0.0.1:9000/dashboard?id=MedFlow
+ceTaskId=7a14d67e-fa10-4a94-b839-32df93d9e53f
+ceTaskUrl=http://127.0.0.1:9000/api/ce/task?id=7a14d67e-fa10-4a94-b839-32df93d9e53f

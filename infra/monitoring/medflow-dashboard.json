@@ -23,8 +23,7 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "prom-datasource"
+            "type": "prometheus"
           },
           "editorMode": "code",
           "expr": "sum(rate(http_requests_total[1m])) by (method, route, status)",
@@ -57,8 +56,7 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "prom-datasource"
+            "type": "prometheus"
           },
           "editorMode": "code",
           "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[5m])) by (le))",
@@ -91,8 +89,7 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "prom-datasource"
+            "type": "prometheus"
           },
           "expr": "sum(rate(http_requests_total{status=~\"2..\"}[1m]))",
           "legendFormat": "Success (2xx)",
@@ -100,8 +97,7 @@
         },
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "prom-datasource"
+            "type": "prometheus"
           },
           "expr": "sum(rate(http_requests_total{status=~\"4..\"}[1m]))",
           "legendFormat": "Client Errors (4xx)",
@@ -109,8 +105,7 @@
         },
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "prom-datasource"
+            "type": "prometheus"
           },
           "expr": "sum(rate(http_requests_total{status=~\"5..\"}[1m]))",
           "legendFormat": "Server Errors (5xx)",
@@ -132,8 +127,7 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "prom-datasource"
+            "type": "prometheus"
           },
           "expr": "nodejs_external_memory_bytes OR process_resident_memory_bytes",
           "legendFormat": "RSS Memory",
@@ -160,8 +154,7 @@
       "targets": [
         {
           "datasource": {
-            "type": "prometheus",
-            "uid": "prom-datasource"
+            "type": "prometheus"
           },
           "expr": "rate(process_cpu_user_seconds_total[1m]) * 100",
           "legendFormat": "CPU Usage (%)",
