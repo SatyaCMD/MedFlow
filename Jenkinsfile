@@ -58,8 +58,10 @@ pipeline {
                 echo 'Compiling and building the monorepo workspaces...'
                 script {
                     if (isUnix()) {
+                        sh 'rm -rf apps/web/.next'
                         sh 'npx pnpm run build'
                     } else {
+                        bat 'if exist apps\\web\\.next rmdir /s /q apps\\web\\.next'
                         bat 'npx pnpm run build'
                     }
                 }
