@@ -429,11 +429,12 @@ export const AmbulanceTrackerModal: React.FC<AmbulanceTrackerModalProps> = ({
 
             {/* Pickup Address Field */}
             <div>
-              <label className="block text-xs font-extrabold uppercase tracking-wider text-slate-700 mb-1.5 flex items-center gap-1.5">
+              <label htmlFor="pickupAddress" className="block text-xs font-extrabold uppercase tracking-wider text-slate-700 mb-1.5 flex items-center gap-1.5">
                 <MapPin className="w-4 h-4 text-rose-600" />
                 <span>Pickup Address / Landmark</span>
               </label>
               <input
+                id="pickupAddress"
                 type="text"
                 required
                 value={pickupAddress}

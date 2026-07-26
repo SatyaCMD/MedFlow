@@ -184,10 +184,11 @@ export const BloodBankModal: React.FC<BloodBankModalProps> = ({ isOpen, onClose 
 
           <div className="p-4 bg-rose-50/50 border border-rose-100 rounded-2xl grid grid-cols-1 sm:grid-cols-2 gap-4 items-center">
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-rose-900 mb-1.5">
+              <label htmlFor="donorBloodGroup" className="block text-xs font-bold uppercase tracking-wider text-rose-900 mb-1.5">
                 Relative Donated Blood Group (+1 Unit)
               </label>
               <select
+                id="donorBloodGroup"
                 value={donorBloodGroup}
                 onChange={(e) => setDonorBloodGroup(e.target.value)}
                 className="w-full px-4 py-2.5 bg-white border border-rose-200 rounded-xl text-xs font-black text-rose-700 outline-none"
@@ -201,10 +202,11 @@ export const BloodBankModal: React.FC<BloodBankModalProps> = ({ isOpen, onClose 
             </div>
 
             <div>
-              <label className="block text-xs font-bold uppercase tracking-wider text-rose-900 mb-1.5">
+              <label htmlFor="requestedBloodGroup" className="block text-xs font-bold uppercase tracking-wider text-rose-900 mb-1.5">
                 Patient Needed Blood Group (-1 Unit)
               </label>
               <select
+                id="requestedBloodGroup"
                 value={requestedBloodGroup}
                 onChange={(e) => setRequestedBloodGroup(e.target.value)}
                 className="w-full px-4 py-2.5 bg-white border border-rose-200 rounded-xl text-xs font-black text-rose-700 outline-none"
