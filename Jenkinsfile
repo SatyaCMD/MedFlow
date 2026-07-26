@@ -73,13 +73,23 @@ pipeline {
                 echo 'Executing SonarQube static code analysis...'
                 script {
                     try {
-                        if (isUnix()) {
-                            sh 'npx sonar-scanner -Dsonar.projectKey=MedFlow -Dsonar.sources=. -Dsonar.exclusions="**/node_modules/**,**/.next/**,**/dist/**,**/coverage/**,**/*.test.ts,**/*.spec.ts,**/*.d.ts" -Dsonar.host.url=http://127.0.0.1:9000 -Dsonar.token=sqp_ff029e764892b9077514d42070035e2c1243c93b'
-                        } else {
-                            bat 'npx sonar-scanner -Dsonar.projectKey=MedFlow -Dsonar.sources=. -Dsonar.exclusions="**/node_modules/**,**/.next/**,**/dist/**,**/coverage/**,**/*.test.ts,**/*.spec.ts,**/*.d.ts" -Dsonar.host.url=http://127.0.0.1:9000 -Dsonar.token=sqp_ff029e764892b9077514d42070035e2c1243c93b'
+                        withSonarQubeEnv {
+                            if (isUnix()) {
+                                sh 'npx sonar-scanner -Dsonar.projectKey=MedFlow -Dsonar.sources=. -Dsonar.exclusions="**/node_modules/**,**/.next/**,**/dist/**,**/coverage/**,**/*.test.ts,**/*.spec.ts,**/*.d.ts" -Dsonar.host.url=http://127.0.0.1:9000 -Dsonar.token=sqp_ff029e764892b9077514d42070035e2c1243c93b'
+                            } else {
+                                bat 'npx sonar-scanner -Dsonar.projectKey=MedFlow -Dsonar.sources=. -Dsonar.exclusions="**/node_modules/**,**/.next/**,**/dist/**,**/coverage/**,**/*.test.ts,**/*.spec.ts,**/*.d.ts" -Dsonar.host.url=http://127.0.0.1:9000 -Dsonar.token=sqp_ff029e764892b9077514d42070035e2c1243c93b'
+                            }
                         }
                     } catch (Exception e) {
-                        echo "[WARN] SonarQube scan skipped or failed: ${e.message}"
+                        try {
+                            if (isUnix()) {
+                                sh 'npx sonar-scanner -Dsonar.projectKey=MedFlow -Dsonar.sources=. -Dsonar.exclusions="**/node_modules/**,**/.next/**,**/dist/**,**/coverage/**,**/*.test.ts,**/*.spec.ts,**/*.d.ts" -Dsonar.host.url=http://127.0.0.1:9000 -Dsonar.token=sqp_ff029e764892b9077514d42070035e2c1243c93b'
+                            } else {
+                                bat 'npx sonar-scanner -Dsonar.projectKey=MedFlow -Dsonar.sources=. -Dsonar.exclusions="**/node_modules/**,**/.next/**,**/dist/**,**/coverage/**,**/*.test.ts,**/*.spec.ts,**/*.d.ts" -Dsonar.host.url=http://127.0.0.1:9000 -Dsonar.token=sqp_ff029e764892b9077514d42070035e2c1243c93b'
+                            }
+                        } catch (Exception ex) {
+                            echo "[WARN] SonarQube scan skipped or failed: ${ex.message}"
+                        }
                     }
                 }
             }
