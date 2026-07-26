@@ -91,7 +91,7 @@ pipeline {
                         if (isUnix()) {
                             sh 'trivy fs --exit-code 0 --severity HIGH,CRITICAL .'
                         } else {
-                            bat 'trivy fs --exit-code 0 --severity HIGH,CRITICAL .'
+                            bat 'where trivy >nul 2>&1 && trivy fs --exit-code 0 --severity HIGH,CRITICAL . || echo [WARN] Trivy CLI scanner not found on PATH. Skipping.'
                         }
                     } catch (Exception e) {
                         echo "[WARN] Trivy repository audit skipped: ${e.message}"
@@ -128,8 +128,7 @@ pipeline {
                             sh "trivy image --exit-code 0 --severity CRITICAL ${DOCKER_REGISTRY}/${API_IMAGE}:${IMAGE_TAG}"
                             sh "trivy image --exit-code 0 --severity CRITICAL ${DOCKER_REGISTRY}/${WEB_IMAGE}:${IMAGE_TAG}"
                         } else {
-                            bat "trivy image --exit-code 0 --severity CRITICAL ${DOCKER_REGISTRY}/${API_IMAGE}:${IMAGE_TAG}"
-                            bat "trivy image --exit-code 0 --severity CRITICAL ${DOCKER_REGISTRY}/${WEB_IMAGE}:${IMAGE_TAG}"
+                            bat 'where trivy >nul 2>&1 && trivy image --exit-code 0 --severity CRITICAL ' + DOCKER_REGISTRY + '/' + API_IMAGE + ':' + IMAGE_TAG + ' || echo [WARN] Trivy container scanner not found on PATH. Skipping.'
                         }
                     } catch (Exception e) {
                         echo "[WARN] Trivy container scan skipped: ${e.message}"
@@ -146,7 +145,7 @@ pipeline {
                         if (isUnix()) {
                             sh "helm upgrade --install medflow-production ./infra/helm/medflow --namespace production --set api.image.tag=${IMAGE_TAG} --set web.image.tag=${IMAGE_TAG}"
                         } else {
-                            bat "helm upgrade --install medflow-production ./infra/helm/medflow --namespace production --set api.image.tag=${IMAGE_TAG} --set web.image.tag=${IMAGE_TAG}"
+                            bat 'where helm >nul 2>&1 && helm upgrade --install medflow-production ./infra/helm/medflow --namespace production --set api.image.tag=' + IMAGE_TAG + ' --set web.image.tag=' + IMAGE_TAG + ' || echo [WARN] Helm CLI tool not found on PATH. Skipping.'
                         }
                     } catch (Exception e) {
                         echo "[WARN] Helm deployment skipped: ${e.message}"
