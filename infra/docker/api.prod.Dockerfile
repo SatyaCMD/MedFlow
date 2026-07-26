@@ -15,7 +15,7 @@ RUN pnpm --filter @medicore360/shared build
 RUN pnpm --filter @medicore360/api build
 
 # Prune devDependencies to keep image size small
-RUN pnpm prune --prod --no-optional
+RUN CI=true pnpm prune --prod --no-optional
 
 # Stage 2: Production Execution Image
 FROM node:20-alpine AS runner
