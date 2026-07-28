@@ -87,8 +87,8 @@ services:
     image: axllent/mailpit
     container_name: mailpit
     ports:
-      - "1025:1025" # SMTP Port
       - "8025:8025" # Web UI Port
+      - "1025:1025" # SMTP Port
     restart: always
     networks:
       - medflow-net
