@@ -17,52 +17,14 @@ services:
     networks:
       - medflow-net
 
-  # Load-Balanced Backend Express API Cluster Instances
-  api1:
+  # Backend Express API Service
+  api:
     build:
       context: .
       dockerfile: ./infra/docker/api.prod.Dockerfile
-    container_name: api1
-    environment:
-      - PORT=4000
-      - NODE_ENV=production
-      - MONGO_URI=${MONGO_URI:-mongodb://mongo:27017/medicore}
-      - REDIS_URI=redis://redis:6379
-      - JWT_ACCESS_SECRET=your_production_access_secret_key_32_chars
-      - JWT_REFRESH_SECRET=your_production_refresh_secret_key_32_chars
-      - APP_PEPPER=your_production_pepper_key_16_chars_chili
-    depends_on:
-      - mongo
-      - redis
-    restart: always
-    networks:
-      - medflow-net
-
-  api2:
-    build:
-      context: .
-      dockerfile: ./infra/docker/api.prod.Dockerfile
-    container_name: api2
-    environment:
-      - PORT=4000
-      - NODE_ENV=production
-      - MONGO_URI=${MONGO_URI:-mongodb://mongo:27017/medicore}
-      - REDIS_URI=redis://redis:6379
-      - JWT_ACCESS_SECRET=your_production_access_secret_key_32_chars
-      - JWT_REFRESH_SECRET=your_production_refresh_secret_key_32_chars
-      - APP_PEPPER=your_production_pepper_key_16_chars_chili
-    depends_on:
-      - mongo
-      - redis
-    restart: always
-    networks:
-      - medflow-net
-
-  api3:
-    build:
-      context: .
-      dockerfile: ./infra/docker/api.prod.Dockerfile
-    container_name: api3
+    container_name: api
+    ports:
+      - "4001:4000"
     environment:
       - PORT=4000
       - NODE_ENV=production
@@ -85,7 +47,7 @@ services:
       dockerfile: ./infra/docker/web.prod.Dockerfile
     container_name: web
     ports:
-      - "3000:3000"
+      - "3001:3000"
     environment:
       - NEXT_PUBLIC_API_URL=http://localhost/api/v1
       - NODE_ENV=production
@@ -97,7 +59,7 @@ services:
   mongo:
     image: mongo:6.0
     container_name: mongo
-    command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]
+    command: [ "mongod", "--replSet", "rs0", "--bind_ip_all" ]
     ports:
       - "27018:27017"
     volumes:
@@ -110,7 +72,7 @@ services:
   redis:
     image: redis:7.0-alpine
     container_name: redis
-    command: ["redis-server", "--appendonly", "yes"]
+    command: [ "redis-server", "--appendonly", "yes" ]
     ports:
       - "6380:6379"
 
@@ -125,8 +87,8 @@ services:
     image: axllent/mailpit
     container_name: mailpit
     ports:
-      - "1025:1025"   # SMTP Port
-      - "8025:8025"   # Web UI Port
+      - "1025:1025" # SMTP Port
+      - "8025:8025" # Web UI Port
     restart: always
     networks:
       - medflow-net
@@ -182,8 +144,7 @@ services:
     container_name: jenkins
     user: root
     ports:
-      - "8080:8080"
-      - "50000:50000"
+      - "8088:8080"
     volumes:
       - jenkins_data:/var/jenkins_home
       - /var/run/docker.sock:/var/run/docker.sock # Mount Docker socket for Docker builds
