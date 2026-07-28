@@ -4,7 +4,7 @@ services:
   # Nginx Gateway Router
   gateway:
     image: nginx:alpine
-    container_name: medflow-gateway
+    container_name: gateway
     ports:
       - "8082:80"
       - "4433:443"
@@ -22,7 +22,7 @@ services:
     build:
       context: .
       dockerfile: ./infra/docker/api.prod.Dockerfile
-    container_name: medflow-api-1
+    container_name: api1
     environment:
       - PORT=4000
       - NODE_ENV=production
@@ -42,7 +42,7 @@ services:
     build:
       context: .
       dockerfile: ./infra/docker/api.prod.Dockerfile
-    container_name: medflow-api-2
+    container_name: api2
     environment:
       - PORT=4000
       - NODE_ENV=production
@@ -62,7 +62,7 @@ services:
     build:
       context: .
       dockerfile: ./infra/docker/api.prod.Dockerfile
-    container_name: medflow-api-3
+    container_name: api3
     environment:
       - PORT=4000
       - NODE_ENV=production
@@ -83,7 +83,7 @@ services:
     build:
       context: .
       dockerfile: ./infra/docker/web.prod.Dockerfile
-    container_name: medflow-web
+    container_name: web
     ports:
       - "3000:3000"
     environment:
@@ -96,7 +96,7 @@ services:
   # MongoDB Database Engine
   mongo:
     image: mongo:6.0
-    container_name: medflow-mongo
+    container_name: mongo
     command: ["mongod", "--replSet", "rs0", "--bind_ip_all"]
     ports:
       - "27018:27017"
@@ -109,7 +109,7 @@ services:
   # Redis Cache & Broker Store
   redis:
     image: redis:7.0-alpine
-    container_name: medflow-redis
+    container_name: redis
     command: ["redis-server", "--appendonly", "yes"]
     ports:
       - "6380:6379"
@@ -123,7 +123,7 @@ services:
   # Mailpit SMTP Capture server
   mailpit:
     image: axllent/mailpit
-    container_name: medflow-mailpit
+    container_name: mailpit
     ports:
       - "1025:1025"   # SMTP Port
       - "8025:8025"   # Web UI Port
@@ -134,7 +134,7 @@ services:
   # Prometheus Observability Scraper
   prometheus:
     image: prom/prometheus:latest
-    container_name: medflow-prometheus
+    container_name: prometheus
     volumes:
       - ./infra/monitoring/prometheus.yml:/etc/prometheus/prometheus.yml:ro
       - prometheus_data:/prometheus
@@ -149,7 +149,7 @@ services:
   # Grafana Dashboard Visualization
   grafana:
     image: grafana/grafana:latest
-    container_name: medflow-grafana
+    container_name: grafana
     volumes:
       - grafana_data:/var/lib/grafana
     ports:
@@ -163,7 +163,7 @@ services:
   # SonarQube Quality Scanner Server
   sonarqube:
     image: sonarqube:community
-    container_name: medflow-sonarqube
+    container_name: sonarqube
     ports:
       - "9000:9000"
     environment:
@@ -179,7 +179,7 @@ services:
   # Jenkins CI/CD Orchestration Server
   jenkins:
     image: jenkins/jenkins:lts
-    container_name: medflow-jenkins
+    container_name: jenkins
     user: root
     ports:
       - "8080:8080"

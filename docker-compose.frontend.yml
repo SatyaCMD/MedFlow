@@ -6,7 +6,7 @@ services:
     build:
       context: .
       dockerfile: ./infra/docker/web.prod.Dockerfile
-    container_name: medflow-web
+    container_name: web
     ports:
       - "3000:3000"
     environment:

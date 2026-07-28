@@ -1,7 +1,7 @@
 services:
   mongo:
     image: mongo:6.0
-    container_name: medicore360-mongo
+    container_name: mongo
     ports:
       - '27018:27017'
     volumes:
@@ -11,7 +11,7 @@ services:
 
   redis:
     image: redis:7.0-alpine
-    container_name: medicore360-redis
+    container_name: redis
     ports:
       - '6380:6379'
     volumes:
@@ -21,7 +21,7 @@ services:
 
   mailpit:
     image: axllent/mailpit
-    container_name: medicore360-mailpit
+    container_name: mailpit
     ports:
       - '1026:1025'
       - '8026:8025'
@@ -32,7 +32,7 @@ services:
     build:
       context: .
       dockerfile: ./infra/docker/api.dev.Dockerfile
-    container_name: medicore360-api
+    container_name: api
     ports:
       - '4000:4000'
     environment:
@@ -59,7 +59,7 @@ services:
     build:
       context: .
       dockerfile: ./infra/docker/web.dev.Dockerfile
-    container_name: medicore360-web
+    container_name: web
     ports:
       - '3000:3000'
     volumes:
