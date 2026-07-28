@@ -65,7 +65,17 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       setUser(null);
       if (typeof window !== 'undefined') {
         sessionStorage.clear();
+        // Preserve appointment store, medical history, and KYC completion history across logins
+        const dataBackup: Record<string, string> = {};
+        for (let i = 0; i < localStorage.length; i++) {
+          const key = localStorage.key(i);
+          if (key && (key.startsWith('medflow_') || key.startsWith('medicore_'))) {
+            const val = localStorage.getItem(key);
+            if (val) dataBackup[key] = val;
+          }
+        }
         localStorage.clear();
+        Object.entries(dataBackup).forEach(([k, v]) => localStorage.setItem(k, v));
         window.location.href = '/login';
       }
     }

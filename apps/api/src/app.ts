@@ -25,6 +25,7 @@ import staffRouter from './modules/staff/staff.routes.js';
 import doctorRouter from './modules/doctor/doctor.routes.js';
 import bloodBankRouter from './modules/bloodBank/bloodBank.routes.js';
 import ambulanceRouter from './modules/ambulance/ambulance.routes.js';
+import kycRouter from './modules/kyc/kyc.routes.js';
 import { rateLimit } from './middleware/rateLimit.js';
 
 const app = express();
@@ -73,6 +74,7 @@ app.use('/api/v1/messaging', messagingRouter);
 app.use('/api/v1/notification', notificationRouter);
 app.use('/api/v1/staff', staffRouter);
 app.use('/api/v1/doctor', doctorRouter);
+app.use('/api/v1/kyc', kycRouter);
 app.use('/api/v1/demo', demoRouter);
 
 // Metrics Scraping Endpoint

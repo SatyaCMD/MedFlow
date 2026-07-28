@@ -270,7 +270,19 @@ export const LabTechnicianDashboard: React.FC = () => {
           </div>
         </div>
 
-        <DataTable columns={columns} data={pendingOrders} />
+        {pendingOrders.length > 0 ? (
+          <DataTable columns={columns} data={pendingOrders} />
+        ) : (
+          <div className="p-8 bg-white border border-slate-200 rounded-3xl text-center space-y-3 shadow-2xs">
+            <div className="w-12 h-12 rounded-2xl bg-indigo-50 text-indigo-600 mx-auto flex items-center justify-center font-bold">
+              <FlaskConical className="w-6 h-6" />
+            </div>
+            <h3 className="font-black text-slate-900 text-sm">Pathology & Diagnostic Queue Empty</h3>
+            <p className="text-xs text-slate-500 max-w-sm mx-auto">
+              There are currently no pending lab diagnostic orders. When attending physicians prescribe lab tests for OPD or ward patients, orders will populate here in real-time.
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Lab Report Submission Modal */}

@@ -69,8 +69,8 @@ export const AuthSidebar: React.FC<AuthSidebarProps> = ({ title, subtitle }) => 
 
       {/* TOP HEADER: Brand Identity */}
       <div className="relative z-10">
-        <Link href="/" className="inline-flex items-center gap-3.5 group cursor-pointer">
-          <div className="bg-white/10 backdrop-blur-xl p-3 rounded-2xl border border-white/20 shadow-xl group-hover:border-blue-400/50 transition-all">
+        <div className="inline-flex items-center gap-3.5">
+          <div className="bg-white/10 backdrop-blur-xl p-3 rounded-2xl border border-white/20 shadow-xl">
             <Logo size={38} className="text-white" />
           </div>
           <div>
@@ -84,7 +84,7 @@ export const AuthSidebar: React.FC<AuthSidebarProps> = ({ title, subtitle }) => 
               Enterprise Hospital Management System
             </span>
           </div>
-        </Link>
+        </div>
       </div>
 
       {/* MIDDLE SECTION: Hero Copy & Interactive Telemetry Dashboard */}

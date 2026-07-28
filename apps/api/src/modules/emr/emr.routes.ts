@@ -10,6 +10,8 @@ import { PERMISSIONS } from '@medicore360/shared';
 const router = Router();
 const controller = new EmrController();
 
+router.post('/dispatch-prescription', controller.dispatchPrescription);
+
 router.use(authenticate);
 
 router.route('/')
@@ -22,4 +24,3 @@ router.route('/:id')
   .delete(authorize(PERMISSIONS.PATIENT_DELETE), controller.delete);
 
 export default router;
-

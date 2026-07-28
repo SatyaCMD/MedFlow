@@ -5,6 +5,16 @@ import { AppointmentService } from './appointment.service.js';
 export class AppointmentController {
   private service = new AppointmentService();
 
+  bookPublic = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const hospitalId = (req as any).user?.hospitalId || 'HOSP-001';
+      const result = await this.service.createAppointment(req.body, hospitalId);
+      res.status(201).json({ success: true, data: result });
+    } catch (err) {
+      next(err);
+    }
+  };
+
   getMany = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const hospitalId = req.user!.hospitalId;

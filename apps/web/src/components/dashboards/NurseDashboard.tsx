@@ -1,13 +1,11 @@
-'use client';
-
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { StatCard } from '../shared/StatCard';
 import { DataTable } from '../shared/DataTable';
 import { NurseVitalsModal } from '../shared/NurseVitalsModal';
 import { PharmacyPurchaseModal } from '../shared/PharmacyPurchaseModal';
 import { useToast } from '../../context/ToastContext';
+import { getSharedAppointments, updateSharedAppointmentVitals, SharedAppointment } from '../../data/appointmentStore';
 import {
   Heart,
   Activity,
@@ -43,39 +41,38 @@ export const NurseDashboard: React.FC = () => {
     { name: 'Sterile Gauze Bandages', stock: '65 Kits', status: 'In Stock', unitPrice: '₹320/kit' },
   ]);
 
-  // Inpatient & Approved Outpatient Queue
-  const [nurseQueue, setNurseQueue] = useState([
-    {
-      id: '1',
-      room: 'Bed 4A',
-      patient: 'Sarah Connor',
-      mrn: 'MC-1001',
-      doctor: 'Dr. Anup Singh',
-      vitalsStatus: 'Pending Nurse Check',
-      lastVitals: 'Not Recorded',
-      dueMed: 'Enalapril 10mg — 09:00 AM',
-    },
-    {
-      id: '2',
-      room: 'Bed 12B',
-      patient: 'John Doe',
-      mrn: 'MC-1002',
-      doctor: 'Dr. Arvind Sharma',
-      vitalsStatus: 'Vitals Recorded & Synced',
-      lastVitals: 'BP: 120/80 • HR: 72 • Temp: 98.6°F',
-      dueMed: 'Metformin 500mg — 10:30 AM',
-    },
-    {
-      id: '3',
-      room: 'Bed 8C',
-      patient: 'Bruce Wayne',
-      mrn: 'MC-1003',
-      doctor: 'Dr. Siddharth Joshi',
-      vitalsStatus: 'Vitals Recorded & Synced',
-      lastVitals: 'BP: 135/88 • HR: 80 • Temp: 99.1°F',
-      dueMed: 'Cefazolin 1g IV — 11:15 AM',
-    },
-  ]);
+  // Real Appointments from Shared Store
+  const [appointments, setAppointments] = useState<SharedAppointment[]>(() => getSharedAppointments());
+
+  const refreshAppointments = () => {
+    setAppointments(getSharedAppointments());
+  };
+
+  useEffect(() => {
+    refreshAppointments();
+    if (typeof window !== 'undefined') {
+      window.addEventListener('medflow-appointment-updated', refreshAppointments);
+      window.addEventListener('storage', refreshAppointments);
+      window.addEventListener('focus', refreshAppointments);
+      return () => {
+        window.removeEventListener('medflow-appointment-updated', refreshAppointments);
+        window.removeEventListener('storage', refreshAppointments);
+        window.removeEventListener('focus', refreshAppointments);
+      };
+    }
+  }, []);
+
+  const queueItems = appointments.map((app, index) => ({
+    id: app.id,
+    room: `Suite ${101 + index}`,
+    patient: app.patientName,
+    mrn: app.mrn,
+    doctor: app.doctorName,
+    vitalsStatus: app.vitals ? 'Vitals Recorded & Synced' : 'Pending Nurse Check',
+    lastVitals: app.vitals ? `BP: ${app.vitals.bp} • HR: ${app.vitals.hr} • Temp: ${app.vitals.temp}` : 'Not Recorded',
+    dueMed: `${app.purpose || 'OPD Checkup'} — ${app.timeSlot}`,
+    rawAppointment: app,
+  }));
 
   const handleOpenVitalsModal = (patientRow: any) => {
     setSelectedPatient(patientRow);
@@ -83,23 +80,29 @@ export const NurseDashboard: React.FC = () => {
   };
 
   const handleVitalsSubmitted = (vitals: any) => {
-    setNurseQueue((prev) =>
-      prev.map((item) =>
-        item.id === selectedPatient?.id
-          ? {
-              ...item,
-              vitalsStatus: 'Vitals Recorded & Synced',
-              lastVitals: `BP: ${vitals.bp} • HR: ${vitals.pulse} • Temp: ${vitals.temp}`,
-            }
-          : item
-      )
-    );
+    if (selectedPatient) {
+      updateSharedAppointmentVitals(selectedPatient.id, {
+        bp: vitals.bp,
+        hr: vitals.pulse,
+        temp: vitals.temp,
+        spo2: vitals.spo2 || '99%',
+        recordedAt: new Date().toLocaleTimeString(),
+        nurseName: 'Nurse Ward Chief',
+      });
+
+      showToast({
+        title: 'Vitals Synced to EMR! 🩺',
+        message: `Vitals recorded for ${selectedPatient.patient}. Patient status updated for Doctor review.`,
+        type: 'success',
+      });
+      refreshAppointments();
+    }
   };
 
   const columns = [
     {
       header: 'Location / Bed',
-      accessor: (row: typeof nurseQueue[0]) => (
+      accessor: (row: any) => (
         <span className="font-bold text-rose-600 flex items-center gap-1.5">
           <Bed className="w-3.5 h-3.5 text-rose-500" /> {row.room}
         </span>
@@ -107,7 +110,7 @@ export const NurseDashboard: React.FC = () => {
     },
     {
       header: 'Patient Name',
-      accessor: (row: typeof nurseQueue[0]) => (
+      accessor: (row: any) => (
         <div className="flex flex-col">
           <span className="font-bold text-slate-900">{row.patient}</span>
           <span className="text-[10px] font-bold text-blue-600">MRN: {row.mrn}</span>
@@ -116,7 +119,7 @@ export const NurseDashboard: React.FC = () => {
     },
     {
       header: 'Attending Doctor',
-      accessor: (row: typeof nurseQueue[0]) => (
+      accessor: (row: any) => (
         <span className="text-slate-700 font-semibold flex items-center gap-1">
           <Stethoscope className="w-3.5 h-3.5 text-blue-500" /> {row.doctor}
         </span>
@@ -124,7 +127,7 @@ export const NurseDashboard: React.FC = () => {
     },
     {
       header: 'Vitals Telemetry Status',
-      accessor: (row: typeof nurseQueue[0]) => (
+      accessor: (row: any) => (
         <div className="flex flex-col gap-1">
           <span
             className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase w-fit ${
@@ -141,7 +144,7 @@ export const NurseDashboard: React.FC = () => {
     },
     {
       header: 'Nurse Actions',
-      accessor: (row: typeof nurseQueue[0]) => (
+      accessor: (row: any) => (
         <button
           onClick={() => handleOpenVitalsModal(row)}
           className="px-3 py-1.5 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-xl shadow-2xs flex items-center gap-1.5 transition-all cursor-pointer"
@@ -242,13 +245,25 @@ export const NurseDashboard: React.FC = () => {
           </span>
         </div>
 
-        <DataTable
-          columns={columns}
-          data={nurseQueue}
-          currentPage={currentPage}
-          totalPages={1}
-          onPageChange={(page) => setCurrentPage(page)}
-        />
+        {queueItems.length > 0 ? (
+          <DataTable
+            columns={columns}
+            data={queueItems}
+            currentPage={currentPage}
+            totalPages={1}
+            onPageChange={(page) => setCurrentPage(page)}
+          />
+        ) : (
+          <div className="p-8 bg-white border border-slate-200 rounded-3xl text-center space-y-3 shadow-2xs">
+            <div className="w-12 h-12 rounded-2xl bg-rose-50 text-rose-600 mx-auto flex items-center justify-center font-bold">
+              <Activity className="w-6 h-6" />
+            </div>
+            <h3 className="font-black text-slate-900 text-sm">Nursing Vitals Queue Empty</h3>
+            <p className="text-xs text-slate-500 max-w-sm mx-auto">
+              There are currently no patients waiting for pre-consultation vitals checkup. When appointments are approved by attending doctors, they will populate here in real-time.
+            </p>
+          </div>
+        )}
       </div>
     </div>
   );

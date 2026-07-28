@@ -2,14 +2,14 @@
 node_modules/
 .pnpm-debug.log*
 
-# Next.js
+# Framework & Build outputs
 .next/
 out/
-
-# Build outputs
 dist/
 build/
 *.tsbuildinfo
+.turbo/
+.cache/
 
 # Environmental variables
 .env
@@ -42,8 +42,12 @@ Thumbs.db
 # Terraform
 .terraform/
 *.tfstate
+*.tfstate.*
 *.tfstate.backup
 *.tfvars
+
+# Scratch & Temp
+scratch/
 
 # SonarQube Scanner Temp Directories
 .scannerwork/

@@ -1,30 +1,5 @@
 # Terraform Infrastructure Configuration for MediCore 360 AWS S3 KYC Document Vault
 
-terraform {
-  required_version = ">= 1.5.0"
-  required_providers {
-    aws = {
-      source  = "hashicorp/aws"
-      version = "~> 5.0"
-    }
-  }
-}
-
-provider "aws" {
-  region = var.aws_region
-}
-
-variable "aws_region" {
-  description = "AWS Cloud Region for MediCore 360 Deployment"
-  type        = string
-  default     = "us-east-1"
-}
-
-variable "environment" {
-  description = "Deployment Environment (production / staging)"
-  type        = string
-  default     = "production"
-}
 
 # 1. Private S3 Bucket for HIPAA-Compliant Encrypted KYC Identity Documents
 resource "aws_s3_bucket" "kyc_vault" {

@@ -17,11 +17,25 @@ import {
   UserCheck,
   TestTube,
   Sparkles,
-  ShieldAlert
+  ShieldAlert,
+  ArrowLeft,
+  Globe,
+  Home,
+  Building2,
+  Droplets
 } from 'lucide-react';
 import { api } from '../../lib/axios';
 import { Logo } from '../../components/shared/Logo';
 import { AuthSidebar } from '../../components/shared/AuthSidebar';
+import { CustomSelect } from '../../components/shared/CustomSelect';
+import {
+  DOCTOR_DEPARTMENTS_OPTIONS,
+  DOCTOR_SPECIALTIES_MAP,
+  DEFAULT_DOCTOR_SPECIALTIES,
+  LAB_SPECIALTIES_OPTIONS,
+  NURSE_WARDS_OPTIONS,
+  BLOOD_GROUP_OPTIONS
+} from '../../data/registrationCatalog';
 
 type PublicRole = 'DOCTOR' | 'PATIENT' | 'NURSE' | 'LAB_TECHNICIAN';
 
@@ -90,9 +104,11 @@ export default function SignupPage() {
 
   // Role-specific fields
   const [medicalLicense, setMedicalLicense] = useState('');
-  const [specialty, setSpecialty] = useState('Cardiology');
+  const [doctorDept, setDoctorDept] = useState('Cardiology');
+  const [specialty, setSpecialty] = useState('Interventional Cardiology');
   const [assignedWard, setAssignedWard] = useState('ICU Ward');
   const [labAccreditation, setLabAccreditation] = useState('');
+  const [labSpecialty, setLabSpecialty] = useState('Hematology');
   const [bloodGroup, setBloodGroup] = useState('O+');
   const [emergencyPhone, setEmergencyPhone] = useState('');
 
@@ -125,7 +141,8 @@ export default function SignupPage() {
       setEmail(`dr_house_${randomNum}@medflow.com`);
       setPassword('Doctor@321');
       setMedicalLicense('MCI-2026-9812');
-      setSpecialty('Cardiology');
+      setDoctorDept('Cardiology');
+      setSpecialty('Interventional Cardiology');
     } else if (role === 'PATIENT') {
       setFirstName('Alexander');
       setLastName('Smith');
@@ -146,7 +163,7 @@ export default function SignupPage() {
       setEmail(`labtech_${randomNum}@medflow.com`);
       setPassword('Technician@321');
       setLabAccreditation('NABL-LAB-8812');
-      setSpecialty('Hematology');
+      setLabSpecialty('Hematology');
     }
     if (error) setError(null);
   };
@@ -157,6 +174,16 @@ export default function SignupPage() {
     setError(null);
 
     try {
+      const activeSpecialty = role === 'LAB_TECHNICIAN' ? labSpecialty : specialty;
+      const activeDept =
+        role === 'DOCTOR'
+          ? doctorDept
+          : role === 'NURSE'
+            ? assignedWard
+            : role === 'LAB_TECHNICIAN'
+              ? labSpecialty
+              : activeSpecialty;
+
       await api.post('/auth/register', {
         firstName,
         lastName,
@@ -164,8 +191,8 @@ export default function SignupPage() {
         password,
         role,
         medicalLicenseNumber: medicalLicense || labAccreditation || undefined,
-        specialty,
-        department: assignedWard || specialty,
+        specialty: activeSpecialty,
+        department: activeDept,
       });
 
       setSuccess(true);
@@ -182,7 +209,7 @@ export default function SignupPage() {
 
   return (
     <div className="min-h-screen flex bg-slate-50 text-slate-800 font-sans overflow-hidden">
-      
+
       {/* LEFT COLUMN: Telemetry Sidebar */}
       <AuthSidebar
         title="Role-Dedicated Workstation Registration"
@@ -190,8 +217,34 @@ export default function SignupPage() {
       />
 
       {/* RIGHT COLUMN: Interactive Dedicated Signup Form */}
-      <div className="w-full lg:w-1/2 flex items-center justify-center p-4 sm:p-8 relative bg-slate-50 overflow-y-auto">
+      <div className="w-full lg:w-1/2 flex flex-col items-center justify-center p-4 sm:p-8 relative bg-slate-50 overflow-y-auto">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-blue-500/5 via-transparent to-transparent pointer-events-none" />
+
+        {/* TOP BAR: Sleek Back to Landing Page / Main Site Navigation */}
+        <div className="w-full max-w-lg flex items-center justify-between mb-3 z-20">
+          <motion.button
+            type="button"
+            whileHover={{ x: -4, scale: 1.02 }}
+            whileTap={{ scale: 0.97 }}
+            onClick={() => router.push('/')}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-white hover:bg-slate-900 text-slate-700 hover:text-white border border-slate-200/90 hover:border-slate-800 rounded-2xl text-xs font-black shadow-sm hover:shadow-lg transition-all duration-200 cursor-pointer group"
+          >
+            <ArrowLeft className="w-3.5 h-3.5 text-blue-600 group-hover:text-blue-400 group-hover:-translate-x-1 transition-transform" />
+            <span>Back to Home</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse ml-0.5" />
+          </motion.button>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => router.push('/')}
+              className="text-[11px] font-bold text-slate-500 hover:text-blue-600 transition-colors flex items-center gap-1.5 cursor-pointer"
+            >
+              <Globe className="w-3.5 h-3.5 text-slate-400" />
+              <span>MediCore 360 Portal</span>
+            </button>
+          </div>
+        </div>
 
         <motion.div
           initial={{ opacity: 0, y: 30 }}
@@ -200,10 +253,10 @@ export default function SignupPage() {
           className="w-full max-w-lg bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-8 shadow-xl relative z-10 space-y-5 my-auto"
         >
           {/* Mobile Brand Header */}
-          <button type="button" className="flex flex-col items-center mb-3 lg:hidden w-full focus:outline-none" onClick={() => router.push('/')}>
+          <div className="flex flex-col items-center mb-3 lg:hidden w-full">
             <Logo size={44} className="mb-1" />
             <h2 className="text-xl font-black text-slate-900 tracking-wider">MediCore 360</h2>
-          </button>
+          </div>
 
           {/* Form Header */}
           <div className="flex items-center justify-between border-b border-slate-100 pb-3">
@@ -242,11 +295,10 @@ export default function SignupPage() {
                       setRole(r.value);
                       if (error) setError(null);
                     }}
-                    className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${
-                      isSelected
+                    className={`p-3 rounded-2xl border text-left transition-all cursor-pointer flex flex-col justify-between ${isSelected
                         ? 'bg-slate-900 text-white border-slate-900 shadow-md scale-[1.02]'
                         : 'bg-slate-50 hover:bg-slate-100 text-slate-800 border-slate-200'
-                    }`}
+                      }`}
                   >
                     <div className="flex items-center justify-between">
                       <div className={`p-1.5 rounded-xl ${isSelected ? 'bg-blue-500/20 text-blue-400' : 'bg-slate-200/70 text-slate-700'}`}>
@@ -376,15 +428,14 @@ export default function SignupPage() {
                     {[1, 2, 3, 4, 5].map((step) => (
                       <div
                         key={step}
-                        className={`h-full flex-1 transition-all duration-300 ${
-                          step <= strengthScore
+                        className={`h-full flex-1 transition-all duration-300 ${step <= strengthScore
                             ? strengthScore >= 4
                               ? 'bg-emerald-500'
                               : strengthScore >= 2
-                              ? 'bg-amber-500'
-                              : 'bg-rose-500'
+                                ? 'bg-amber-500'
+                                : 'bg-rose-500'
                             : 'bg-slate-200'
-                        }`}
+                          }`}
                       />
                     ))}
                   </div>
@@ -394,128 +445,135 @@ export default function SignupPage() {
 
             {/* ROLE-SPECIFIC DEDICATED FIELDS */}
             {role === 'DOCTOR' && (
-              <div className="grid grid-cols-2 gap-3 p-3 bg-blue-50/50 border border-blue-100 rounded-2xl">
+              <div className="space-y-3 p-3.5 bg-blue-50/50 border border-blue-100/90 rounded-2xl">
                 <div>
                   <label htmlFor="signupMedicalLicenseInput" className="block text-[10px] font-bold uppercase tracking-wider text-blue-900 mb-1">
-                    Medical Council License #
+                    Medical Council License # <span className="text-rose-500">*</span>
                   </label>
                   <input
                     id="signupMedicalLicenseInput"
                     type="text"
+                    required
                     value={medicalLicense}
                     onChange={(e) => setMedicalLicense(e.target.value)}
                     placeholder="MCI-2026-9812"
-                    className="w-full px-3 py-1.5 bg-white border border-blue-200 rounded-xl text-xs font-bold text-slate-900 outline-none"
+                    className="w-full px-3.5 py-2.5 bg-white border border-blue-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600 shadow-xs"
                   />
                 </div>
-                <div>
-                  <label htmlFor="signupSpecialtySelect" className="block text-[10px] font-bold uppercase tracking-wider text-blue-900 mb-1">
-                    Clinical Specialty
-                  </label>
-                  <select
+
+                <div className="grid grid-cols-1 gap-3">
+                  <CustomSelect
+                    id="signupDoctorDeptSelect"
+                    label="Clinical Department"
+                    required
+                    value={doctorDept}
+                    onChange={(newDept) => {
+                      setDoctorDept(newDept);
+                      const specs = DOCTOR_SPECIALTIES_MAP[newDept] || DEFAULT_DOCTOR_SPECIALTIES;
+                      setSpecialty(specs[0].value);
+                    }}
+                    options={DOCTOR_DEPARTMENTS_OPTIONS}
+                    placeholder="Select Department..."
+                    searchPlaceholder="Search 30+ Clinical Departments..."
+                    icon={Building2}
+                    accentColor="blue"
+                  />
+
+                  <CustomSelect
                     id="signupSpecialtySelect"
+                    label="Clinical Specialty"
+                    required
                     value={specialty}
-                    onChange={(e) => setSpecialty(e.target.value)}
-                    className="w-full px-3 py-1.5 bg-white border border-blue-200 rounded-xl text-xs font-bold text-slate-900 outline-none cursor-pointer"
-                  >
-                    <option value="Cardiology">Cardiology</option>
-                    <option value="Neurology">Neurology</option>
-                    <option value="Pediatrics">Pediatrics</option>
-                    <option value="Orthopedics">Orthopedics</option>
-                    <option value="Dermatology">Dermatology</option>
-                    <option value="Oncology">Oncology</option>
-                  </select>
+                    onChange={(val) => setSpecialty(val)}
+                    options={DOCTOR_SPECIALTIES_MAP[doctorDept] || DEFAULT_DOCTOR_SPECIALTIES}
+                    placeholder="Select Specialty..."
+                    searchPlaceholder="Search Clinical Specialty..."
+                    icon={Stethoscope}
+                    accentColor="blue"
+                  />
                 </div>
               </div>
             )}
 
             {role === 'NURSE' && (
-              <div className="grid grid-cols-2 gap-3 p-3 bg-purple-50/50 border border-purple-100 rounded-2xl">
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 bg-purple-50/50 border border-purple-100/90 rounded-2xl">
                 <div>
                   <label htmlFor="signupNurseLicenseInput" className="block text-[10px] font-bold uppercase tracking-wider text-purple-900 mb-1">
-                    Nursing Council Reg #
+                    Nursing Council Reg # <span className="text-rose-500">*</span>
                   </label>
                   <input
                     id="signupNurseLicenseInput"
                     type="text"
+                    required
                     value={medicalLicense}
                     onChange={(e) => setMedicalLicense(e.target.value)}
                     placeholder="INC-NURSE-4421"
-                    className="w-full px-3 py-1.5 bg-white border border-purple-200 rounded-xl text-xs font-bold text-slate-900 outline-none"
+                    className="w-full px-3.5 py-2.5 bg-white border border-purple-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-purple-500/20 focus:border-purple-600 shadow-xs"
                   />
                 </div>
-                <div>
-                  <label htmlFor="signupAssignedWardSelect" className="block text-[10px] font-bold uppercase tracking-wider text-purple-900 mb-1">
-                    Assigned Hospital Ward
-                  </label>
-                  <select
-                    id="signupAssignedWardSelect"
-                    value={assignedWard}
-                    onChange={(e) => setAssignedWard(e.target.value)}
-                    className="w-full px-3 py-1.5 bg-white border border-purple-200 rounded-xl text-xs font-bold text-slate-900 outline-none cursor-pointer"
-                  >
-                    <option value="ICU Ward">ICU Ward</option>
-                    <option value="Pediatric Ward">Pediatric Ward</option>
-                    <option value="Post-Op Ward">Post-Op Ward</option>
-                    <option value="Emergency Ward">Emergency Ward</option>
-                  </select>
-                </div>
+
+                <CustomSelect
+                  id="signupAssignedWardSelect"
+                  label="Assigned Hospital Ward"
+                  required
+                  value={assignedWard}
+                  onChange={(val) => setAssignedWard(val)}
+                  options={NURSE_WARDS_OPTIONS}
+                  placeholder="Select Ward..."
+                  searchPlaceholder="Search Hospital Ward..."
+                  icon={ShieldCheck}
+                  accentColor="purple"
+                />
               </div>
             )}
 
             {role === 'LAB_TECHNICIAN' && (
-              <div className="grid grid-cols-2 gap-3 p-3 bg-amber-50/50 border border-amber-100 rounded-2xl">
+              <div className="space-y-3 p-3.5 bg-amber-50/50 border border-amber-100/90 rounded-2xl">
                 <div>
                   <label htmlFor="labAccreditation" className="block text-[10px] font-bold uppercase tracking-wider text-amber-900 mb-1">
-                    Lab Accreditation License #
+                    Lab Accreditation License # <span className="text-rose-500">*</span>
                   </label>
                   <input
                     id="labAccreditation"
                     type="text"
+                    required
                     value={labAccreditation}
                     onChange={(e) => setLabAccreditation(e.target.value)}
                     placeholder="NABL-LAB-8812"
-                    className="w-full px-3 py-1.5 bg-white border border-amber-200 rounded-xl text-xs font-bold text-slate-900 outline-none"
+                    className="w-full px-3.5 py-2.5 bg-white border border-amber-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600 shadow-xs"
                   />
                 </div>
-                <div>
-                  <label htmlFor="labSpecialty" className="block text-[10px] font-bold uppercase tracking-wider text-amber-900 mb-1">
-                    Lab Specialty
-                  </label>
-                  <select
-                    id="labSpecialty"
-                    value={specialty}
-                    onChange={(e) => setSpecialty(e.target.value)}
-                    className="w-full px-3 py-1.5 bg-white border border-amber-200 rounded-xl text-xs font-bold text-slate-900 outline-none cursor-pointer"
-                  >
-                    <option value="Hematology">Hematology</option>
-                    <option value="Microbiology">Microbiology</option>
-                    <option value="Radiology">Radiology</option>
-                    <option value="Genomics">Genomics</option>
-                  </select>
-                </div>
+
+                <CustomSelect
+                  id="labSpecialty"
+                  label="Lab Specialty"
+                  required
+                  value={labSpecialty}
+                  onChange={(val) => setLabSpecialty(val)}
+                  options={LAB_SPECIALTIES_OPTIONS}
+                  placeholder="Select Lab Specialty..."
+                  searchPlaceholder="Search 15+ Lab Specialties..."
+                  icon={TestTube}
+                  accentColor="amber"
+                />
               </div>
             )}
 
             {role === 'PATIENT' && (
-              <div className="grid grid-cols-2 gap-3 p-3 bg-emerald-50/50 border border-emerald-100 rounded-2xl">
-                <div>
-                  <label htmlFor="bloodGroup" className="block text-[10px] font-bold uppercase tracking-wider text-emerald-900 mb-1">
-                    Blood Group
-                  </label>
-                  <select
-                    id="bloodGroup"
-                    value={bloodGroup}
-                    onChange={(e) => setBloodGroup(e.target.value)}
-                    className="w-full px-3 py-1.5 bg-white border border-emerald-200 rounded-xl text-xs font-bold text-slate-900 outline-none cursor-pointer"
-                  >
-                    <option value="O+">O positive (O+)</option>
-                    <option value="A+">A positive (A+)</option>
-                    <option value="B+">B positive (B+)</option>
-                    <option value="AB+">AB positive (AB+)</option>
-                    <option value="O-">O negative (O-)</option>
-                  </select>
-                </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-3.5 bg-emerald-50/50 border border-emerald-100/90 rounded-2xl">
+                <CustomSelect
+                  id="bloodGroup"
+                  label="Blood Group"
+                  required
+                  value={bloodGroup}
+                  onChange={(val) => setBloodGroup(val)}
+                  options={BLOOD_GROUP_OPTIONS}
+                  placeholder="Select Blood Group..."
+                  searchPlaceholder="Search Blood Group..."
+                  icon={Droplets}
+                  accentColor="emerald"
+                />
+
                 <div>
                   <label htmlFor="emergencyPhone" className="block text-[10px] font-bold uppercase tracking-wider text-emerald-900 mb-1">
                     Emergency Contact Phone
@@ -525,8 +583,8 @@ export default function SignupPage() {
                     type="tel"
                     value={emergencyPhone}
                     onChange={(e) => setEmergencyPhone(e.target.value)}
-                    placeholder="+91 9876543210"
-                    className="w-full px-3 py-1.5 bg-white border border-emerald-200 rounded-xl text-xs font-bold text-slate-900 outline-none"
+                    placeholder="+91 98765xxxxx"
+                    className="w-full px-3.5 py-2 bg-white border border-emerald-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 shadow-xs"
                   />
                 </div>
               </div>

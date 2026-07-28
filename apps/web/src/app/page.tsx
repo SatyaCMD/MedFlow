@@ -23,7 +23,15 @@ import {
   CheckCircle2,
   FileText,
   Building2,
-  ChevronRight
+  ChevronRight,
+  ChevronDown,
+  ChevronUp,
+  X,
+  ExternalLink,
+  Code2,
+  Terminal,
+  Server,
+  ShieldCheck
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
 import { AppShell } from '../components/shared/AppShell';
@@ -44,14 +52,94 @@ export default function Home() {
   const router = useRouter();
   const { user, loading, logout } = useAuth();
   const [activeTab, setActiveTab] = useState<'emr' | 'patients' | 'telemetry' | 'security'>('emr');
+  const [expandedCard, setExpandedCard] = useState<number | null>(null);
+  const [modalCard, setModalCard] = useState<any | null>(null);
 
   const landingCards = [
-    { icon: Activity, title: 'Clean Architecture', desc: 'Strict controllers, services, repositories boundary model enforcing separation of concerns.', tag: 'Clean Code' },
-    { icon: Database, title: 'Multi-Tenant Scope', desc: 'Dynamically isolated records based on host mappings and tenant ID cryptographic headers.', tag: 'Isolated Data' },
-    { icon: Key, title: 'Role-Based Access', desc: 'Secure custom matrix checks at compile and runtime for 8 granular clinical roles.', tag: 'RBAC Security' },
-    { icon: Users, title: '8 Dashboards', desc: 'Custom workspace views tailored for Physicians, Nurses, Pharmacists, Admins & Patients.', tag: 'Tailored Views' },
-    { icon: Shield, title: 'Hardened Posture', desc: 'OWASP standards verified, salt/pepper password hashing, parameterized query checks.', tag: 'OWASP Verified' },
-    { icon: Layers, title: 'Observability Stack', desc: 'Structured Pino logs, Prometheus performance metrics, and automated alert triggers.', tag: 'Live Metrics' },
+    {
+      icon: Activity,
+      title: 'Clean Architecture',
+      desc: 'Strict controllers, services, repositories boundary model enforcing separation of concerns.',
+      tag: 'Clean Code',
+      detailedExplanation: 'Enforces strict modular multi-tier separation dividing the backend API into decoupled Controllers, Services, and Data Repositories. Controllers manage HTTP request/response validation contracts, Services execute pure business rules, and Models manage database schemas.',
+      highlights: [
+        'Decoupled Controller-Service Boundary (Zero HTTP leak into domain logic)',
+        'Centralized Middleware Pipeline (Zod validation, rate limiting & auth guards)',
+        'Workspace Package Isolation (@medicore360/shared DTO contracts)'
+      ],
+      specs: ['Node.js 20 ESM', 'TypeScript 5.3', 'Express REST API', 'Zod Validation'],
+      codeSnippet: `// Clean Architecture Controller Handler\nexport class AuthController {\n  async login(req: Request, res: Response) {\n    const dto = loginSchema.parse(req.body);\n    const result = await this.authService.login(dto.identifier, dto.password);\n    return res.json({ success: true, data: result });\n  }\n}`
+    },
+    {
+      icon: Database,
+      title: 'Multi-Tenant Scope',
+      desc: 'Dynamically isolated records based on host mappings and tenant ID cryptographic headers.',
+      tag: 'Isolated Data',
+      detailedExplanation: 'Guarantees logical and cryptographic multi-tenancy across independent hospital units. Every incoming HTTP request inspects host headers and tenant context, automatically injecting tenant ID scoping into Mongo and Redis queries.',
+      highlights: [
+        'Host Header Tenant Resolver (Dynamic subdomain to hospital unit mapping)',
+        'Scoped Mongoose Queries (Automatic tenant context injection on all operations)',
+        'Isolated S3 Document Buckets (Tenant-keyed document vaults for HIPAA safety)'
+      ],
+      specs: ['Tenant Context Middleware', 'Host Header Resolution', 'Isolated Storage Paths', 'Redis Session Partitioning'],
+      codeSnippet: `// Scoped Tenant Query Guard\nconst tenantFilter = { hospitalId: req.tenantId, deletedAt: null };\nconst records = await PatientModel.find({ ...tenantFilter, ...query });`
+    },
+    {
+      icon: Key,
+      title: 'Role-Based Access',
+      desc: 'Secure custom matrix checks at compile and runtime for 8 granular clinical roles.',
+      tag: 'RBAC Security',
+      detailedExplanation: 'Granular permission enforcement across 8 specialized clinical and administrative roles. Ensures users can only access features and records explicitly authorized for their workstation assignment.',
+      highlights: [
+        '8 Dedicated Role Portals (Doctor, Nurse, Lab Tech, Pharmacist, Blood Bank, Patient, Admin, Super Admin)',
+        'Dual Token Flow (15-min Access Token + 7-day Rotating Refresh Token)',
+        'Compile-Time Type Guards (Strict TypeScript enum checks for permissions)'
+      ],
+      specs: ['RS256/HS256 Signed JWTs', 'Argon2id Salt + Pepper', 'Redis Session Revocation', 'RequirePermission Guard'],
+      codeSnippet: `// Granular RBAC Permission Middleware Guard\nrouter.post('/prescribe', \n  requirePermission('WRITE_PRESCRIPTION'), \n  doctorController.createPrescription\n);`
+    },
+    {
+      icon: Users,
+      title: '8 Dashboards',
+      desc: 'Custom workspace views tailored for Physicians, Nurses, Pharmacists, Admins & Patients.',
+      tag: 'Tailored Views',
+      detailedExplanation: 'Purpose-built workstation interfaces tailored for clinical workflows. Includes OPD queues for doctors, bedside vitals loggers for nurses, pharmacy stock fulfillment, blood bank matching, and personal patient vaults.',
+      highlights: [
+        'Physician Studio (ICD-10 prescription generator, OPD queues & EMR history)',
+        'Caregiver Station (ICU triage alerts, vitals logger & bedside round checklists)',
+        'Dispensary & Inventory (Prescription fulfillment & real-time stock audits)'
+      ],
+      specs: ['Next.js 14 App Router', 'Framer Motion', 'Tailwind CSS', 'Recharts Analytics'],
+      codeSnippet: `// Dynamic Workstation View Dispatcher\n<AppShell userRole={user.role}>\n  {role === 'DOCTOR' ? <DoctorDashboard /> : <NurseDashboard />}\n</AppShell>`
+    },
+    {
+      icon: Shield,
+      title: 'Hardened Posture',
+      desc: 'OWASP standards verified, salt/pepper password hashing, parameterized query checks.',
+      tag: 'OWASP Verified',
+      detailedExplanation: 'Architected strictly adhering to OWASP Top 10 security standards. Passwords use memory-hard Argon2id hashing with unique per-user salts and a global environment pepper key.',
+      highlights: [
+        'Argon2id Salt & Pepper Hashing (Resistant to GPU/ASIC rainbow table attacks)',
+        'MFA OTP Verification (6-digit one-time passcode with 5-minute TTL)',
+        'Account Lockout Protocol (3 failed attempts triggers automated Redis lockout)'
+      ],
+      specs: ['OWASP Top 10 Hardened', 'Argon2id + Salt + Pepper', 'MFA OTP Verification', 'Redis Rate Limiter'],
+      codeSnippet: `// Cryptographic Salt & Pepper Password Hashing\nconst hash = await argon2.hash(password, {\n  salt: userSaltBuffer,\n  secret: appPepperBuffer,\n});`
+    },
+    {
+      icon: Layers,
+      title: 'Observability Stack',
+      desc: 'Structured Pino logs, Prometheus performance metrics, and automated alert triggers.',
+      tag: 'Live Metrics',
+      detailedExplanation: 'Comprehensive production monitoring, structured JSON logging, and real-time performance telemetry tracking HTTP request durations, database query latencies, and cache hit ratios.',
+      highlights: [
+        'Structured Pino Logger (JSON logs with request correlation IDs)',
+        'OpenTelemetry API Metrics (Prometheus-compatible HTTP latency tracking)',
+        'Tamper-Evident Audit Trails (Immutable log of clinical data modifications)'
+      ],
+      specs: ['Pino JSON Logger', 'OpenTelemetry API', 'Prometheus Exporter', 'Health Probes'],
+      codeSnippet: `// High-Performance Structured Pino Telemetry Log\nlogger.info({ requestId, durationMs, tenantId }, 'HTTP request completed');`
+    },
   ];
 
   const recentAppointments = [
@@ -422,32 +510,181 @@ export default function Home() {
           <div className="text-center max-w-2xl mx-auto mb-12">
             <span className="text-xs font-extrabold text-blue-600 uppercase tracking-widest">Enterprise Architecture</span>
             <h2 className="text-3xl font-black text-slate-900 mt-2">Built for Modern Hospital Scale</h2>
+            <p className="text-xs text-slate-500 font-medium mt-1">Click any card below to expand its technical specifications & architectural breakdown</p>
           </div>
 
-          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 w-full">
-            {landingCards.map((card, idx) => (
-              <motion.div
-                key={idx}
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5, delay: idx * 0.1 }}
-                whileHover={{ scale: 1.02 }}
-                className="flex flex-col p-6 bg-white border border-slate-200/80 rounded-2xl shadow-sm hover:shadow-md transition-all duration-350 relative group"
-              >
-                <div className="flex items-center justify-between mb-6">
-                  <div className="flex items-center justify-center w-12 h-12 bg-blue-50 border border-blue-100 text-blue-600 rounded-xl group-hover:bg-blue-600 group-hover:text-white transition-colors duration-300">
-                    <card.icon className="w-6 h-6" />
+          <div className="grid grid-cols-1 gap-6 sm:grid-cols-2 lg:grid-cols-3 w-full items-start">
+            {landingCards.map((card, idx) => {
+              const isExpanded = expandedCard === idx;
+              const IconComp = card.icon;
+
+              return (
+                <motion.div
+                  key={idx}
+                  initial={{ opacity: 0, y: 20 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ duration: 0.4, delay: idx * 0.08 }}
+                  onClick={() => setExpandedCard(isExpanded ? null : idx)}
+                  className={`flex flex-col p-6 bg-white border rounded-3xl transition-all duration-300 relative cursor-pointer group ${
+                    isExpanded
+                      ? 'border-blue-500 shadow-xl ring-2 ring-blue-500/20 scale-[1.01]'
+                      : 'border-slate-200/90 shadow-sm hover:shadow-lg hover:border-blue-300'
+                  }`}
+                >
+                  <div className="flex items-center justify-between mb-4">
+                    <div className={`flex items-center justify-center w-12 h-12 rounded-2xl border transition-colors duration-300 ${
+                      isExpanded
+                        ? 'bg-blue-600 text-white border-blue-600 shadow-md'
+                        : 'bg-blue-50 border-blue-100 text-blue-600 group-hover:bg-blue-600 group-hover:text-white'
+                    }`}>
+                      <IconComp className="w-6 h-6" />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      <span className="px-2.5 py-1 bg-slate-100 text-slate-700 text-[10px] font-extrabold rounded-full border border-slate-200/60">
+                        {card.tag}
+                      </span>
+                      <div className="p-1 rounded-full text-slate-400 group-hover:text-blue-600">
+                        {isExpanded ? <ChevronUp className="w-4 h-4 text-blue-600" /> : <ChevronDown className="w-4 h-4" />}
+                      </div>
+                    </div>
                   </div>
-                  <span className="px-2.5 py-1 bg-slate-100 text-slate-600 text-[10px] font-bold rounded-full">
-                    {card.tag}
-                  </span>
-                </div>
-                <h3 className="text-lg font-bold text-slate-900">{card.title}</h3>
-                <p className="mt-2 text-sm text-slate-500 leading-relaxed">{card.desc}</p>
-              </motion.div>
-            ))}
+
+                  <h3 className="text-lg font-black text-slate-900 flex items-center justify-between">
+                    <span>{card.title}</span>
+                  </h3>
+                  <p className="mt-1.5 text-xs text-slate-500 leading-relaxed font-medium">{card.desc}</p>
+
+                  {/* EXPANDED DETAILS SECTION */}
+                  <AnimatePresence>
+                    {isExpanded && (
+                      <motion.div
+                        initial={{ opacity: 0, height: 0 }}
+                        animate={{ opacity: 1, height: 'auto' }}
+                        exit={{ opacity: 0, height: 0 }}
+                        transition={{ duration: 0.3, ease: 'easeInOut' }}
+                        className="overflow-hidden pt-4 mt-4 border-t border-slate-100 space-y-4"
+                      >
+                        <p className="text-xs text-slate-700 font-semibold leading-relaxed bg-blue-50/50 p-3 rounded-2xl border border-blue-100/70">
+                          {card.detailedExplanation}
+                        </p>
+
+                        <div className="space-y-2">
+                          <span className="block text-[10px] font-black uppercase tracking-wider text-slate-500">
+                            Key System Highlights:
+                          </span>
+                          <div className="space-y-1.5">
+                            {card.highlights.map((h, hIdx) => (
+                              <div key={hIdx} className="flex items-start gap-2 text-xs font-semibold text-slate-800">
+                                <CheckCircle2 className="w-3.5 h-3.5 text-blue-600 shrink-0 mt-0.5" />
+                                <span className="leading-snug">{h}</span>
+                              </div>
+                            ))}
+                          </div>
+                        </div>
+
+                        <div className="flex flex-wrap gap-1.5 pt-1">
+                          {card.specs.map((spec, sIdx) => (
+                            <span key={sIdx} className="px-2 py-0.5 bg-slate-100 text-slate-700 text-[10px] font-bold rounded-md border border-slate-200/80">
+                              {spec}
+                            </span>
+                          ))}
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            setModalCard(card);
+                          }}
+                          className="w-full py-2 px-3 bg-blue-600 hover:bg-blue-700 text-white text-xs font-bold rounded-xl flex items-center justify-center gap-1.5 shadow-md shadow-blue-600/20 transition-all cursor-pointer mt-2"
+                        >
+                          <Code2 className="w-3.5 h-3.5" />
+                          <span>Inspect Code Blueprint</span>
+                          <ExternalLink className="w-3 h-3 opacity-80" />
+                        </button>
+                      </motion.div>
+                    )}
+                  </AnimatePresence>
+                </motion.div>
+              );
+            })}
           </div>
         </section>
+
+        {/* FULL ARCHITECTURE BLUEPRINT MODAL */}
+        <AnimatePresence>
+          {modalCard && (
+            <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/60 backdrop-blur-xs">
+              <motion.div
+                initial={{ opacity: 0, scale: 0.95, y: 20 }}
+                animate={{ opacity: 1, scale: 1, y: 0 }}
+                exit={{ opacity: 0, scale: 0.95, y: 20 }}
+                className="bg-white border border-slate-200 rounded-3xl max-w-2xl w-full p-6 sm:p-8 shadow-2xl space-y-5 max-h-[90vh] flex flex-col"
+              >
+                <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-10 h-10 rounded-xl bg-blue-600 text-white flex items-center justify-center shadow-md">
+                      <modalCard.icon className="w-5 h-5" />
+                    </div>
+                    <div>
+                      <h3 className="font-black text-lg text-slate-900 leading-tight">{modalCard.title} Architecture Blueprint</h3>
+                      <span className="text-xs text-blue-600 font-bold">{modalCard.tag} Specification</span>
+                    </div>
+                  </div>
+                  <button
+                    type="button"
+                    onClick={() => setModalCard(null)}
+                    className="p-2 text-slate-400 hover:text-slate-700 bg-slate-100 rounded-xl cursor-pointer hover:bg-slate-200 transition-colors"
+                  >
+                    <X className="w-4 h-4" />
+                  </button>
+                </div>
+
+                <div className="overflow-y-auto space-y-4 pr-1">
+                  <div>
+                    <h4 className="text-xs font-black uppercase tracking-wider text-slate-500 mb-1.5">Executive Summary</h4>
+                    <p className="text-xs text-slate-700 font-medium leading-relaxed bg-slate-50 p-3.5 rounded-2xl border border-slate-200">
+                      {modalCard.detailedExplanation}
+                    </p>
+                  </div>
+
+                  <div>
+                    <h4 className="text-xs font-black uppercase tracking-wider text-slate-500 mb-2">Technical Implementation Stack</h4>
+                    <div className="flex flex-wrap gap-2">
+                      {modalCard.specs.map((s: string, idx: number) => (
+                        <span key={idx} className="px-3 py-1 bg-blue-50 text-blue-700 text-xs font-bold rounded-xl border border-blue-200">
+                          {s}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  {modalCard.codeSnippet && (
+                    <div>
+                      <h4 className="text-xs font-black uppercase tracking-wider text-slate-500 mb-1.5 flex items-center gap-1.5">
+                        <Terminal className="w-3.5 h-3.5 text-blue-600" />
+                        Code & Contract Implementation Blueprint
+                      </h4>
+                      <pre className="p-4 bg-slate-950 text-blue-300 rounded-2xl font-mono text-xs overflow-x-auto leading-relaxed border border-slate-800">
+                        <code>{modalCard.codeSnippet}</code>
+                      </pre>
+                    </div>
+                  )}
+                </div>
+
+                <div className="pt-2 border-t border-slate-100 flex justify-end">
+                  <button
+                    type="button"
+                    onClick={() => setModalCard(null)}
+                    className="px-5 py-2.5 bg-slate-900 text-white font-bold text-xs rounded-xl shadow-md cursor-pointer hover:bg-slate-800 transition-all"
+                  >
+                    Close Spec Inspector
+                  </button>
+                </div>
+              </motion.div>
+            </div>
+          )}
+        </AnimatePresence>
       </div>
 
       <Footer />

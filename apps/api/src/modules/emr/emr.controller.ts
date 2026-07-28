@@ -9,13 +9,13 @@ export class EmrController {
     try {
       const hospitalId = req.user!.hospitalId;
       const { page, limit, sortBy, sortOrder, ...filters } = req.query;
-      
+
       const results = await this.service.getEmrList(
         filters,
         { page, limit, sortBy, sortOrder },
         hospitalId
       );
-      
+
       res.status(200).json({
         success: true,
         data: results.items,
@@ -46,6 +46,16 @@ export class EmrController {
     }
   };
 
+  dispatchPrescription = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const hospitalId = req.user?.hospitalId || 'HOSP-001';
+      const result = await this.service.dispatchPrescription(req.body, hospitalId);
+      res.status(200).json({ success: true, data: result });
+    } catch (err) {
+      next(err);
+    }
+  };
+
   update = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const hospitalId = req.user!.hospitalId;
@@ -66,4 +76,3 @@ export class EmrController {
     }
   };
 }
-

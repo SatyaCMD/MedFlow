@@ -6,6 +6,9 @@ import { StatCard } from '../../components/shared/StatCard';
 import { DataTable } from '../../components/shared/DataTable';
 import { Users, UserPlus, Search, Filter, ShieldCheck } from 'lucide-react';
 
+import { useAuth } from '../../hooks/useAuth';
+import { useRouter } from 'next/navigation';
+
 interface Patient {
   id: string;
   mrn: string;
@@ -18,8 +21,17 @@ interface Patient {
 }
 
 export default function PatientsPage() {
+  const { user, loading } = useAuth();
+  const router = useRouter();
   const [currentPage, setCurrentPage] = useState(1);
   const [searchQuery, setSearchQuery] = useState('');
+
+  if (!loading && !user) {
+    if (typeof window !== 'undefined') {
+      router.push('/explore/patients');
+    }
+    return null;
+  }
 
   const mockPatients: Patient[] = [
     { id: '1', mrn: 'MC-1001', name: 'John Doe', age: 45, gender: 'Male', condition: 'Hypertension', status: 'admitted', doctor: 'Dr. House' },

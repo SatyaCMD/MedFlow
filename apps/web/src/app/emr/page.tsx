@@ -24,11 +24,23 @@ import {
   FileSignature
 } from 'lucide-react';
 
+import { useAuth } from '../../hooks/useAuth';
+import { useRouter } from 'next/navigation';
+
 export default function EmrPage() {
+  const { user, loading } = useAuth();
+  const router = useRouter();
   const { showToast } = useToast();
   const [currentPage, setCurrentPage] = useState(1);
   const [isRxPdfOpen, setIsRxPdfOpen] = useState(false);
   const [isVideoConsultOpen, setIsVideoConsultOpen] = useState(false);
+
+  if (!loading && !user) {
+    if (typeof window !== 'undefined') {
+      router.push('/explore/emr');
+    }
+    return null;
+  }
 
   const [emrRecords] = useState([
     {

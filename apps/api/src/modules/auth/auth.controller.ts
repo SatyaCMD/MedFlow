@@ -108,8 +108,8 @@ export class AuthController {
 
   resetPassword = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { email, code, newPassword } = req.body;
-      const result = await this.service.resetPassword(email, code, newPassword);
+      const { email, code, newPassword, oldPassword } = req.body;
+      const result = await this.service.resetPassword(email, code, newPassword, oldPassword);
       res.status(200).json({ success: true, data: result });
     } catch (err) {
       next(err);

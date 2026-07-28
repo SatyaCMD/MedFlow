@@ -6,6 +6,8 @@ import { motion } from 'framer-motion';
 import { Droplet, ArrowRightLeft, ShieldCheck, CheckCircle2, RefreshCw, X, Plus, AlertCircle } from 'lucide-react';
 import { useToast } from '../../context/ToastContext';
 
+import { api } from '../../lib/axios';
+
 interface BloodBankModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -43,10 +45,9 @@ export const BloodBankModal: React.FC<BloodBankModalProps> = ({ isOpen, onClose 
 
   const fetchInventory = async () => {
     try {
-      const res = await fetch('/api/v1/blood-bank/inventory');
-      const data = await res.json();
-      if (data.success && data.data) {
-        setInventory(data.data);
+      const res = await api.get('/blood-bank/inventory');
+      if (res.data?.success && res.data?.data) {
+        setInventory(res.data.data);
       }
     } catch {
       // Retain fallback local inventory state

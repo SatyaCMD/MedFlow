@@ -75,118 +75,10 @@ const STORAGE_KEYS = {
 };
 
 // Initial Seed Clinical Records (Within 1 Year)
-const INITIAL_CLINICAL_RECORDS: ClinicalRecord[] = [
-  {
-    id: 'cr-101',
-    rxNumber: 'RX-2026-88912',
-    patientName: 'Sarah Connor',
-    mrn: 'MC-1001',
-    doctorName: 'Dr. Anup Singh',
-    department: 'Cardiology',
-    date: '2026-07-20',
-    timestamp: new Date('2026-07-20').getTime(),
-    diagnosis: 'Essential Hypertension & Cardiac Risk Profiling',
-    medications: [
-      { name: 'Amlodipine Besylate 5mg Tablets', dosage: 'Once Daily (QD - Morning) • 30 Days', instructions: 'After Food — Take with water after breakfast' },
-      { name: 'Atorvastatin 10mg Tablets', dosage: 'At Bedtime (HS - Night) • 30 Days', instructions: 'After Food — Lipid management therapy' },
-    ],
-    labTests: [
-      { name: 'Lipid Profile (Total Cholesterol, HDL, LDL)', category: 'Metabolic & Hormonal', specimen: 'Serum', instructions: '12-Hour Fasting Required' },
-      { name: 'ECG / EKG 12-Lead Cardiac Tracing', category: 'Cardiac & ECG', specimen: 'Non-Invasive', instructions: 'Fasting Not Required' },
-    ],
-    signatureHash: 'SHA256: 8f92a40b192c78d011fe928410294ab12',
-  },
-  {
-    id: 'cr-102',
-    rxNumber: 'RX-2026-77401',
-    patientName: 'John Doe',
-    mrn: 'MC-1002',
-    doctorName: 'Dr. Devendra Roy',
-    department: 'Cardiology',
-    date: '2026-06-15',
-    timestamp: new Date('2026-06-15').getTime(),
-    diagnosis: 'Acute Arrhythmia & Cardiac Palpitations',
-    medications: [
-      { name: 'Metoprolol Succinate 25mg Tablets', dosage: 'Twice Daily (BID - Every 12 Hours) • 14 Days', instructions: 'After Food — Monitor heart rate' },
-    ],
-    labTests: [
-      { name: 'ECG / EKG 12-Lead Cardiac Diagnostic Tracing', category: 'Cardiac & ECG', specimen: 'Non-Invasive Diagnostic', instructions: 'Immediate' },
-    ],
-    signatureHash: 'SHA256: 3c12e50d890a77b612fe889104018274d',
-  },
-  {
-    id: 'cr-103',
-    rxNumber: 'RX-2025-55109',
-    patientName: 'Sarah Connor',
-    mrn: 'MC-1001',
-    doctorName: 'Dr. Priya Sharma',
-    department: 'Internal Medicine',
-    date: '2025-11-10',
-    timestamp: new Date('2025-11-10').getTime(),
-    diagnosis: 'Acute Upper Respiratory Tract Infection',
-    medications: [
-      { name: 'Amoxicillin 500mg Capsules', dosage: 'Thrice Daily (TID - Every 8 Hours) • 7 Days', instructions: 'After Food — Take full course' },
-      { name: 'Paracetamol 650mg Tablets', dosage: 'As Needed (PRN) • 5 Days', instructions: 'After Food — For fever > 100°F' },
-    ],
-    signatureHash: 'SHA256: 77a01bc992d34e00192eab8871029471f',
-  },
-];
+const INITIAL_CLINICAL_RECORDS: ClinicalRecord[] = [];
 
 // Initial Seed Lab Orders
-const INITIAL_LAB_ORDERS: LabOrderRecord[] = [
-  {
-    id: 'lo-201',
-    rxNumber: 'RX-2026-88912',
-    patientName: 'Sarah Connor',
-    mrn: 'MC-1001',
-    doctorName: 'Dr. Anup Singh',
-    department: 'Cardiology',
-    testName: 'Lipid Profile (Total Cholesterol, HDL, LDL, Triglycerides)',
-    category: 'Metabolic & Hormonal',
-    specimen: 'Serum (Yellow Top)',
-    fastingRequirement: '12-Hour Fasting Required',
-    date: '2026-07-20',
-    timestamp: new Date('2026-07-20').getTime(),
-    status: 'REPORT_SUBMITTED',
-    report: {
-      findings: 'Total Cholesterol: 210 mg/dL (Mildly Elevated), HDL: 48 mg/dL, LDL: 135 mg/dL, Triglycerides: 160 mg/dL',
-      notes: 'Mild hyperlipidemia noted. Continue statin therapy and dietary restriction.',
-      technicianName: 'Rajesh Kumar (Chief Lab Technician)',
-      submittedAt: '2026-07-20 04:30 PM',
-      doctorName: 'Dr. Anup Singh',
-    },
-  },
-  {
-    id: 'lo-202',
-    rxNumber: 'RX-2026-77401',
-    patientName: 'John Doe',
-    mrn: 'MC-1002',
-    doctorName: 'Dr. Devendra Roy',
-    department: 'Cardiology',
-    testName: 'ECG / EKG 12-Lead Cardiac Diagnostic Tracing',
-    category: 'Cardiac & ECG',
-    specimen: 'Non-Invasive Diagnostic',
-    fastingRequirement: 'Fasting Not Required',
-    date: '2026-07-23',
-    timestamp: new Date('2026-07-23').getTime(),
-    status: 'IN_PROCESSING',
-  },
-  {
-    id: 'lo-203',
-    rxNumber: 'RX-2026-99014',
-    patientName: 'Bruce Wayne',
-    mrn: 'MC-1003',
-    doctorName: 'Dr. Rajesh Patel',
-    department: 'Orthopedics',
-    testName: 'CBC (Complete Blood Count & Differential)',
-    category: 'Blood & Pathology',
-    specimen: 'Venous Blood (EDTA)',
-    fastingRequirement: 'Fasting Not Required',
-    date: '2026-07-24',
-    timestamp: new Date('2026-07-24').getTime(),
-    status: 'PENDING_SAMPLE',
-  },
-];
+const INITIAL_LAB_ORDERS: LabOrderRecord[] = [];
 
 // Initial Seed Pharmacy Sales Records
 const INITIAL_PHARMACY_SALES: PharmacySaleRecord[] = [
@@ -242,6 +134,7 @@ export const saveClinicalRecord = (record: ClinicalRecord) => {
   const updated = [record, ...existing];
   if (typeof window !== 'undefined') {
     localStorage.setItem(STORAGE_KEYS.CLINICAL_RECORDS, JSON.stringify(updated));
+    window.dispatchEvent(new Event('medflow-clinical-records-updated'));
   }
 
   // Also auto-create Lab Orders for any prescribed lab tests!

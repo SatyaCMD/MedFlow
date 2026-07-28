@@ -8,6 +8,12 @@ import { redis } from '../../lib/redis.js';
 import { AppError } from '../../middleware/errorHandler.js';
 import { env } from '../../config/env.js';
 import { sendMail } from '../../lib/mailer.js';
+import {
+  getLoginAlertEmail,
+  getFailedLoginAlertEmail,
+  getPasswordResetOtpEmail,
+  getSignupVerificationEmail,
+} from '../../lib/emailTemplates.js';
 import { ROLES, Role } from '@medicore360/shared';
 import { logger } from '../../lib/logger.js';
 
@@ -126,6 +132,17 @@ export class AuthService {
       department: data.department,
     });
 
+    // Dispatch Signup Verification Email (all roles EXCEPT SUPER_ADMIN and HOSPITAL_ADMIN)
+    if (data.role !== ROLES.SUPER_ADMIN && data.role !== (ROLES as any).HOSPITAL_ADMIN) {
+      const verifyCode = crypto.randomInt(100000, 1000000).toString();
+      const mailContent = getSignupVerificationEmail({
+        userName: `${data.firstName || ''} ${data.lastName || ''}`.trim() || 'User',
+        role: data.role || 'PATIENT',
+        verificationCode: verifyCode,
+      });
+      sendMail({ to: data.email, subject: mailContent.subject, html: mailContent.html }).catch(() => {});
+    }
+
     const userObj = newUser.toObject();
     delete (userObj as Partial<IUser>).passwordHash;
     delete (userObj as Partial<IUser>).passwordSalt;
@@ -194,6 +211,13 @@ export class AuthService {
 
     const isMatch = await this.verifyPassword(password, user.passwordHash, user.passwordSalt);
     if (!isMatch) {
+      // Dispatch Security Warning Email for failed password attempt (All Roles)
+      const warnMail = getFailedLoginAlertEmail({
+        userName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'User',
+        timestamp: new Date().toLocaleString(),
+      });
+      sendMail({ to: user.email, subject: warnMail.subject, html: warnMail.html }).catch(() => {});
+
       // Track failed attempt count in Redis
       const failedKey = `failed_attempts:${normInput}`;
       const attempts = await redis.incr(failedKey);
@@ -224,6 +248,14 @@ export class AuthService {
     // Clear failed attempts and lockout upon successful password match
     await redis.del(`failed_attempts:${normInput}`);
     await redis.del(lockKey);
+
+    // Dispatch Successful Login Alert Email (All Roles)
+    const loginMail = getLoginAlertEmail({
+      userName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'User',
+      role: user.role,
+      timestamp: new Date().toLocaleString(),
+    });
+    sendMail({ to: user.email, subject: loginMail.subject, html: loginMail.html }).catch(() => {});
 
     // Generate OTP and temporary token
     const tempToken = uuidv4();
@@ -256,7 +288,7 @@ export class AuthService {
         `,
       });
     } catch (mailErr) {
-      logger.warn({ mailErr, email: user.email, otpCode }, 'Failed to dispatch email via SMTP. Fallback logging OTP directly for development testing.');
+      logger.info({ email: user.email, otpCode }, '🔑 [DEV OTP CODE] Active 6-digit OTP verification code generated for login session.');
     }
 
     return {
@@ -270,87 +302,157 @@ export class AuthService {
       throw new AppError('Email address is required', 400);
     }
 
-    const normEmail = email.toLowerCase().trim();
-    const user = await User.findOne({ email: normEmail, deletedAt: null });
+    const rawInput = email.trim();
+    const normEmail = rawInput.toLowerCase();
+    const cleanName = rawInput.replace(/^(dr\.|dr|nurse)\s+/i, '').trim();
+
+    let user = await User.findOne({
+      deletedAt: null,
+      $or: [
+        { email: normEmail },
+        { firstName: new RegExp(`^${cleanName}$`, 'i') },
+        { lastName: new RegExp(`^${cleanName}$`, 'i') },
+        {
+          $expr: {
+            $eq: [
+              { $toLower: { $concat: ['$firstName', ' ', '$lastName'] } },
+              cleanName.toLowerCase()
+            ]
+          }
+        }
+      ]
+    });
+
     if (!user) {
       // Don't reveal user non-existence for security, return generic success
       return { success: true, message: 'If registered, an OTP code has been sent to your email.' };
     }
 
-    const otpCode = crypto.randomInt(100000, 1000000).toString();
-    await redis.set(`forgot_otp:${normEmail}`, JSON.stringify({ email: normEmail, code: otpCode }), 'EX', 600); // 10 mins
-
-    try {
-      await sendMail({
-        to: normEmail,
-        subject: 'MedFlow EHMS - Reset Password Verification Code',
-        text: `Hello ${user.firstName},\n\nYour password reset code is: ${otpCode}\n\nThis code will expire in 10 minutes.`,
-        html: `
-          <div style="font-family: Arial, sans-serif; padding: 20px;">
-            <h2>MedFlow Password Reset</h2>
-            <p>Hello <strong>${user.firstName}</strong>,</p>
-            <p>Use the following 6-digit OTP code to reset your account password:</p>
-            <div style="font-size: 32px; font-weight: bold; letter-spacing: 5px; padding: 15px; background: #e0f2fe; color: #0369a1; border-radius: 8px; width: fit-content;">
-              ${otpCode}
-            </div>
-            <p>Valid for 10 minutes.</p>
-          </div>
-        `,
-      });
-    } catch (mailErr) {
-      logger.warn({ mailErr, email: normEmail, otpCode }, 'Forgot Password email send fallback.');
+    // Restrict Admin Password Reset via public email OTP (All Roles EXCEPT Admins)
+    if (user.role === ROLES.SUPER_ADMIN || user.role === (ROLES as any).HOSPITAL_ADMIN) {
+      throw new AppError('Administrative account password resets are restricted to hardware master security keys. Contact Enterprise Security.', 403, 'ADMIN_RESET_RESTRICTED');
     }
 
-    return { success: true, message: 'Password reset OTP code dispatched successfully.' };
+    const otpCode = crypto.randomInt(100000, 1000000).toString();
+    const targetEmail = user.email.toLowerCase();
+    await redis.set(`forgot_otp:${targetEmail}`, JSON.stringify({ email: targetEmail, code: otpCode }), 'EX', 600); // 10 mins
+    await redis.set(`forgot_otp:${normEmail}`, JSON.stringify({ email: targetEmail, code: otpCode }), 'EX', 600);
+
+    try {
+      const resetMail = getPasswordResetOtpEmail({
+        userName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'User',
+        otpCode,
+      });
+      await sendMail({ to: targetEmail, subject: resetMail.subject, html: resetMail.html });
+    } catch (mailErr) {
+      logger.info({ email: targetEmail, otpCode }, '🔑 [DEV OTP CODE] Password reset verification code generated.');
+    }
+
+    return { success: true, message: 'Password reset 6-digit OTP code dispatched to email.' };
   }
 
   async getDebugForgotOtp(email: string) {
     const normEmail = email.toLowerCase().trim();
     const stored = await redis.get(`forgot_otp:${normEmail}`);
-    if (!stored) return { code: '123456', email: normEmail };
+    if (!stored) return null;
     const { code } = JSON.parse(stored);
     return { code, email: normEmail };
   }
 
-  async resetPassword(email: string, code: string, newPassword: string) {
-    if (!email || !code || !newPassword) {
-      throw new AppError('Email, OTP code, and new password are required.', 400);
+  async resetPassword(email: string, code?: string, newPassword?: string, oldPassword?: string) {
+    const targetPassword = newPassword;
+    if (!email || !targetPassword) {
+      throw new AppError('Email and new password are required.', 400);
+    }
+    if (!oldPassword && !code) {
+      throw new AppError('Either current/old password or 6-digit OTP code is required.', 400);
     }
 
-    const normEmail = email.toLowerCase().trim();
-    const stored = await redis.get(`forgot_otp:${normEmail}`);
-    let validOtp = false;
+    const rawInput = email.trim();
+    const normEmail = rawInput.toLowerCase();
+    const cleanName = rawInput.replace(/^(dr\.|dr|nurse)\s+/i, '').trim();
 
-    if (stored) {
-      const parsed = JSON.parse(stored);
-      if (parsed.code === code || code === '123456' || (code && code.length === 6)) {
-        validOtp = true;
-      }
-    } else if (code === '123456' || (code && code.length === 6)) {
-      validOtp = true;
-    }
+    let user = await User.findOne({
+      deletedAt: null,
+      $or: [
+        { email: normEmail },
+        { firstName: new RegExp(`^${cleanName}$`, 'i') },
+        { lastName: new RegExp(`^${cleanName}$`, 'i') },
+        {
+          $expr: {
+            $eq: [
+              { $toLower: { $concat: ['$firstName', ' ', '$lastName'] } },
+              cleanName.toLowerCase()
+            ]
+          }
+        }
+      ]
+    });
 
-    if (!validOtp) {
-      throw new AppError('Invalid or expired OTP code for password reset.', 400, 'INVALID_OTP');
-    }
-
-    const user = await User.findOne({ email: normEmail, deletedAt: null });
     if (!user) {
       throw new AppError('User account not found.', 404);
     }
 
+    if (oldPassword) {
+      const isMatch = await this.verifyPassword(oldPassword, user.passwordHash, user.passwordSalt);
+      if (!isMatch) {
+        throw new AppError('Current / Old password is incorrect.', 400, 'INVALID_OLD_PASSWORD');
+      }
+    } else if (code) {
+      const stored = await redis.get(`forgot_otp:${user.email.toLowerCase()}`) || await redis.get(`forgot_otp:${normEmail}`);
+      let validOtp = false;
+
+      if (stored) {
+        const parsed = JSON.parse(stored);
+        if (parsed.code === code) {
+          validOtp = true;
+        }
+      }
+
+      if (!validOtp) {
+        throw new AppError('Invalid or expired 6-digit OTP code for password reset.', 400, 'INVALID_OTP');
+      }
+    }
+
+    if (targetPassword.length < 6) {
+      throw new AppError('New password must be at least 6 characters long.', 400);
+    }
+
     const salt = crypto.randomBytes(16).toString('hex');
-    const passwordHash = await this.hashPassword(newPassword, salt);
+    const passwordHash = await this.hashPassword(targetPassword, salt);
 
     user.passwordHash = passwordHash;
     user.passwordSalt = salt;
     await user.save();
 
+    // Clear all lockout & failed attempt counters for email and name identifiers
+    const userEmailLower = user.email.toLowerCase();
+    await redis.del(`forgot_otp:${userEmailLower}`);
     await redis.del(`forgot_otp:${normEmail}`);
+    await redis.del(`lockout:${userEmailLower}`);
     await redis.del(`lockout:${normEmail}`);
+    await redis.del(`failed_attempts:${userEmailLower}`);
     await redis.del(`failed_attempts:${normEmail}`);
 
-    return { success: true, message: 'Password has been reset successfully. You can now log in.' };
+    // Send confirmation email
+    try {
+      sendMail({
+        to: user.email,
+        subject: '🔒 MedFlow Account Password Reset Successfully',
+        html: `
+          <div style="font-family: Arial, sans-serif; padding: 20px; color: #1e293b;">
+            <h2>Password Reset Confirmation</h2>
+            <p>Hello <strong>${user.firstName}</strong>,</p>
+            <p>Your MedFlow workstation account password has been updated and your account is active.</p>
+            <p style="font-size:12px; color:#64748b;">If you did not make this change, please contact security immediately.</p>
+          </div>
+        `,
+      }).catch(() => {});
+    } catch {
+      // Non-blocking mail
+    }
+
+    return { success: true, message: 'Password has been reset successfully. Account unlocked. You can now log in.' };
   }
 
   async getDebugOtp(tempToken: string) {
@@ -369,17 +471,10 @@ export class AuthService {
       userId = parsed.userId;
       const storedCode = parsed.code;
 
-      if (storedCode !== code && code !== '123456') {
-        throw new AppError('Invalid verification code.', 401, 'UNAUTHORIZED');
+      if (storedCode !== code) {
+        throw new AppError('Invalid 6-digit verification code.', 401, 'UNAUTHORIZED');
       }
       await redis.del(`otp:${tempToken}`);
-    } else if (code === '123456') {
-      // Dev master fallback: locate default user
-      const defaultUser = await User.findOne({ deletedAt: null });
-      if (!defaultUser) {
-        throw new AppError('OTP expired or invalid session.', 401, 'UNAUTHORIZED');
-      }
-      userId = defaultUser._id.toString();
     } else {
       throw new AppError('OTP expired or invalid session.', 401, 'UNAUTHORIZED');
     }

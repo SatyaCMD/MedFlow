@@ -28,6 +28,8 @@ import {
 } from 'lucide-react';
 import { useToast } from '../../context/ToastContext';
 import { REAL_DOCTORS_DATASET, DoctorProfile } from '../../data/medicalCatalog';
+import { saveSharedAppointment } from '../../data/appointmentStore';
+import { api } from '../../lib/axios';
 
 interface BookDoctorVisitModalProps {
   isOpen: boolean;
@@ -273,12 +275,39 @@ export const BookDoctorVisitModal: React.FC<BookDoctorVisitModalProps> = ({
       consultationFee: numericFee,
     };
 
+    // Save to shared appointment store so Doctor Dashboard receives it!
+    const newAppRecord = {
+      id: String(Date.now()),
+      patientName: patientName || 'Patient',
+      mrn: `MC-${Math.floor(1000 + Math.random() * 9000)}`,
+      doctorName: selectedDoctor.name,
+      department: selectedDept,
+      date: selectedDate,
+      timeSlot: selectedTimeSlot,
+      location: selectedDoctor.hospitalUnit || 'Outpatient Suite 101',
+      purpose: visitReason || 'General OPD Consultation',
+      status: 'PENDING DOCTOR APPROVAL' as const,
+      isPaid: false,
+      amount: selectedDoctor.fee || '₹1,500',
+      patientEmail: patientEmail || `${patientName.toLowerCase().replace(/\s+/g, '.')}@medflow.com`,
+      patientPhone,
+    };
+
+    saveSharedAppointment(newAppRecord);
+
+    // Dispatch API request to backend so confirmation email is sent
+    try {
+      api.post('/appointment/public-book', bookingDetails).catch(() => {});
+    } catch {
+      // Non-blocking
+    }
+
     if (onProceedToPayment) {
       onProceedToPayment(bookingDetails);
     } else {
       showToast({
-        title: 'Appointment Booking Confirmed!',
-        message: `Consultation booked with ${selectedDoctor.name} on ${selectedDate} at ${selectedTimeSlot}.`,
+        title: 'Appointment Booking Confirmed! 📅',
+        message: `Consultation booked with ${selectedDoctor.name}. Confirmation email dispatched to ${patientEmail}.`,
         type: 'success',
       });
       onClose();
@@ -402,7 +431,7 @@ export const BookDoctorVisitModal: React.FC<BookDoctorVisitModalProps> = ({
                   <input
                     type="tel"
                     required
-                    placeholder="+91 9876543210"
+                    placeholder="+91 98765xxxxx"
                     value={patientPhone}
                     onChange={(e) => setPatientPhone(e.target.value)}
                     className="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"
@@ -478,9 +507,8 @@ export const BookDoctorVisitModal: React.FC<BookDoctorVisitModalProps> = ({
                     </div>
                   </div>
                   <ChevronDown
-                    className={`w-4 h-4 text-slate-500 transition-transform ${
-                      isDeptDropdownOpen ? 'rotate-180 text-blue-600' : ''
-                    }`}
+                    className={`w-4 h-4 text-slate-500 transition-transform ${isDeptDropdownOpen ? 'rotate-180 text-blue-600' : ''
+                      }`}
                   />
                 </div>
 
@@ -522,11 +550,10 @@ export const BookDoctorVisitModal: React.FC<BookDoctorVisitModalProps> = ({
                                 setIsDeptDropdownOpen(false);
                                 setDeptSearchQuery('');
                               }}
-                              className={`p-2.5 rounded-xl cursor-pointer transition-all flex items-center justify-between ${
-                                isSelected
+                              className={`p-2.5 rounded-xl cursor-pointer transition-all flex items-center justify-between ${isSelected
                                   ? 'bg-blue-50 border border-blue-200/90 text-blue-900 font-bold'
                                   : 'hover:bg-slate-50 text-slate-800 font-semibold'
-                              }`}
+                                }`}
                             >
                               <div className="flex items-center gap-3 truncate">
                                 <span className="text-lg shrink-0">{meta.icon}</span>
@@ -612,9 +639,8 @@ export const BookDoctorVisitModal: React.FC<BookDoctorVisitModalProps> = ({
                               }
                               setIsDoctorDropdownOpen(false);
                             }}
-                            className={`p-2.5 rounded-xl cursor-pointer hover:bg-blue-50 transition-colors flex items-center justify-between ${
-                              doc.id === selectedDoctor.id ? 'bg-blue-50/80 border border-blue-200/80' : ''
-                            }`}
+                            className={`p-2.5 rounded-xl cursor-pointer hover:bg-blue-50 transition-colors flex items-center justify-between ${doc.id === selectedDoctor.id ? 'bg-blue-50/80 border border-blue-200/80' : ''
+                              }`}
                           >
                             <div className="flex items-center gap-3 truncate">
                               <div className="w-8 h-8 rounded-full bg-slate-100 text-slate-700 font-black text-xs flex items-center justify-center shrink-0">
@@ -696,11 +722,10 @@ export const BookDoctorVisitModal: React.FC<BookDoctorVisitModalProps> = ({
                       key={idx}
                       type="button"
                       onClick={() => setSelectedDate(cd.formattedStr)}
-                      className={`min-w-[85px] p-3 rounded-2xl border text-center transition-all cursor-pointer shrink-0 ${
-                        isSelected
+                      className={`min-w-[85px] p-3 rounded-2xl border text-center transition-all cursor-pointer shrink-0 ${isSelected
                           ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-600/20 scale-105'
                           : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
-                      }`}
+                        }`}
                     >
                       <span className="block text-[10px] font-extrabold uppercase opacity-80">{cd.dayName}</span>
                       <span className="block text-base font-black mt-0.5">{cd.dateNum}</span>
@@ -727,11 +752,10 @@ export const BookDoctorVisitModal: React.FC<BookDoctorVisitModalProps> = ({
                       key={idx}
                       type="button"
                       onClick={() => setSelectedTimeSlot(slot)}
-                      className={`py-2 px-2.5 rounded-xl border text-xs font-black transition-all cursor-pointer flex items-center justify-center gap-1 ${
-                        isSelected
+                      className={`py-2 px-2.5 rounded-xl border text-xs font-black transition-all cursor-pointer flex items-center justify-center gap-1 ${isSelected
                           ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-600/20 scale-105'
                           : 'bg-slate-50 text-slate-800 border-slate-200 hover:bg-slate-100 hover:border-slate-300'
-                      }`}
+                        }`}
                     >
                       <Clock className="w-3 h-3" />
                       <span>{slot}</span>

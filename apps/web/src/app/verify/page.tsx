@@ -166,6 +166,7 @@ function VerifyPageContent() {
       const { data } = response.data;
 
       setSuccess(true);
+      sessionStorage.setItem('medflow_just_logged_in', 'true');
       login(data.accessToken, data.user);
       sessionStorage.removeItem('tempToken');
 
@@ -208,10 +209,10 @@ function VerifyPageContent() {
           </button>
 
           {/* Mobile Brand Header */}
-          <button type="button" className="flex flex-col items-center mb-4 lg:hidden w-full focus:outline-none cursor-pointer" onClick={() => router.push('/')}>
+          <div className="flex flex-col items-center mb-4 lg:hidden w-full">
             <Logo size={48} className="mb-2" />
             <h2 className="text-xl font-black text-slate-900 tracking-wider">MediCore 360</h2>
-          </button>
+          </div>
 
           <div>
             <div className="flex items-center justify-between">
@@ -256,14 +257,7 @@ function VerifyPageContent() {
               </button>
             </div>
 
-            <div className="flex items-center justify-between text-[11px]">
-              <button
-                type="button"
-                onClick={() => handleAutoFill('123456')}
-                className="text-blue-700 hover:text-blue-900 font-bold underline cursor-pointer"
-              >
-                Use Master Test PIN (123456)
-              </button>
+            <div className="flex items-center justify-end text-[11px]">
               <button
                 type="button"
                 onClick={() => setShowMailpitModal(true)}

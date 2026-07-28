@@ -23,6 +23,7 @@ import {
   Sparkles,
   ExternalLink
 } from 'lucide-react';
+import Link from 'next/link';
 import { Logo } from './Logo';
 
 export const Footer: React.FC = () => {
@@ -35,6 +36,7 @@ export const Footer: React.FC = () => {
 
   // Interactive feedback states
   const [showFeedbackModal, setShowFeedbackModal] = useState(false);
+  const [feedbackCategory, setFeedbackCategory] = useState('UI/UX Design');
   const [feedbackRating, setFeedbackRating] = useState(0);
   const [feedbackHoverRating, setFeedbackHoverRating] = useState(0);
   const [feedbackText, setFeedbackText] = useState('');
@@ -250,7 +252,7 @@ export const Footer: React.FC = () => {
               <a href="https://github.com" target="_blank" rel="noopener noreferrer" className="p-2.5 rounded-xl bg-slate-800/80 hover:bg-blue-600/20 hover:text-blue-400 border border-slate-700/80 transition-all text-slate-400">
                 <Github className="w-4 h-4" />
               </a>
-              <a href="https://twitter.com" target="_blank" rel="noopener noreferrer" className="p-2.5 rounded-xl bg-slate-800/80 hover:bg-blue-600/20 hover:text-blue-400 border border-slate-700/80 transition-all text-slate-400">
+              <a href="https://x.com" target="_blank" rel="noopener noreferrer" className="p-2.5 rounded-xl bg-slate-800/80 hover:bg-blue-600/20 hover:text-blue-400 border border-slate-700/80 transition-all text-slate-400">
                 <Twitter className="w-4 h-4" />
               </a>
               <a href="https://linkedin.com" target="_blank" rel="noopener noreferrer" className="p-2.5 rounded-xl bg-slate-800/80 hover:bg-blue-600/20 hover:text-blue-400 border border-slate-700/80 transition-all text-slate-400">
@@ -274,17 +276,17 @@ export const Footer: React.FC = () => {
 
             <ul className={`mt-3 space-y-2.5 md:block ${expandedSections.platform ? 'block' : 'hidden'}`}>
               {[
-                { label: 'Clinical Dashboard', href: '/' },
-                { label: 'Patient Directory', href: '/patients' },
-                { label: 'Appointment Board', href: '/appointments' },
-                { label: 'Billing & Invoices', href: '/billing' },
-                { label: 'EMR Audit Storage', href: '/emr' }
+                { label: 'Clinical Dashboard', href: '/explore/clinical' },
+                { label: 'Patient Directory', href: '/explore/patients' },
+                { label: 'Appointment Board', href: '/explore/appointments' },
+                { label: 'Billing & Invoices', href: '/explore/billing' },
+                { label: 'EMR Audit Storage', href: '/explore/emr' }
               ].map((item) => (
                 <li key={item.label}>
-                  <a href={item.href} className="text-xs text-slate-400 hover:text-blue-400 transition-colors flex items-center gap-1.5 group">
+                  <Link href={item.href} className="text-xs text-slate-400 hover:text-blue-400 transition-colors flex items-center gap-1.5 group">
                     <span className="w-1.5 h-1.5 rounded-full bg-slate-700 group-hover:bg-blue-400 transition-colors" />
                     <span>{item.label}</span>
-                  </a>
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -306,17 +308,17 @@ export const Footer: React.FC = () => {
             <ul className={`mt-3 space-y-2.5 md:block ${expandedSections.resources ? 'block' : 'hidden'}`}>
               {[
                 { label: 'Design Token System', href: '/design', tag: 'v1.0' },
-                { label: 'API Reference Suite', href: '#', tag: 'Swagger' },
-                { label: 'Clean Architecture Guide', href: '#', tag: 'Docs' },
-                { label: 'Postman Test Suite', href: '#', tag: '71 Tests' }
+                { label: 'API Reference Suite', href: '/docs/api', tag: 'Swagger' },
+                { label: 'Clean Architecture Guide', href: '/docs/architecture', tag: 'Docs' },
+                { label: 'Postman Test Suite', href: '/docs/postman', tag: '71 Tests' }
               ].map((item) => (
                 <li key={item.label}>
-                  <a href={item.href} className="text-xs text-slate-400 hover:text-blue-400 transition-colors flex items-center justify-between group">
+                  <Link href={item.href} className="text-xs text-slate-400 hover:text-blue-400 transition-colors flex items-center justify-between group">
                     <span>{item.label}</span>
                     <span className="px-1.5 py-0.5 text-[9px] font-bold bg-slate-800 text-blue-400 rounded-md border border-slate-700">
                       {item.tag}
                     </span>
-                  </a>
+                  </Link>
                 </li>
               ))}
             </ul>
@@ -337,14 +339,14 @@ export const Footer: React.FC = () => {
 
             <ul className={`mt-3 space-y-2.5 md:block ${expandedSections.legal ? 'block' : 'hidden'}`}>
               <li>
-                <a href="#" className="text-xs text-slate-400 hover:text-blue-400 transition-colors">
+                <Link href="/trust/hipaa" className="text-xs text-slate-400 hover:text-blue-400 transition-colors">
                   HIPAA Security Audit
-                </a>
+                </Link>
               </li>
               <li>
-                <a href="#" className="text-xs text-slate-400 hover:text-blue-400 transition-colors">
+                <Link href="/trust/privacy" className="text-xs text-slate-400 hover:text-blue-400 transition-colors">
                   Privacy Policy & Compliance
-                </a>
+                </Link>
               </li>
               <li>
                 <button
@@ -412,118 +414,193 @@ export const Footer: React.FC = () => {
         </div>
       </div>
 
-      {/* INTERACTIVE STAR FEEDBACK POPUP MODAL */}
+      {/* HIGH-INDUSTRY-STANDARD LIGHT THEME PLATFORM FEEDBACK MODAL */}
       <AnimatePresence>
         {showFeedbackModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/70 backdrop-blur-md">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-md">
             <motion.div
-              initial={{ opacity: 0, scale: 0.95, y: 20 }}
+              initial={{ opacity: 0, scale: 0.92, y: 25 }}
               animate={{ opacity: 1, scale: 1, y: 0 }}
-              exit={{ opacity: 0, scale: 0.95, y: 20 }}
-              transition={{ type: 'spring', duration: 0.4 }}
-              className="bg-slate-900 border border-slate-700 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl p-6 relative text-slate-100"
+              exit={{ opacity: 0, scale: 0.92, y: 25 }}
+              transition={{ type: 'spring', bounce: 0.25, duration: 0.4 }}
+              className="bg-white border border-slate-200 rounded-3xl w-full max-w-lg overflow-hidden shadow-2xl p-6 sm:p-8 relative text-slate-900 space-y-5"
             >
+              {/* Background Ambient Glow Accent */}
+              <div className="absolute -top-20 -left-20 w-48 h-48 bg-blue-100/50 rounded-full blur-[80px] pointer-events-none" />
+              <div className="absolute -bottom-20 -right-20 w-48 h-48 bg-indigo-100/50 rounded-full blur-[80px] pointer-events-none" />
+
               {!feedbackSubmitted ? (
-                <form onSubmit={handleFeedbackSubmit} className="space-y-4">
-                  <div className="flex items-center justify-between border-b border-slate-800 pb-3">
-                    <h3 className="font-black text-base text-white flex items-center gap-2">
-                      <MessageSquare className="w-4 h-4 text-blue-400" />
-                      Platform Feedback
-                    </h3>
+                <form onSubmit={handleFeedbackSubmit} className="space-y-5 relative z-10">
+                  <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+                    <div className="flex items-center gap-3">
+                      <div className="p-2.5 bg-blue-50 border border-blue-200 text-blue-600 rounded-2xl shadow-xs">
+                        <MessageSquare className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h3 className="font-black text-lg text-slate-900 leading-tight">Platform Feedback & Review</h3>
+                        <p className="text-xs text-slate-500 font-medium">Shape the next generation of clinical workstations</p>
+                      </div>
+                    </div>
                     <button
                       type="button"
                       onClick={() => setShowFeedbackModal(false)}
-                      className="text-slate-400 hover:text-white text-sm font-bold cursor-pointer"
+                      className="p-2 text-slate-400 hover:text-slate-700 hover:bg-slate-100 rounded-xl transition-all cursor-pointer"
                     >
                       ✕
                     </button>
                   </div>
 
-                  <p className="text-xs text-slate-400 leading-relaxed">
-                    Rate your experience with MediCore 360 to help us optimize workstation workflows:
-                  </p>
-
-                  {/* Dynamic Interactive Star Rating */}
-                  <div className="flex justify-center items-center gap-2 py-4 bg-slate-950/80 rounded-2xl border border-slate-800">
-                    {[1, 2, 3, 4, 5].map((index) => {
-                      const isHighlighted = index <= (feedbackHoverRating || feedbackRating);
-                      return (
+                  {/* Category Selection Pills */}
+                  <div className="space-y-1.5">
+                    <label className="text-[10px] font-black text-slate-500 uppercase tracking-widest block">
+                      Select Feedback Focus Area
+                    </label>
+                    <div className="flex flex-wrap gap-2">
+                      {['🎨 UI/UX Design', '⚡ Speed & Latency', '🔒 Security & Auth', '💡 Feature Request', '🐞 Bug Report'].map((cat) => (
                         <button
-                          key={index}
+                          key={cat}
                           type="button"
-                          onMouseEnter={() => setFeedbackHoverRating(index)}
-                          onMouseLeave={() => setFeedbackHoverRating(0)}
-                          onClick={() => {
-                            setFeedbackRating(index);
-                            if (feedbackError) setFeedbackError('');
-                          }}
-                          className="focus:outline-none transition-transform active:scale-90 cursor-pointer"
+                          onClick={() => setFeedbackCategory(cat)}
+                          className={`px-3 py-1.5 rounded-xl text-xs font-bold transition-all cursor-pointer ${
+                            feedbackCategory === cat
+                              ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20 border border-blue-500'
+                              : 'bg-slate-50 text-slate-600 border border-slate-200 hover:bg-slate-100 hover:text-slate-900'
+                          }`}
                         >
-                          <Star
-                            className={`w-8 h-8 transition-all ${
-                              isHighlighted
-                                ? 'fill-amber-400 text-amber-400 drop-shadow-md'
-                                : 'text-slate-700'
-                            }`}
-                          />
+                          {cat}
                         </button>
-                      );
-                    })}
+                      ))}
+                    </div>
                   </div>
 
+                  {/* Interactive Dynamic Star Rating Container */}
+                  <div className="p-5 bg-slate-50/80 border border-slate-200 rounded-2xl space-y-2 flex flex-col items-center justify-center text-center shadow-xs">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 block">
+                      Rate System Workstation Experience
+                    </span>
+
+                    <div className="flex justify-center items-center gap-3 py-1">
+                      {[1, 2, 3, 4, 5].map((index) => {
+                        const isHighlighted = index <= (feedbackHoverRating || feedbackRating);
+                        return (
+                          <motion.button
+                            key={index}
+                            type="button"
+                            whileHover={{ scale: 1.2 }}
+                            whileTap={{ scale: 0.9 }}
+                            onMouseEnter={() => setFeedbackHoverRating(index)}
+                            onMouseLeave={() => setFeedbackHoverRating(0)}
+                            onClick={() => {
+                              setFeedbackRating(index);
+                              if (feedbackError) setFeedbackError('');
+                            }}
+                            className="focus:outline-none cursor-pointer p-1"
+                          >
+                            <Star
+                              className={`w-8 h-8 transition-all ${
+                                isHighlighted
+                                  ? 'fill-amber-400 text-amber-400 drop-shadow-[0_0_8px_rgba(251,191,36,0.4)]'
+                                  : 'text-slate-300'
+                              }`}
+                            />
+                          </motion.button>
+                        );
+                      })}
+                    </div>
+
+                    {/* Dynamic Rating Description Label */}
+                    <span className="text-xs font-extrabold text-amber-600 block">
+                      {(feedbackHoverRating || feedbackRating) === 1 && '💔 Needs Significant Improvement'}
+                      {(feedbackHoverRating || feedbackRating) === 2 && '⚠️ Fair Experience'}
+                      {(feedbackHoverRating || feedbackRating) === 3 && '👍 Good & Reliable'}
+                      {(feedbackHoverRating || feedbackRating) === 4 && '🌟 Great System!'}
+                      {(feedbackHoverRating || feedbackRating) === 5 && '🚀 Exceptional Platform!'}
+                      {!(feedbackHoverRating || feedbackRating) && 'Tap stars to assign score'}
+                    </span>
+                  </div>
+
+                  {/* Quick Tap-To-Add Suggestion Chips */}
                   <div className="space-y-1.5">
-                    <label className="text-xs font-bold text-slate-300 uppercase tracking-wider">
-                      Feedback Details
-                    </label>
+                    <span className="text-[10px] font-black uppercase text-slate-500 tracking-wider block">
+                      Quick Suggestions (Tap to add):
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {['⚡ Fast loading', '🎨 Clean UI', '🔒 Secure EMR', '🩺 Intuitive OPD Flow', '💊 Easy Prescriptions'].map((chip) => (
+                        <button
+                          key={chip}
+                          type="button"
+                          onClick={() => {
+                            setFeedbackText((prev) => (prev ? `${prev} • ${chip}` : chip));
+                            if (feedbackError) setFeedbackError('');
+                          }}
+                          className="px-2.5 py-1 bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-700 text-[10px] font-bold rounded-lg border border-slate-200 transition-all cursor-pointer"
+                        >
+                          + {chip}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Detailed Textarea */}
+                  <div className="space-y-1.5">
+                    <div className="flex items-center justify-between text-[10px] font-black uppercase tracking-wider text-slate-600">
+                      <span>Feedback Details</span>
+                      <span className="text-slate-400 font-mono">{feedbackText.length} / 500</span>
+                    </div>
                     <textarea
-                      placeholder="Share your thoughts or suggest feature improvements..."
+                      placeholder="Share your experience or feature suggestions in detail..."
+                      maxLength={500}
                       value={feedbackText}
                       onChange={(e) => {
                         setFeedbackText(e.target.value);
                         if (feedbackError) setFeedbackError('');
                       }}
-                      rows={4}
-                      className="w-full px-3.5 py-2.5 rounded-xl border border-slate-700 bg-slate-950 text-white text-xs placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 resize-none transition-all"
+                      rows={3}
+                      className="w-full px-4 py-3 rounded-2xl border border-slate-200 bg-slate-50 text-slate-900 text-xs placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:bg-white resize-none transition-all"
                     />
                   </div>
 
                   {feedbackError && (
-                    <p className="text-xs text-rose-400 flex items-center gap-1">
-                      <AlertTriangle className="w-3.5 h-3.5" />
+                    <motion.p
+                      initial={{ opacity: 0, y: -5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      className="text-xs text-rose-600 font-bold flex items-center gap-1.5 px-1"
+                    >
+                      <AlertTriangle className="w-4 h-4 shrink-0" />
                       {feedbackError}
-                    </p>
+                    </motion.p>
                   )}
 
-                  <div className="flex justify-end gap-2 pt-2">
+                  <div className="flex justify-end gap-3 pt-2">
                     <button
                       type="button"
                       onClick={() => setShowFeedbackModal(false)}
-                      className="px-4 py-2 text-xs font-bold rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 transition-all cursor-pointer"
+                      className="px-4 py-2.5 text-xs font-bold rounded-xl bg-slate-100 hover:bg-slate-200 text-slate-700 border border-slate-200 transition-all cursor-pointer"
                     >
                       Cancel
                     </button>
                     <button
                       type="submit"
-                      className="px-5 py-2 text-xs font-bold rounded-xl bg-blue-600 hover:bg-blue-500 text-white shadow-lg shadow-blue-600/30 transition-all flex items-center gap-1.5 cursor-pointer"
+                      className="px-6 py-2.5 text-xs font-black rounded-xl bg-blue-600 hover:bg-blue-700 text-white shadow-lg shadow-blue-600/25 transition-all flex items-center gap-2 cursor-pointer active:scale-95"
                     >
                       <span>Submit Review</span>
-                      <ThumbsUp className="w-3.5 h-3.5" />
+                      <ThumbsUp className="w-4 h-4" />
                     </button>
                   </div>
                 </form>
               ) : (
                 <motion.div
-                  initial={{ opacity: 0, scale: 0.95 }}
+                  initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
-                  className="flex flex-col items-center justify-center py-8 text-center space-y-4"
+                  className="flex flex-col items-center justify-center py-10 text-center space-y-4 relative z-10"
                 >
-                  <div className="w-14 h-14 rounded-full bg-emerald-500/20 border border-emerald-500/40 flex items-center justify-center text-emerald-400 animate-bounce">
-                    <Heart className="w-7 h-7 fill-current" />
+                  <div className="w-16 h-16 rounded-3xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600 shadow-lg shadow-emerald-500/10 animate-bounce">
+                    <Heart className="w-8 h-8 fill-current" />
                   </div>
                   <div className="space-y-1">
-                    <h3 className="font-bold text-lg text-white">Review Submitted!</h3>
-                    <p className="text-xs text-slate-400 max-w-xs leading-relaxed">
-                      Thank you for your feedback! Your input helps us continuously improve MediCore 360.
+                    <h3 className="font-black text-xl text-slate-900">Review Successfully Dispatched!</h3>
+                    <p className="text-xs text-slate-600 max-w-xs leading-relaxed font-medium">
+                      Thank you for your review. Your insights directly optimize MediCore 360 workstation design and telemetry performance.
                     </p>
                   </div>
                 </motion.div>

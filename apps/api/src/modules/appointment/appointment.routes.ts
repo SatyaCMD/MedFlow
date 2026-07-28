@@ -10,6 +10,9 @@ import { PERMISSIONS } from '@medicore360/shared';
 const router = Router();
 const controller = new AppointmentController();
 
+// Unauthenticated appointment booking for patients
+router.post('/public-book', controller.bookPublic);
+
 router.use(authenticate);
 
 router.route('/')

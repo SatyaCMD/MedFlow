@@ -16,6 +16,11 @@ import {
   LabOrderRecord,
 } from '../../data/medicalHistoryStore';
 import {
+  getSharedAppointments,
+  updateSharedAppointmentStatus,
+  SharedAppointment,
+} from '../../data/appointmentStore';
+import {
   Stethoscope,
   Calendar,
   Clock,
@@ -53,13 +58,26 @@ export const DoctorDashboard: React.FC = () => {
       : `Dr. ${user.firstName} ${user.lastName}`
     : 'Dr. Anup Singh';
 
-  // Appointments State
-  const [appointments, setAppointments] = useState([
-    { id: '1', time: '09:00 AM', patient: 'Sarah Connor', type: 'Hypertension Follow-Up', mrn: 'MC-1001', status: 'Pending Doctor Approval' },
-    { id: '2', time: '10:30 AM', patient: 'John Doe', type: 'ECG Report Review', mrn: 'MC-1002', status: 'Approved' },
-    { id: '3', time: '11:15 AM', patient: 'Bruce Wayne', type: 'Post-Op Knee Eval', mrn: 'MC-1003', status: 'Completed' },
-    { id: '4', time: '02:00 PM', patient: 'Diana Prince', type: 'Cardiology Assessment', mrn: 'MC-1004', status: 'Pending Doctor Approval' },
-  ]);
+  // Appointments State from Shared Store
+  const [appointments, setAppointments] = useState<SharedAppointment[]>(() => getSharedAppointments());
+
+  const refreshAppointments = () => {
+    setAppointments(getSharedAppointments());
+  };
+
+  useEffect(() => {
+    refreshAppointments();
+    if (typeof window !== 'undefined') {
+      window.addEventListener('medflow-appointment-updated', refreshAppointments);
+      window.addEventListener('storage', refreshAppointments);
+      window.addEventListener('focus', refreshAppointments);
+      return () => {
+        window.removeEventListener('medflow-appointment-updated', refreshAppointments);
+        window.removeEventListener('storage', refreshAppointments);
+        window.removeEventListener('focus', refreshAppointments);
+      };
+    }
+  }, []);
 
   // Clinical Records & Lab Orders State
   const [clinicalRecords, setClinicalRecords] = useState<ClinicalRecord[]>([]);
@@ -83,12 +101,11 @@ export const DoctorDashboard: React.FC = () => {
   }, [isPrescribeStudioOpen, isHistoryModalOpen, isLabReportsModalOpen]);
 
   const handleApprove = (apptId: string, patientName: string) => {
-    setAppointments((prev) =>
-      prev.map((a) => (a.id === apptId ? { ...a, status: 'Approved & Confirmed' } : a))
-    );
+    updateSharedAppointmentStatus(apptId, 'PENDING NURSE VITALS');
+    refreshAppointments();
     showToast({
-      title: 'Appointment Approved!',
-      message: `Confirmed consultation for ${patientName}. Routed to Nurse Pre-Consultation Vitals Queue.`,
+      title: 'Appointment Approved! 🩺',
+      message: `Confirmed consultation for ${patientName}. Request routed to Nursing Ward for pre-consultation vitals checkup.`,
       type: 'success',
     });
   };
@@ -114,8 +131,16 @@ export const DoctorDashboard: React.FC = () => {
     });
   };
 
-  const openPrescribeStudio = (patientName: string, mrn: string) => {
-    setActivePatient({ name: patientName, mrn });
+  const openPrescribeStudio = (row: SharedAppointment) => {
+    if (!row.vitals && row.status !== 'VITALS RECORDED & READY FOR DOCTOR') {
+      showToast({
+        title: 'Vitals Checkup Required! 🩺',
+        message: `Nurse vitals checkup required before issuing digital E-Prescription for ${row.patientName}. Patient is currently in Nursing Ward Queue.`,
+        type: 'warning',
+      });
+      return;
+    }
+    setActivePatient({ name: row.patientName, mrn: row.mrn, id: row.id });
     setIsPrescribeStudioOpen(true);
   };
 
@@ -159,34 +184,34 @@ export const DoctorDashboard: React.FC = () => {
   const columns = [
     {
       header: 'Time Slot',
-      accessor: (row: typeof appointments[0]) => (
+      accessor: (row: SharedAppointment) => (
         <span className="font-bold text-blue-600 flex items-center gap-1.5 tabular-nums">
-          <Clock className="w-3.5 h-3.5 text-blue-500" /> {row.time}
+          <Clock className="w-3.5 h-3.5 text-blue-500" /> {row.timeSlot || row.date}
         </span>
       ),
     },
     {
       header: 'Patient Name',
-      accessor: (row: typeof appointments[0]) => (
+      accessor: (row: SharedAppointment) => (
         <button
-          onClick={() => openPrescribeStudio(row.patient, row.mrn)}
+          onClick={() => openPrescribeStudio(row)}
           className="font-black text-slate-900 hover:text-blue-600 hover:underline cursor-pointer flex items-center gap-1.5 text-left"
         >
           <User className="w-3.5 h-3.5 text-slate-400" />
-          <span>{row.patient}</span>
+          <span>{row.patientName}</span>
         </button>
       ),
     },
-    { header: 'MRN Code', accessor: (row: typeof appointments[0]) => <span className="text-blue-600 font-bold">{row.mrn}</span> },
-    { header: 'Consultation Purpose', accessor: (row: typeof appointments[0]) => <span className="text-slate-700 font-semibold">{row.type}</span> },
+    { header: 'MRN Code', accessor: (row: SharedAppointment) => <span className="text-blue-600 font-bold">{row.mrn}</span> },
+    { header: 'Consultation Purpose', accessor: (row: SharedAppointment) => <span className="text-slate-700 font-semibold">{row.purpose || row.department}</span> },
     {
       header: 'Approval Status',
-      accessor: (row: typeof appointments[0]) => (
+      accessor: (row: SharedAppointment) => (
         <span
           className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase ${
             row.status.includes('Completed')
               ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
-              : row.status.includes('Approved')
+              : row.status.includes('Approved') || row.status.includes('VITALS')
                 ? 'bg-blue-100 text-blue-800 border border-blue-300'
                 : row.status === 'Rescheduled'
                   ? 'bg-purple-100 text-purple-800 border border-purple-300'
@@ -199,11 +224,11 @@ export const DoctorDashboard: React.FC = () => {
     },
     {
       header: 'Doctor Actions',
-      accessor: (row: typeof appointments[0]) => (
+      accessor: (row: SharedAppointment) => (
         <div className="flex items-center gap-1.5 flex-wrap">
-          {row.status.includes('Pending') && (
+          {row.status === 'PENDING DOCTOR APPROVAL' && (
             <button
-              onClick={() => handleApprove(row.id, row.patient)}
+              onClick={() => handleApprove(row.id, row.patientName)}
               className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold rounded-lg shadow-2xs flex items-center gap-1 cursor-pointer transition-all"
             >
               <Check className="w-3.5 h-3.5" />
@@ -212,7 +237,7 @@ export const DoctorDashboard: React.FC = () => {
           )}
 
           <button
-            onClick={() => openPrescribeStudio(row.patient, row.mrn)}
+            onClick={() => openPrescribeStudio(row)}
             className="px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white text-[11px] font-bold rounded-lg shadow-2xs flex items-center gap-1 cursor-pointer transition-all"
           >
             <Pill className="w-3.5 h-3.5" />
@@ -220,7 +245,7 @@ export const DoctorDashboard: React.FC = () => {
           </button>
 
           <button
-            onClick={() => openLabReportsModal(row.patient, row.mrn)}
+            onClick={() => openLabReportsModal(row.patientName, row.mrn)}
             className="px-2.5 py-1 bg-cyan-600 hover:bg-cyan-500 text-white text-[11px] font-bold rounded-lg shadow-2xs flex items-center gap-1 cursor-pointer transition-all"
           >
             <FlaskConical className="w-3.5 h-3.5" />
@@ -228,7 +253,7 @@ export const DoctorDashboard: React.FC = () => {
           </button>
 
           <button
-            onClick={() => openPatientHistory(row.patient, row.mrn)}
+            onClick={() => openPatientHistory(row.patientName, row.mrn)}
             className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-[11px] font-bold rounded-lg border border-indigo-200 flex items-center gap-1 cursor-pointer transition-all"
           >
             <History className="w-3.5 h-3.5 text-indigo-600" />
@@ -545,7 +570,14 @@ export const DoctorDashboard: React.FC = () => {
           </button>
 
           <button
-            onClick={() => openPrescribeStudio('Sarah Connor', 'MC-1001')}
+            onClick={() => {
+              const appt = appointments[0];
+              if (appt) {
+                openPrescribeStudio(appt);
+              } else {
+                showToast({ title: 'No Patient Selected', message: 'Please select an appointment from the queue to prescribe.', type: 'info' });
+              }
+            }}
             className="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-blue-600/20 flex items-center gap-2 cursor-pointer transition-all"
           >
             <Sparkles className="w-4 h-4 text-blue-200" />
@@ -574,7 +606,19 @@ export const DoctorDashboard: React.FC = () => {
           </span>
         </div>
 
-        <DataTable columns={columns} data={appointments} />
+        {appointments.length > 0 ? (
+          <DataTable columns={columns} data={appointments} />
+        ) : (
+          <div className="p-8 bg-white border border-slate-200 rounded-3xl text-center space-y-3">
+            <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 mx-auto flex items-center justify-center font-bold">
+              <Clock className="w-6 h-6" />
+            </div>
+            <h3 className="font-black text-slate-900 text-sm">Consultation Queue Empty</h3>
+            <p className="text-xs text-slate-500 max-w-sm mx-auto">
+              There are currently no outpatient consultations scheduled. When patients book an OPD visit, their appointments will appear here in real-time.
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Reschedule Modal */}

@@ -20,11 +20,23 @@ import {
   PieChart
 } from 'lucide-react';
 
+import { useAuth } from '../../hooks/useAuth';
+import { useRouter } from 'next/navigation';
+
 export default function BillingPage() {
+  const { user, loading } = useAuth();
+  const router = useRouter();
   const { showToast } = useToast();
   const [currentPage, setCurrentPage] = useState(1);
   const [isPaymentOpen, setIsPaymentOpen] = useState(false);
   const [paymentTarget, setPaymentTarget] = useState({ title: 'IPD Hospital Stay & Surgery Package', amount: '₹45,800' });
+
+  if (!loading && !user) {
+    if (typeof window !== 'undefined') {
+      router.push('/explore/billing');
+    }
+    return null;
+  }
 
   const [invoices] = useState([
     { id: 'INV-9901', date: 'Jul 22, 2026', patient: 'Sarah Connor', dept: 'IPD Cardiology Ward', total: '₹45,800', tpaStatus: 'TPA Cashless Pre-Approved', gst: '₹2,290 (5%)', status: 'Paid' },

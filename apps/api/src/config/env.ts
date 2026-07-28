@@ -33,9 +33,13 @@ const envSchema = z.object({
   JWT_REFRESH_SECRET: z.string().min(8, 'JWT_REFRESH_SECRET must be configured'),
   APP_PEPPER: z.string().min(8, 'APP_PEPPER must be configured'),
   SMTP_HOST: z.string().default('localhost'),
-  SMTP_PORT: z.coerce.number().default(1025),
+  SMTP_PORT: z.coerce.number().default(1026),
   SMTP_USER: z.string().optional().default(''),
   SMTP_PASS: z.string().optional().default(''),
+  AWS_REGION: z.string().default('us-east-1'),
+  AWS_ACCESS_KEY_ID: z.string().optional().default(''),
+  AWS_SECRET_ACCESS_KEY: z.string().optional().default(''),
+  AWS_S3_KYC_BUCKET: z.string().default('medflow-kyc-documents-production'),
 });
 
 const parseEnv = () => {

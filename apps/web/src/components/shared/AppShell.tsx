@@ -52,7 +52,7 @@ interface AppShellProps {
 }
 
 export const AppShell: React.FC<AppShellProps> = ({ children, userRole = 'DOCTOR' }) => {
-  const { logout, user } = useAuth();
+  const { logout, user, loading } = useAuth();
   const { showToast } = useToast();
   const pathname = usePathname();
 
@@ -81,17 +81,53 @@ export const AppShell: React.FC<AppShellProps> = ({ children, userRole = 'DOCTOR
     amount: '₹1,500',
     patientName: 'Alex Care',
   });
+
   const [kycSubmitted, setKycSubmitted] = useState(false);
   const [holdTimeLeft, setHoldTimeLeft] = useState(300);
   const [isApproved, setIsApproved] = useState(false);
 
-  // Trigger KYC modal on first visit for non-super-admins
+  // Interactive Login & Logout Popup States
+  const [showLoginWelcomeModal, setShowLoginWelcomeModal] = useState(false);
+  const [showLogoutConfirmModal, setShowLogoutConfirmModal] = useState(false);
+
   useEffect(() => {
-    if (!isSuperAdmin && !kycSubmitted && !isApproved) {
+    if (typeof window === 'undefined') return;
+    if (user && sessionStorage.getItem('medflow_just_logged_in') === 'true') {
+      sessionStorage.removeItem('medflow_just_logged_in');
+      setShowLoginWelcomeModal(true);
+    }
+  }, [user]);
+
+  // Trigger KYC modal ONLY on first visit for non-super-admins after auth loading completes
+  useEffect(() => {
+    if (typeof window === 'undefined') return;
+    if (loading) return; // Do NOT trigger while auth is loading
+    if (!user) return; // Do NOT trigger if unauthenticated
+
+    const userEmail = user.email;
+    const userId = user.id;
+
+    const emailDone = userEmail ? localStorage.getItem(`medflow_kyc_completed_${userEmail}`) === 'true' : false;
+    const idDone = userId ? localStorage.getItem(`medflow_kyc_completed_${userId}`) === 'true' : false;
+    const isAlreadyCompleted = emailDone || idDone;
+
+    if (!isSuperAdmin && !isAlreadyCompleted && !kycSubmitted && !isApproved) {
       const timer = setTimeout(() => setIsKycModalOpen(true), 1200);
       return () => clearTimeout(timer);
+    } else {
+      setIsKycModalOpen(false);
     }
-  }, [isSuperAdmin, kycSubmitted, isApproved]);
+  }, [user, loading, isSuperAdmin, kycSubmitted, isApproved]);
+
+  const handleKycSubmitted = () => {
+    setKycSubmitted(true);
+    setIsApproved(true);
+    setIsKycModalOpen(false);
+    if (typeof window !== 'undefined' && user) {
+      if (user.email) localStorage.setItem(`medflow_kyc_completed_${user.email}`, 'true');
+      if (user.id) localStorage.setItem(`medflow_kyc_completed_${user.id}`, 'true');
+    }
+  };
 
   // Hold queue countdown timer
   useEffect(() => {
@@ -118,22 +154,40 @@ export const AppShell: React.FC<AppShellProps> = ({ children, userRole = 'DOCTOR
     showToastRef.current = showToast;
   }, [logout, showToast]);
 
-  // Session timeout countdown timer
+  // Session timeout countdown timer with persistent sessionStorage timestamp
   useEffect(() => {
-    const interval = setInterval(() => {
-      setSessionTimeLeft((prev) => {
-        if (prev <= 1) {
-          if (logoutRef.current) logoutRef.current();
-          if (showToastRef.current) {
-            showToastRef.current({ title: 'Session Expired', message: '30-minute security window elapsed.', type: 'warning' });
-          }
-          return 0;
+    if (typeof window === 'undefined') return;
+
+    const activeUserId = user?.id || user?.email || 'guest';
+    const sessionKey = `medflow_session_expiry_${activeUserId}`;
+    let expiryStr = sessionStorage.getItem(sessionKey);
+
+    if (!expiryStr) {
+      const newExpiry = Date.now() + 1800 * 1000; // 30 minutes (1800s)
+      sessionStorage.setItem(sessionKey, newExpiry.toString());
+      expiryStr = newExpiry.toString();
+    }
+
+    const expiryTime = parseInt(expiryStr, 10);
+
+    const updateTimer = () => {
+      const now = Date.now();
+      const remainingSecs = Math.max(0, Math.floor((expiryTime - now) / 1000));
+      setSessionTimeLeft(remainingSecs);
+
+      if (remainingSecs <= 0) {
+        sessionStorage.removeItem(sessionKey);
+        if (logoutRef.current) logoutRef.current();
+        if (showToastRef.current) {
+          showToastRef.current({ title: 'Session Expired', message: '30-minute security window elapsed.', type: 'warning' });
         }
-        return prev - 1;
-      });
-    }, 1000);
+      }
+    };
+
+    updateTimer();
+    const interval = setInterval(updateTimer, 1000);
     return () => clearInterval(interval);
-  }, []);
+  }, [user]);
 
   const formatTimer = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -309,13 +363,99 @@ export const AppShell: React.FC<AppShellProps> = ({ children, userRole = 'DOCTOR
       {/* KYC Document Verification Modal */}
       <KycModal
         isOpen={isKycModalOpen}
-        onClose={() => setIsKycModalOpen(false)}
-        userRole={currentRole}
-        onKycSubmitted={() => {
-          setKycSubmitted(true);
+        onClose={() => {
           setIsKycModalOpen(false);
+          if (typeof window !== 'undefined' && user) {
+            if (user.email) localStorage.setItem(`medflow_kyc_completed_${user.email}`, 'true');
+            if (user.id) localStorage.setItem(`medflow_kyc_completed_${user.id}`, 'true');
+          }
         }}
+        userRole={currentRole}
+        userName={user ? `${user.firstName || ''} ${user.lastName || ''}`.trim() : 'Patient User'}
+        userId={user?.id}
+        userEmail={user?.email}
+        onKycSubmitted={handleKycSubmitted}
       />
+
+      {/* SUCCESSFUL LOGIN WELCOME POPUP MODAL (LIGHT THEME) */}
+      <AnimatePresence>
+        {showLoginWelcomeModal && (
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-md">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              transition={{ type: 'spring', bounce: 0.25, duration: 0.4 }}
+              className="bg-white border border-slate-200/90 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl p-6 sm:p-8 text-center space-y-5 text-slate-900 relative"
+            >
+              <div className="absolute -top-16 -left-16 w-40 h-40 bg-blue-100/60 rounded-full blur-3xl pointer-events-none" />
+              <div className="w-16 h-16 rounded-3xl bg-blue-50 border border-blue-200 text-blue-600 flex items-center justify-center mx-auto shadow-md shadow-blue-500/10 animate-pulse">
+                <ShieldCheck className="w-8 h-8" />
+              </div>
+              <div className="space-y-2">
+                <span className="px-3 py-1 bg-emerald-50 text-emerald-700 font-extrabold text-[10px] uppercase tracking-wider rounded-full border border-emerald-200 inline-block">
+                  Authentication Verified
+                </span>
+                <h3 className="text-xl font-black tracking-tight text-slate-900">
+                  Welcome Back, {user?.firstName || 'User'} {user?.lastName || ''}!
+                </h3>
+                <p className="text-xs text-slate-600 font-semibold leading-relaxed">
+                  Your <span className="text-blue-600 uppercase font-extrabold">{currentRole}</span> workstation session is active. 256-bit HIPAA KMS Encryption & RBAC Scope Enforced.
+                </p>
+              </div>
+              <button
+                onClick={() => setShowLoginWelcomeModal(false)}
+                className="w-full py-3.5 bg-blue-600 hover:bg-blue-700 text-white font-black text-xs rounded-xl shadow-lg shadow-blue-600/25 transition-all cursor-pointer active:scale-95"
+              >
+                Launch Workstation →
+              </button>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
+
+      {/* LOGOUT CONFIRMATION MODAL (LIGHT THEME) */}
+      <AnimatePresence>
+        {showLogoutConfirmModal && (
+          <div className="fixed inset-0 z-[9999] flex items-center justify-center p-4 bg-slate-950/40 backdrop-blur-md">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9, y: 20 }}
+              animate={{ opacity: 1, scale: 1, y: 0 }}
+              exit={{ opacity: 0, scale: 0.9, y: 20 }}
+              transition={{ type: 'spring', bounce: 0.25, duration: 0.4 }}
+              className="bg-white border border-slate-200 rounded-3xl w-full max-w-md overflow-hidden shadow-2xl p-6 sm:p-8 text-center space-y-6 text-slate-900 relative"
+            >
+              <div className="w-16 h-16 rounded-3xl bg-rose-50 border border-rose-200 text-rose-600 flex items-center justify-center mx-auto shadow-md shadow-rose-500/10">
+                <LogOut className="w-8 h-8" />
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-xl font-black tracking-tight text-slate-900">Confirm Workstation Logout</h3>
+                <p className="text-xs text-slate-600 font-semibold leading-relaxed">
+                  Are you sure you want to end your active workstation session? All active telemetry logs and prescript records have been synchronized.
+                </p>
+              </div>
+              <div className="flex gap-3 pt-2">
+                <button
+                  onClick={() => setShowLogoutConfirmModal(false)}
+                  className="flex-1 py-3 bg-slate-100 hover:bg-slate-200 border border-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-all cursor-pointer"
+                >
+                  Cancel & Stay Logged In
+                </button>
+                <button
+                  onClick={() => {
+                    setShowLogoutConfirmModal(false);
+                    logout();
+                  }}
+                  className="flex-1 py-3 bg-rose-600 hover:bg-rose-700 text-white font-black text-xs rounded-xl shadow-lg shadow-rose-600/25 transition-all cursor-pointer flex items-center justify-center gap-1.5 active:scale-95"
+                >
+                  <LogOut className="w-4 h-4" />
+                  <span>End Session</span>
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Mobile Sidebar Overlay */}
       <AnimatePresence>
@@ -332,12 +472,12 @@ export const AppShell: React.FC<AppShellProps> = ({ children, userRole = 'DOCTOR
 
       {/* Sidebar Navigation */}
       <aside
-        className={`fixed lg:static inset-y-0 left-0 z-50 bg-white border-r border-slate-200/80 flex flex-col justify-between transition-all duration-300 ${
+        className={`fixed lg:static inset-y-0 left-0 z-50 bg-white border-r border-slate-200/80 flex flex-col justify-between overflow-hidden h-screen max-h-screen select-none transition-all duration-300 ${
           isCollapsed ? 'w-20' : 'w-64'
         } ${isMobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
       >
-        <div className="space-y-5 p-4">
-          <div className="flex items-center justify-between">
+        <div className="space-y-3 p-3 sm:p-4 flex-1 flex flex-col min-h-0 overflow-hidden">
+          <div className="flex items-center justify-between shrink-0">
             <Logo textVisible={!isCollapsed} />
             <button
               onClick={() => setIsCollapsed(!isCollapsed)}
@@ -349,14 +489,14 @@ export const AppShell: React.FC<AppShellProps> = ({ children, userRole = 'DOCTOR
 
           {/* Role-Specific Side Panel Badge */}
           {!isCollapsed && (
-            <div className="px-1">
+            <div className="px-1 shrink-0">
               <span className={`px-2.5 py-1 rounded-full text-[9.5px] font-black uppercase border tracking-wider block text-center ${navConfig.badgeBg}`}>
                 {navConfig.badge}
               </span>
             </div>
           )}
 
-          <nav className="space-y-1">
+          <nav className="space-y-1 overflow-hidden flex-1 justify-start">
             {navConfig.items.map((item) => {
               const isActive = pathname === item.href && !item.onClick;
               const Icon = item.icon;
@@ -366,10 +506,10 @@ export const AppShell: React.FC<AppShellProps> = ({ children, userRole = 'DOCTOR
                   <button
                     key={item.label}
                     onClick={item.onClick}
-                    className="w-full flex items-center gap-3 px-3.5 py-2.5 rounded-2xl font-bold text-xs text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all text-left cursor-pointer"
+                    className="w-full flex items-center gap-2.5 px-3 py-2 rounded-xl font-bold text-xs text-slate-600 hover:bg-slate-100 hover:text-slate-900 transition-all text-left cursor-pointer"
                   >
                     <Icon className="w-4 h-4 shrink-0 text-blue-600" />
-                    {!isCollapsed && <span>{item.label}</span>}
+                    {!isCollapsed && <span className="truncate">{item.label}</span>}
                   </button>
                 );
               }
@@ -378,14 +518,14 @@ export const AppShell: React.FC<AppShellProps> = ({ children, userRole = 'DOCTOR
                 <Link
                   key={item.href + item.label}
                   href={item.href}
-                  className={`flex items-center gap-3 px-3.5 py-2.5 rounded-2xl font-bold text-xs transition-all ${
+                  className={`flex items-center gap-2.5 px-3 py-2 rounded-xl font-bold text-xs transition-all ${
                     isActive
                       ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20'
                       : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
                   }`}
                 >
                   <Icon className="w-4 h-4 shrink-0" />
-                  {!isCollapsed && <span>{item.label}</span>}
+                  {!isCollapsed && <span className="truncate">{item.label}</span>}
                 </Link>
               );
             })}
@@ -393,22 +533,28 @@ export const AppShell: React.FC<AppShellProps> = ({ children, userRole = 'DOCTOR
         </div>
 
         {/* User Footer Card */}
-        <div className="p-4 border-t border-slate-100 space-y-3">
-          {!isCollapsed && (
-            <div className="p-3 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-center justify-between">
-              <div>
-                <span className="font-black text-xs text-slate-900 block truncate">{user?.email || 'user@medflow.org'}</span>
-                <span className="text-[10px] font-extrabold uppercase text-blue-600 block">{currentRole}</span>
+        <div className="p-3 sm:p-4 border-t border-slate-100 space-y-2.5 shrink-0">
+          {!isCollapsed && (() => {
+            const rawName = user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : user?.email?.split('@')[0] || 'User';
+            const displayName = currentRole === 'DOCTOR' && !rawName.toLowerCase().startsWith('dr') ? `Dr. ${rawName}` : rawName;
+            const roleLabel = currentRole.replace(/_/g, ' ');
+
+            return (
+              <div className="p-2.5 rounded-2xl bg-slate-50 border border-slate-200/80 flex items-center justify-between gap-2">
+                <div className="min-w-0 flex-1" title={user?.email || ''}>
+                  <span className="font-black text-xs text-slate-900 block truncate leading-tight">{displayName}</span>
+                  <span className="text-[10px] font-extrabold uppercase text-blue-600 block truncate leading-tight tracking-wider mt-0.5">{roleLabel}</span>
+                </div>
+                <button
+                  onClick={() => setShowLogoutConfirmModal(true)}
+                  title="Logout Workstation"
+                  className="p-1.5 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer shrink-0"
+                >
+                  <LogOut className="w-4 h-4" />
+                </button>
               </div>
-              <button
-                onClick={logout}
-                title="Logout"
-                className="p-2 text-slate-400 hover:text-rose-600 hover:bg-rose-50 rounded-xl transition-colors cursor-pointer"
-              >
-                <LogOut className="w-4 h-4" />
-              </button>
-            </div>
-          )}
+            );
+          })()}
 
           {/* Session Expiry Ribbon */}
           <div className="flex items-center justify-between text-[11px] font-semibold text-slate-500 px-1">
@@ -416,7 +562,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children, userRole = 'DOCTOR
               <Clock className="w-3.5 h-3.5 text-blue-600" />
               Session
             </span>
-            <span className="font-mono font-bold text-slate-700">{formatTimer(sessionTimeLeft)}</span>
+            <span className="font-mono font-bold text-slate-700 tabular-nums">{formatTimer(sessionTimeLeft)}</span>
           </div>
         </div>
       </aside>
@@ -447,19 +593,27 @@ export const AppShell: React.FC<AppShellProps> = ({ children, userRole = 'DOCTOR
 
           <div className="flex items-center gap-3">
             {/* User Profile Badge */}
-            <div className="flex items-center gap-2 pl-2 border-l border-slate-200">
-              <div className="w-8 h-8 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-600 font-black text-xs">
-                {user?.firstName ? user.firstName[0] : 'U'}
-              </div>
-              <div className="hidden sm:block text-left">
-                <span className="font-black text-xs text-slate-900 block leading-tight">
-                  {user?.firstName || 'User'} {user?.lastName || ''}
-                </span>
-                <span className="text-[10px] font-bold uppercase text-slate-500 block leading-tight">
-                  {currentRole}
-                </span>
-              </div>
-            </div>
+            {(() => {
+              const rawName = user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : user?.email?.split('@')[0] || 'User';
+              const displayName = currentRole === 'DOCTOR' && !rawName.toLowerCase().startsWith('dr') ? `Dr. ${rawName}` : rawName;
+              const roleLabel = currentRole.replace(/_/g, ' ');
+
+              return (
+                <div className="flex items-center gap-2.5 pl-3 border-l border-slate-200">
+                  <div className="w-8 h-8 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-600 font-black text-xs shadow-xs">
+                    {user?.firstName ? user.firstName[0] : 'U'}
+                  </div>
+                  <div className="hidden sm:block text-left" title={user?.email || ''}>
+                    <span className="font-black text-xs text-slate-900 block leading-tight">
+                      {displayName}
+                    </span>
+                    <span className="text-[10px] font-bold uppercase text-slate-500 block leading-tight tracking-wide mt-0.5">
+                      {roleLabel}
+                    </span>
+                  </div>
+                </div>
+              );
+            })()}
           </div>
         </header>
 

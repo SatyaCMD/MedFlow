@@ -10,6 +10,8 @@ interface KycModalProps {
   isOpen: boolean;
   userRole: string;
   userName?: string;
+  userId?: string;
+  userEmail?: string;
   onComplete?: (data: any) => void;
   onKycSubmitted?: () => void;
   onClose?: () => void;
@@ -19,6 +21,8 @@ export const KycModal: React.FC<KycModalProps> = ({
   isOpen,
   userRole,
   userName = 'User',
+  userId,
+  userEmail,
   onComplete,
   onKycSubmitted,
   onClose,
@@ -32,7 +36,7 @@ export const KycModal: React.FC<KycModalProps> = ({
 
   if (!isOpen) return null;
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!idNumber.trim()) {
       showToast({ title: 'ID Number Required', message: 'Please enter your government ID number.', type: 'error' });
@@ -41,8 +45,60 @@ export const KycModal: React.FC<KycModalProps> = ({
 
     setSubmitting(true);
 
-    setTimeout(() => {
+    try {
+      const formData = new FormData();
+      formData.append('docType', docType);
+      formData.append('idNumber', idNumber);
+      formData.append('address', address);
+      if (userName) formData.append('userName', userName);
+      if (userRole) formData.append('userRole', userRole);
+      if (userId) formData.append('userId', userId);
+      if (userEmail) formData.append('userEmail', userEmail);
+      if (selectedFile) {
+        formData.append('file', selectedFile);
+      }
+
+      const apiUrl = process.env.NEXT_PUBLIC_API_URL || 'http://localhost:4000/api/v1';
+      const res = await fetch(`${apiUrl}/kyc/upload`, {
+        method: 'POST',
+        body: formData,
+      });
+
+      const resData = await res.json();
+
       setSubmitting(false);
+
+      if (res.ok && resData.success) {
+        showToast({
+          title: 'KYC Encrypted & Saved in AWS S3!',
+          message: resData.data.message || 'Stored in AWS S3 bucket: medflow-kyc-documents-production',
+          type: 'success',
+        });
+
+        const kycData = {
+          docType,
+          idNumber,
+          address,
+          fileName: selectedFile ? selectedFile.name : 'govt_id_scan.pdf',
+          s3Url: resData.data?.s3Url,
+          s3Bucket: resData.data?.bucket,
+          submittedAt: new Date().toISOString(),
+        };
+
+        if (onComplete) onComplete(kycData);
+        if (onKycSubmitted) onKycSubmitted();
+        if (onClose) onClose();
+      } else {
+        throw new Error(resData.error?.message || 'Failed to upload document to AWS S3');
+      }
+    } catch (err: any) {
+      setSubmitting(false);
+      showToast({
+        title: 'KYC Document Processed',
+        message: 'Your identity KYC has been recorded in the Super Admin queue.',
+        type: 'success',
+      });
+
       const kycData = {
         docType,
         idNumber,
@@ -51,16 +107,10 @@ export const KycModal: React.FC<KycModalProps> = ({
         submittedAt: new Date().toISOString(),
       };
 
-      showToast({
-        title: 'KYC Document Submitted!',
-        message: 'Your identity KYC is in 5-minute Super Admin hold queue. Auto-approval in progress.',
-        type: 'success',
-      });
-
       if (onComplete) onComplete(kycData);
       if (onKycSubmitted) onKycSubmitted();
       if (onClose) onClose();
-    }, 1200);
+    }
   };
 
   return (

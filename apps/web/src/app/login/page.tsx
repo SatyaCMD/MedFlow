@@ -31,11 +31,15 @@ import {
   X,
   ChevronRight,
   ChevronLeft,
-  Droplets
+  Droplets,
+  ArrowLeft,
+  Globe,
+  Home,
 } from 'lucide-react';
 import { api } from '../../lib/axios';
 import { Logo } from '../../components/shared/Logo';
 import { AuthSidebar } from '../../components/shared/AuthSidebar';
+import { ForgotPasswordModal } from '../../components/shared/ForgotPasswordModal';
 import { REAL_DOCTORS_DATASET, DoctorProfile } from '../../data/medicalCatalog';
 
 type LoginRole = 'DOCTOR' | 'LAB_TECHNICIAN' | 'NURSE' | 'PHARMACIST' | 'PATIENT' | 'BLOOD_BANK' | 'SUPER_ADMIN';
@@ -243,11 +247,23 @@ export default function LoginPage() {
       const firstCardiology = REAL_DOCTORS_DATASET.find(d => d.department === 'Cardiology') || REAL_DOCTORS_DATASET[0];
       setIdentifier(firstCardiology.name);
       setPassword('Doctor@321');
-    } else if (roleId === 'SUPER_ADMIN') {
-      setIdentifier('superadmin54@gmail.com');
-      setPassword(''); // Password must be manually typed by Super Admin
+    } else if (roleId === 'LAB_TECHNICIAN') {
+      setIdentifier('Rajesh Kumar');
+      setPassword('Technician@321');
+    } else if (roleId === 'NURSE') {
+      setIdentifier('Sunita Patel');
+      setPassword('Caregiver@321');
+    } else if (roleId === 'PHARMACIST') {
+      setIdentifier('Pharmacist Dispensary');
+      setPassword('Pharmacist@321');
+    } else if (roleId === 'BLOOD_BANK') {
+      setIdentifier('Blood Bank Reserve');
+      setPassword('BloodBank@321');
     } else if (roleId === 'PATIENT') {
       setIdentifier('');
+      setPassword('');
+    } else if (roleId === 'SUPER_ADMIN') {
+      setIdentifier('superadmin54@gmail.com');
       setPassword('');
     } else if (targetPortal.sampleProfiles.length > 0) {
       const defaultSample = targetPortal.sampleProfiles[0];
@@ -311,6 +327,32 @@ export default function LoginPage() {
       <div className="w-full lg:w-1/2 flex flex-col items-center justify-center p-4 sm:p-8 relative bg-slate-50 overflow-y-auto">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-blue-500/5 via-transparent to-transparent pointer-events-none" />
 
+        {/* TOP BAR: Sleek Back to Landing Page / Main Site Navigation */}
+        <div className="w-full max-w-lg flex items-center justify-between mb-3 z-20">
+          <motion.button
+            type="button"
+            whileHover={{ x: -4, scale: 1.02 }}
+            whileTap={{ scale: 0.97 }}
+            onClick={() => router.push('/')}
+            className="inline-flex items-center gap-2 px-4 py-2 bg-white hover:bg-slate-900 text-slate-700 hover:text-white border border-slate-200/90 hover:border-slate-800 rounded-2xl text-xs font-black shadow-sm hover:shadow-lg transition-all duration-200 cursor-pointer group"
+          >
+            <ArrowLeft className="w-3.5 h-3.5 text-blue-600 group-hover:text-blue-400 group-hover:-translate-x-1 transition-transform" />
+            <span>Back to Home</span>
+            <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse ml-0.5" />
+          </motion.button>
+
+          <div className="flex items-center gap-2">
+            <button
+              type="button"
+              onClick={() => router.push('/')}
+              className="text-[11px] font-bold text-slate-500 hover:text-blue-600 transition-colors flex items-center gap-1.5 cursor-pointer"
+            >
+              <Globe className="w-3.5 h-3.5 text-slate-400" />
+              <span>MediCore 360 Portal</span>
+            </button>
+          </div>
+        </div>
+
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
@@ -318,10 +360,10 @@ export default function LoginPage() {
           className="w-full max-w-lg bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-8 shadow-xl relative z-10 space-y-5 my-auto"
         >
           {/* Mobile Brand Title */}
-          <button type="button" className="flex flex-col items-center mb-2 lg:hidden w-full focus:outline-none" onClick={() => router.push('/')}>
+          <div className="flex flex-col items-center mb-2 lg:hidden w-full">
             <Logo size={44} className="mb-1" />
             <h2 className="text-xl font-black text-slate-900 tracking-wider">MediCore 360</h2>
-          </button>
+          </div>
 
           {/* DEDICATED ROLE PORTAL TAB SELECTOR BAR */}
           <div>
@@ -832,48 +874,12 @@ export default function LoginPage() {
         )}
       </AnimatePresence>
 
-      {/* Forgot Password Modal */}
-      <AnimatePresence>
-        {showForgotModal && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-xs">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="bg-white border border-slate-200 rounded-2xl max-w-sm w-full p-6 shadow-2xl space-y-4"
-            >
-              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                <h3 className="font-bold text-sm text-slate-800 flex items-center gap-2">
-                  <HelpCircle className="w-4 h-4 text-blue-600" />
-                  Password Recovery Assistant
-                </h3>
-                <button
-                  onClick={() => setShowForgotModal(false)}
-                  className="text-slate-400 hover:text-slate-600 text-sm font-bold cursor-pointer"
-                >
-                  ✕
-                </button>
-              </div>
-              <p className="text-xs text-slate-600 leading-relaxed">
-                Default workstation passwords are configured per role scope:
-              </p>
-              <div className="p-3 bg-slate-50 rounded-xl text-xs space-y-1 font-mono text-slate-800">
-                <p>Doctor: <strong className="text-blue-600">Doctor@321</strong></p>
-                <p>Lab Tech: <strong className="text-amber-600">Technician@321</strong></p>
-                <p>Caregiver: <strong className="text-purple-600">Caregiver@321</strong></p>
-                <p>Pharmacist: <strong className="text-teal-600">Pharmacist@321</strong></p>
-                <p>Blood Bank: <strong className="text-red-600">BloodBank@321</strong></p>
-              </div>
-              <button
-                onClick={() => setShowForgotModal(false)}
-                className="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl transition-all cursor-pointer"
-              >
-                Close
-              </button>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
+      {/* Interactive Forgot & Reset Password Modal */}
+      <ForgotPasswordModal
+        isOpen={showForgotModal}
+        onClose={() => setShowForgotModal(false)}
+        currentUserEmail={identifier}
+      />
 
     </div>
   );
