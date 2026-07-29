@@ -19,15 +19,6 @@ scrape_configs:
           environment: 'development'
           service: 'express-api'
 
-  - job_name: 'medflow-api-container'
-    metrics_path: '/metrics'
-    scrape_interval: 5s
-    static_configs:
-      - targets: ['api:4000']
-        labels:
-          environment: 'production'
-          service: 'express-api-container'
-
   - job_name: 'grafana-telemetry'
     metrics_path: '/metrics'
     scrape_interval: 15s
@@ -36,21 +27,3 @@ scrape_configs:
         labels:
           environment: 'production'
           service: 'grafana-dashboard'
-
-  - job_name: 'jenkins-cicd'
-    metrics_path: '/prometheus/'
-    scrape_interval: 15s
-    static_configs:
-      - targets: ['jenkins:8080']
-        labels:
-          environment: 'production'
-          service: 'jenkins-automation'
-
-  - job_name: 'sonarqube-quality'
-    metrics_path: '/api/system/metrics'
-    scrape_interval: 30s
-    static_configs:
-      - targets: ['sonarqube:9000']
-        labels:
-          environment: 'production'
-          service: 'sonarqube-scanner'
