@@ -71,13 +71,14 @@ router.post('/upload', upload.single('file'), async (req: Request, res: Response
         message: uploadResult.message,
       },
     });
-  } catch (error: any) {
-    logger.error({ error: error.message }, 'Failed to process KYC document upload');
+  } catch (error: unknown) {
+    const err = error as Error;
+    logger.error({ error: err.message }, 'Failed to process KYC document upload');
     return res.status(500).json({
       success: false,
       error: {
         code: 'UPLOAD_FAILED',
-        message: error.message || 'Internal server error while processing KYC document.',
+        message: err.message || 'Internal server error while processing KYC document.',
       },
     });
   }

@@ -31,18 +31,18 @@ export default function BillingPage() {
   const [isPaymentOpen, setIsPaymentOpen] = useState(false);
   const [paymentTarget, setPaymentTarget] = useState({ title: 'IPD Hospital Stay & Surgery Package', amount: '₹45,800' });
 
+  const [invoices] = useState([
+    { id: 'INV-9901', date: 'Jul 22, 2026', patient: 'Sarah Connor', dept: 'IPD Cardiology Ward', total: '₹45,800', tpaStatus: 'TPA Cashless Pre-Approved', gst: '₹2,290 (5%)', status: 'Paid' },
+    { id: 'INV-9902', date: 'Jul 21, 2026', patient: 'John Doe', dept: 'OPD Neurology', total: '₹2,500', tpaStatus: 'Direct Patient Payment', gst: '₹125 (5%)', status: 'Paid' },
+    { id: 'INV-9903', date: 'Jul 20, 2026', patient: 'Bruce Wayne', dept: 'Pharmacy & Surgical Consumables', total: '₹12,400', tpaStatus: 'Star Health TPA Claim Pending', gst: '₹620 (5%)', status: 'Pending TPA Settlement' },
+  ]);
+
   if (!loading && !user) {
     if (typeof window !== 'undefined') {
       router.push('/explore/billing');
     }
     return null;
   }
-
-  const [invoices] = useState([
-    { id: 'INV-9901', date: 'Jul 22, 2026', patient: 'Sarah Connor', dept: 'IPD Cardiology Ward', total: '₹45,800', tpaStatus: 'TPA Cashless Pre-Approved', gst: '₹2,290 (5%)', status: 'Paid' },
-    { id: 'INV-9902', date: 'Jul 21, 2026', patient: 'John Doe', dept: 'OPD Neurology', total: '₹2,500', tpaStatus: 'Direct Patient Payment', gst: '₹125 (5%)', status: 'Paid' },
-    { id: 'INV-9903', date: 'Jul 20, 2026', patient: 'Bruce Wayne', dept: 'Pharmacy & Surgical Consumables', total: '₹12,400', tpaStatus: 'Star Health TPA Claim Pending', gst: '₹620 (5%)', status: 'Pending TPA Settlement' },
-  ]);
 
   const handleDownloadInvoice = (invId: string) => {
     showToast({

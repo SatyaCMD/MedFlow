@@ -306,7 +306,7 @@ export class AuthService {
     const normEmail = rawInput.toLowerCase();
     const cleanName = rawInput.replace(/^(dr\.|dr|nurse)\s+/i, '').trim();
 
-    let user = await User.findOne({
+    const user = await User.findOne({
       deletedAt: null,
       $or: [
         { email: normEmail },
@@ -372,7 +372,7 @@ export class AuthService {
     const normEmail = rawInput.toLowerCase();
     const cleanName = rawInput.replace(/^(dr\.|dr|nurse)\s+/i, '').trim();
 
-    let user = await User.findOne({
+    const user = await User.findOne({
       deletedAt: null,
       $or: [
         { email: normEmail },

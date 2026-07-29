@@ -49,7 +49,9 @@ export const sendMail = async (options: MailOptions): Promise<void> => {
     });
 
     logger.info({ messageId: info.messageId, to: options.to, subject: options.subject }, '✉️ Email dispatched successfully via SMTP.');
-  } catch (err: any) {
+  } catch (err: unknown) {
+    const error = err as Error;
+    /* eslint-disable no-console */
     console.log('\n================== [MEDIFLOW EMAIL DISPATCH TELEMETRY] ==================');
     console.log(`TO: ${options.to}`);
     console.log(`SUBJECT: ${options.subject}`);
@@ -59,9 +61,10 @@ export const sendMail = async (options: MailOptions): Promise<void> => {
     console.log('------------------------------------------------------------------------');
     console.log(options.text || (options.html ? options.html.replace(/<[^>]*>?/gm, '') : ''));
     console.log('========================================================================\n');
+    /* eslint-enable no-console */
 
     logger.warn(
-      { to: options.to, subject: options.subject, reason: err.message },
+      { to: options.to, subject: options.subject, reason: error.message },
       '⚠️ SMTP server offline. Logged email telemetry to server console.'
     );
   }

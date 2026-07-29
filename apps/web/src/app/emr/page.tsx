@@ -35,13 +35,6 @@ export default function EmrPage() {
   const [isRxPdfOpen, setIsRxPdfOpen] = useState(false);
   const [isVideoConsultOpen, setIsVideoConsultOpen] = useState(false);
 
-  if (!loading && !user) {
-    if (typeof window !== 'undefined') {
-      router.push('/explore/emr');
-    }
-    return null;
-  }
-
   const [emrRecords] = useState([
     {
       id: 'emr-101',
@@ -64,6 +57,13 @@ export default function EmrPage() {
       hash: 'SHA256: 4e91b20a11fc78d099be20194ab99',
     },
   ]);
+
+  if (!loading && !user) {
+    if (typeof window !== 'undefined') {
+      router.push('/explore/emr');
+    }
+    return null;
+  }
 
   const handleLaunchVideoConsult = () => {
     setIsVideoConsultOpen(true);

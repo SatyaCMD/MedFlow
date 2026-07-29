@@ -79,7 +79,7 @@ export function buildS3UserFolder(params: {
   // Append optional sanitized user ID suffix if available
   let idSuffix = '';
   if (params.userId && params.userId !== 'anonymous_user' && params.userId !== 'undefined') {
-    const sanitizedId = params.userId.replace(/[^a-zA-Z0-9_\-]/g, '');
+    const sanitizedId = params.userId.replace(/[^a-zA-Z0-9_-]/g, '');
     if (sanitizedId) {
       idSuffix = `_${sanitizedId}`;
     }
@@ -143,8 +143,9 @@ export async function uploadKycDocumentToS3(params: UploadKycParams): Promise<{
     } else {
       throw new Error('S3 Client initialization failed');
     }
-  } catch (err: any) {
-    logger.warn({ error: err.message, bucket: bucketName, userFolder }, '⚠️ S3 direct upload status warning.');
+  } catch (err: unknown) {
+    const error = err as Error;
+    logger.warn({ error: error.message, bucket: bucketName, userFolder }, '⚠️ S3 direct upload status warning.');
     return {
       success: false,
       s3Key,
@@ -152,7 +153,7 @@ export async function uploadKycDocumentToS3(params: UploadKycParams): Promise<{
       s3Url: `https://${bucketName}.s3.${env.AWS_REGION || 'us-east-1'}.amazonaws.com/${s3Key}`,
       userFolder,
       kmsEncrypted: true,
-      message: `Failed to upload to S3: ${err.message || 'AWS authentication required'}`,
+      message: `Failed to upload to S3: ${error.message || 'AWS authentication required'}`,
     };
   }
 }

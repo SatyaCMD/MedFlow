@@ -81,6 +81,8 @@ services:
     container_name: grafana
     volumes:
       - grafana_data:/var/lib/grafana
+      - ./infra/monitoring/grafana/provisioning:/etc/grafana/provisioning
+      - ./infra/monitoring/medflow-dashboard.json:/var/lib/grafana/dashboards/medflow-dashboard.json
     ports:
       - "3005:3000"
     depends_on:
