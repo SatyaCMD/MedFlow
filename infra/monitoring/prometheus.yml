@@ -3,15 +3,54 @@ global:
   evaluation_interval: 15s
 
 scrape_configs:
-  - job_name: 'prometheus'
+  - job_name: 'prometheus-self'
     static_configs:
       - targets: ['localhost:9090']
+        labels:
+          environment: 'production'
+          service: 'prometheus'
 
-  - job_name: 'medflow-api'
+  - job_name: 'medflow-api-host'
     metrics_path: '/metrics'
     scrape_interval: 5s
     static_configs:
-      - targets: ['api:4000', 'host.docker.internal:4000']
+      - targets: ['host.docker.internal:4000']
+        labels:
+          environment: 'development'
+          service: 'express-api'
+
+  - job_name: 'medflow-api-container'
+    metrics_path: '/metrics'
+    scrape_interval: 5s
+    static_configs:
+      - targets: ['api:4000']
         labels:
           environment: 'production'
-          service: 'api'
+          service: 'express-api-container'
+
+  - job_name: 'grafana-telemetry'
+    metrics_path: '/metrics'
+    scrape_interval: 15s
+    static_configs:
+      - targets: ['grafana:3000']
+        labels:
+          environment: 'production'
+          service: 'grafana-dashboard'
+
+  - job_name: 'jenkins-cicd'
+    metrics_path: '/prometheus/'
+    scrape_interval: 15s
+    static_configs:
+      - targets: ['jenkins:8080']
+        labels:
+          environment: 'production'
+          service: 'jenkins-automation'
+
+  - job_name: 'sonarqube-quality'
+    metrics_path: '/api/system/metrics'
+    scrape_interval: 30s
+    static_configs:
+      - targets: ['sonarqube:9000']
+        labels:
+          environment: 'production'
+          service: 'sonarqube-scanner'
