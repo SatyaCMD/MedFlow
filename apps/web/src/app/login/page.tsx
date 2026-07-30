@@ -35,6 +35,7 @@ import {
   ArrowLeft,
   Globe,
   Home,
+  Siren,
 } from 'lucide-react';
 import { api } from '../../lib/axios';
 import { Logo } from '../../components/shared/Logo';
@@ -42,7 +43,7 @@ import { AuthSidebar } from '../../components/shared/AuthSidebar';
 import { ForgotPasswordModal } from '../../components/shared/ForgotPasswordModal';
 import { REAL_DOCTORS_DATASET, DoctorProfile } from '../../data/medicalCatalog';
 
-type LoginRole = 'DOCTOR' | 'LAB_TECHNICIAN' | 'NURSE' | 'PHARMACIST' | 'PATIENT' | 'BLOOD_BANK' | 'SUPER_ADMIN';
+type LoginRole = 'DOCTOR' | 'LAB_TECHNICIAN' | 'NURSE' | 'PHARMACIST' | 'PATIENT' | 'BLOOD_BANK' | 'AMBULANCE_ADMIN' | 'HOSPITAL_ADMIN' | 'SUPER_ADMIN';
 
 interface RolePortalConfig {
   id: LoginRole;
@@ -169,6 +170,38 @@ const ROLE_PORTALS: RolePortalConfig[] = [
     ]),
   },
   {
+    id: 'AMBULANCE_ADMIN',
+    tabLabel: 'Ambulance Admin',
+    title: 'Ambulance Fleet & Live Emergency Dispatch Command',
+    subtitle: 'Real-time GPS vehicle tracking, emergency dispatching, driver assignments, maintenance logs, and vehicle registration',
+    badge: 'Ambulance Fleet Admin',
+    badgeStyle: 'bg-rose-100 text-rose-800 border-rose-200',
+    icon: Siren,
+    accentGradient: 'from-rose-600 to-red-700',
+    inputLabel: 'Ambulance Admin User ID / Email',
+    inputPlaceholder: 'Type AmbulanceAdmin or ambulance.admin@medflow.com',
+    defaultPasswordHint: 'Ambulance@321',
+    sampleProfiles: [
+      { name: 'AmbulanceAdmin', idStr: 'AmbulanceAdmin', passStr: 'Ambulance@321', subtext: 'Master Ambulance Fleet & Dispatch Controller' },
+    ],
+  },
+  {
+    id: 'HOSPITAL_ADMIN',
+    tabLabel: 'Hospital Admin',
+    title: 'Hospital Operations & Executive Management',
+    subtitle: 'Facility occupancy, bed management, department analytics, staff scheduling, revenue telemetry, and hospital administration',
+    badge: 'Hospital Operations Admin',
+    badgeStyle: 'bg-blue-100 text-blue-800 border-blue-200',
+    icon: Building2,
+    accentGradient: 'from-blue-700 to-indigo-800',
+    inputLabel: 'Hospital Admin User ID / Email',
+    inputPlaceholder: 'Type HospitalAdmin or hospital.admin@medflow.com',
+    defaultPasswordHint: 'Hospital@321',
+    sampleProfiles: [
+      { name: 'HospitalAdmin', idStr: 'HospitalAdmin', passStr: 'Hospital@321', subtext: 'Master Hospital Operations & Facility Admin' },
+    ],
+  },
+  {
     id: 'SUPER_ADMIN',
     tabLabel: 'Super Admin',
     title: 'Super Admin Command Center',
@@ -259,6 +292,12 @@ export default function LoginPage() {
     } else if (roleId === 'BLOOD_BANK') {
       setIdentifier('Blood Bank Reserve');
       setPassword('BloodBank@321');
+    } else if (roleId === 'AMBULANCE_ADMIN') {
+      setIdentifier('AmbulanceAdmin');
+      setPassword('Ambulance@321');
+    } else if (roleId === 'HOSPITAL_ADMIN') {
+      setIdentifier('HospitalAdmin');
+      setPassword('Hospital@321');
     } else if (roleId === 'PATIENT') {
       setIdentifier('');
       setPassword('');

@@ -2,6 +2,7 @@
 
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { useRouter } from 'next/navigation';
 import {
   CreditCard,
   CheckCircle2,
@@ -25,9 +26,12 @@ import {
   ChevronRight,
   ShieldAlert,
   Smartphone,
-  Landmark
+  Landmark,
+  ExternalLink,
+  Wifi
 } from 'lucide-react';
 import { useToast } from '../../context/ToastContext';
+import { printSinglePageReceipt } from '../../lib/singlePageReceiptPdf';
 
 export interface PaymentModalProps {
   isOpen: boolean;
@@ -50,6 +54,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   userRole = 'PATIENT',
   onPaymentSuccess,
 }) => {
+  const router = useRouter();
   const { showToast } = useToast();
 
   const isStaffRole = userRole === 'NURSE' || userRole === 'LAB_TECH' || userRole === 'DOCTOR' || userRole === 'SUPER_ADMIN';
@@ -62,9 +67,14 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   // Form Input States
   const [upiApp, setUpiApp] = useState<'GPAY' | 'PHONEPE' | 'PAYTM' | 'QR'>('GPAY');
   const [upiId, setUpiId] = useState('user@okaxis');
+  
+  // Dynamic User Card Input States
+  const [cardholderName, setCardholderName] = useState(patientName || 'Alex Care');
   const [cardNumber, setCardNumber] = useState('4532 8819 9021 7712');
   const [cardExpiry, setCardExpiry] = useState('08/29');
   const [cardCvv, setCardCvv] = useState('882');
+  const [billingZip, setBillingZip] = useState('400001');
+
   const [selectedBank, setSelectedBank] = useState('HDFC Bank');
   const [deptPoCode, setDeptPoCode] = useState('HOSP-WARD-PO-8819');
   const [supervisorPin, setSupervisorPin] = useState('7721');
@@ -75,7 +85,24 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 
   if (!isOpen) return null;
 
-  // Execute Razorpay / Stripe Payment Process
+  // Helper to format card number as user types
+  const handleCardNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value.replace(/\D/g, '').slice(0, 16);
+    const formatted = raw.replace(/(\d{4})(?=\d)/g, '$1 ');
+    setCardNumber(formatted);
+  };
+
+  // Helper to detect Card Brand dynamically
+  const getCardBrand = (num: string) => {
+    const clean = num.replace(/\s+/g, '');
+    if (clean.startsWith('4')) return 'Visa';
+    if (clean.startsWith('5')) return 'Mastercard';
+    if (clean.startsWith('3')) return 'American Express';
+    if (clean.startsWith('6')) return 'RuPay';
+    return 'Credit / Debit Card';
+  };
+
+  // Execute Payment Process
   const handleExecutePayment = async (e: React.FormEvent) => {
     e.preventDefault();
     setProcessing(true);
@@ -83,9 +110,28 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
     const transactionId = `pay_rzp_${Math.random().toString(36).substring(2, 10)}${Math.random().toString(36).substring(2, 6)}`;
     const invoiceId = `ORD-RX-${Math.floor(100000 + Math.random() * 900000)}`;
 
+    const cleanCardNum = cardNumber.replace(/\s+/g, '');
+    const cardLast4 = cleanCardNum.slice(-4) || '7712';
+    const cardBrand = getCardBrand(cardNumber);
+
+    const receiptObj = {
+      invoiceId,
+      transactionId,
+      itemTitle,
+      itemCategory,
+      amount,
+      customerName: patientName,
+      cardholderName,
+      cardLast4,
+      cardBrand,
+      role: userRole,
+      paymentMethod: selectedMethod.replace(/_/g, ' '),
+      timestamp: new Date().toLocaleString(),
+      status: 'PAID & VERIFIED',
+    };
+
     try {
-      // Dispatch API request to record pharmacy/appointment checkout & send PDF email
-      const res = await fetch('/api/v1/pharmacy/checkout', {
+      await fetch('/api/v1/pharmacy/checkout', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
@@ -97,45 +143,21 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
         }),
       });
 
-      const receiptObj = {
-        invoiceId,
-        transactionId,
-        itemTitle,
-        amount,
-        customerName: patientName,
-        role: userRole,
-        paymentMethod: selectedMethod.replace(/_/g, ' '),
-        timestamp: new Date().toLocaleString(),
-        status: 'PAID & VERIFIED',
-      };
-
       setCompletedReceipt(receiptObj);
       if (onPaymentSuccess) onPaymentSuccess(receiptObj);
 
       showToast({
         title: 'Payment Successful! 💳',
-        message: `Transaction ${transactionId} approved. Tax receipt emailed to patient.`,
+        message: `Transaction ${transactionId} approved. Official 1-Page PDF receipt generated.`,
         type: 'success',
       });
     } catch {
-      // Fallback demo receipt
-      const receiptObj = {
-        invoiceId,
-        transactionId,
-        itemTitle,
-        amount,
-        customerName: patientName,
-        role: userRole,
-        paymentMethod: selectedMethod.replace(/_/g, ' '),
-        timestamp: new Date().toLocaleString(),
-        status: 'PAID & VERIFIED (DEMO)',
-      };
       setCompletedReceipt(receiptObj);
       if (onPaymentSuccess) onPaymentSuccess(receiptObj);
 
       showToast({
         title: 'Payment Processed Successfully!',
-        message: 'Official PDF payment receipt generated.',
+        message: 'Official 1-Page PDF payment receipt generated.',
         type: 'success',
       });
     } finally {
@@ -144,7 +166,40 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   };
 
   const handlePrintOrDownloadReceipt = () => {
-    window.print();
+    if (!completedReceipt) return;
+    printSinglePageReceipt({
+      invoiceId: completedReceipt.invoiceId,
+      transactionId: completedReceipt.transactionId,
+      itemTitle: completedReceipt.itemTitle,
+      itemCategory: completedReceipt.itemCategory,
+      amount: completedReceipt.amount,
+      customerName: completedReceipt.customerName,
+      cardholderName: completedReceipt.cardholderName,
+      cardLast4: completedReceipt.cardLast4,
+      cardBrand: completedReceipt.cardBrand,
+      paymentMethod: completedReceipt.paymentMethod,
+      timestamp: completedReceipt.timestamp,
+      status: completedReceipt.status,
+    });
+  };
+
+  const handleGoToSuccessPage = () => {
+    if (!completedReceipt) return;
+    onClose();
+    const query = new URLSearchParams({
+      tx: completedReceipt.transactionId,
+      invoice: completedReceipt.invoiceId,
+      item: completedReceipt.itemTitle,
+      amount: completedReceipt.amount,
+      name: completedReceipt.customerName,
+      cardholder: completedReceipt.cardholderName || completedReceipt.customerName,
+      cardLast4: completedReceipt.cardLast4 || '7712',
+      brand: completedReceipt.cardBrand || 'Visa',
+      method: completedReceipt.paymentMethod,
+      cat: completedReceipt.itemCategory || 'APPOINTMENT',
+    }).toString();
+
+    router.push(`/payment/success?${query}`);
   };
 
   return (
@@ -326,43 +381,104 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                       <CreditCard className="w-4 h-4 text-slate-700" />
                       Stripe Card Checkout
                     </span>
-                    <span className="text-[10px] font-bold text-slate-500">Visa • Mastercard • RuPay</span>
+                    <span className="text-[10px] font-bold text-slate-500">Visa • Mastercard • RuPay • Amex</span>
                   </div>
 
-                  <div>
-                    <label className="block text-[11px] font-bold text-slate-600 mb-1">Card Number</label>
-                    <input
-                      type="text"
-                      required
-                      value={cardNumber}
-                      onChange={(e) => setCardNumber(e.target.value)}
-                      className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 outline-none focus:ring-2 focus:ring-blue-500"
-                    />
+                  {/* Dynamic Interactive Credit Card Mockup */}
+                  <div className="relative overflow-hidden rounded-2xl p-5 bg-gradient-to-br from-slate-900 via-indigo-950 to-blue-900 text-white shadow-xl border border-slate-800">
+                    <div className="flex justify-between items-center mb-6">
+                      <div className="flex items-center gap-3">
+                        <div className="w-10 h-7 bg-amber-400/90 rounded-md border border-amber-300 flex items-center justify-center overflow-hidden shadow-inner">
+                          <div className="w-full h-[1px] bg-slate-800/40 my-[2px]"></div>
+                          <div className="w-full h-[1px] bg-slate-800/40 my-[2px]"></div>
+                        </div>
+                        <Wifi className="w-5 h-5 text-slate-300/80 rotate-90" />
+                      </div>
+                      <span className="px-2.5 py-1 bg-white/10 backdrop-blur-md rounded-lg text-xs font-black tracking-widest uppercase border border-white/20">
+                        {getCardBrand(cardNumber)}
+                      </span>
+                    </div>
+
+                    <div className="mb-4">
+                      <span className="text-[9px] uppercase tracking-widest text-slate-400 font-bold block mb-1">CARD NUMBER</span>
+                      <div className="font-mono text-lg sm:text-xl font-bold tracking-widest text-blue-100">
+                        {cardNumber || '•••• •••• •••• ••••'}
+                      </div>
+                    </div>
+
+                    <div className="flex justify-between items-end pt-2 border-t border-white/10 text-xs">
+                      <div>
+                        <span className="text-[8px] uppercase tracking-widest text-slate-400 font-bold block">CARDHOLDER NAME</span>
+                        <span className="font-bold text-slate-200 uppercase tracking-wider">{cardholderName || 'CARDHOLDER NAME'}</span>
+                      </div>
+                      <div>
+                        <span className="text-[8px] uppercase tracking-widest text-slate-400 font-bold block">EXPIRES</span>
+                        <span className="font-mono font-bold text-slate-200">{cardExpiry || 'MM/YY'}</span>
+                      </div>
+                    </div>
                   </div>
 
-                  <div className="grid grid-cols-2 gap-3">
+                  {/* Card Inputs given by User */}
+                  <div className="space-y-3 pt-1">
                     <div>
-                      <label className="block text-[11px] font-bold text-slate-600 mb-1">Expiry Date</label>
+                      <label className="block text-[11px] font-bold text-slate-600 mb-1">Cardholder Full Name</label>
                       <input
                         type="text"
                         required
-                        value={cardExpiry}
-                        onChange={(e) => setCardExpiry(e.target.value)}
+                        value={cardholderName}
+                        onChange={(e) => setCardholderName(e.target.value)}
                         className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="MM/YY"
+                        placeholder="John Doe"
                       />
                     </div>
+
                     <div>
-                      <label className="block text-[11px] font-bold text-slate-600 mb-1">Security CVV</label>
+                      <label className="block text-[11px] font-bold text-slate-600 mb-1">16-Digit Card Number</label>
                       <input
-                        type="password"
-                        maxLength={4}
+                        type="text"
                         required
-                        value={cardCvv}
-                        onChange={(e) => setCardCvv(e.target.value)}
-                        className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="•••"
+                        value={cardNumber}
+                        onChange={handleCardNumberChange}
+                        className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-900 outline-none focus:ring-2 focus:ring-blue-500"
+                        placeholder="4532 8819 9021 7712"
                       />
+                    </div>
+
+                    <div className="grid grid-cols-3 gap-3">
+                      <div className="col-span-1">
+                        <label className="block text-[11px] font-bold text-slate-600 mb-1">Expiry Date</label>
+                        <input
+                          type="text"
+                          required
+                          value={cardExpiry}
+                          onChange={(e) => setCardExpiry(e.target.value)}
+                          className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-900 outline-none focus:ring-2 focus:ring-blue-500"
+                          placeholder="MM/YY"
+                        />
+                      </div>
+                      <div className="col-span-1">
+                        <label className="block text-[11px] font-bold text-slate-600 mb-1">CVV Code</label>
+                        <input
+                          type="password"
+                          maxLength={4}
+                          required
+                          value={cardCvv}
+                          onChange={(e) => setCardCvv(e.target.value)}
+                          className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-900 outline-none focus:ring-2 focus:ring-blue-500"
+                          placeholder="•••"
+                        />
+                      </div>
+                      <div className="col-span-1">
+                        <label className="block text-[11px] font-bold text-slate-600 mb-1">Postal Code</label>
+                        <input
+                          type="text"
+                          required
+                          value={billingZip}
+                          onChange={(e) => setBillingZip(e.target.value)}
+                          className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-900 outline-none focus:ring-2 focus:ring-blue-500"
+                          placeholder="400001"
+                        />
+                      </div>
                     </div>
                   </div>
                 </div>
@@ -436,13 +552,13 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                 }`}
               >
                 {processing ? (
-                  <span>Processing Razorpay / Stripe Payment...</span>
+                  <span>Processing Payment Authorization...</span>
                 ) : (
                   <>
                     <span>
                       {selectedMethod === 'STAFF_PO'
                         ? `Authorize Department PO & Clear ${amount}`
-                        : `Pay ${amount} via ${selectedMethod === 'STRIPE_CARD' ? 'Stripe' : 'Razorpay'}`}
+                        : `Pay ${amount} via ${selectedMethod === 'STRIPE_CARD' ? 'Stripe Card' : 'Razorpay'}`}
                     </span>
                     <ArrowRight className="w-4 h-4" />
                   </>
@@ -458,7 +574,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                 <CheckCircle2 className="w-7 h-7" />
               </div>
               <h3 className="font-black text-lg text-emerald-950">Payment Verified & Completed</h3>
-              <p className="text-xs font-bold text-emerald-800">Official tax receipt & PDF document dispatched to email.</p>
+              <p className="text-xs font-bold text-emerald-800">Official tax receipt & 1-page PDF confirmation generated.</p>
             </div>
 
             <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-2 text-xs">
@@ -471,8 +587,16 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                 <span className="font-mono font-bold text-blue-600">{completedReceipt.transactionId}</span>
               </div>
               <div className="flex justify-between">
+                <span className="font-semibold text-slate-500">Cardholder / Customer:</span>
+                <span className="font-bold text-slate-800">{completedReceipt.cardholderName || completedReceipt.customerName}</span>
+              </div>
+              <div className="flex justify-between">
                 <span className="font-semibold text-slate-500">Payment Method:</span>
-                <span className="font-bold text-slate-800">{completedReceipt.paymentMethod}</span>
+                <span className="font-bold text-slate-800">
+                  {completedReceipt.cardLast4
+                    ? `${completedReceipt.cardBrand || 'Card'} ending in •••• ${completedReceipt.cardLast4}`
+                    : completedReceipt.paymentMethod}
+                </span>
               </div>
               <div className="flex justify-between border-t border-slate-200 pt-2 font-bold">
                 <span className="text-slate-700">Total Amount Paid:</span>
@@ -480,21 +604,32 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
               </div>
             </div>
 
-            <div className="flex items-center gap-3 pt-2">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 pt-2">
               <button
                 type="button"
-                onClick={handlePrintOrDownloadReceipt}
-                className="flex-1 py-3 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-2 cursor-pointer"
+                onClick={handleGoToSuccessPage}
+                className="py-3 px-4 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-2 cursor-pointer shadow-md shadow-blue-500/20"
               >
-                <Printer className="w-4 h-4" />
-                <span>Print Tax Receipt Slip</span>
+                <ExternalLink className="w-4 h-4" />
+                <span>View Successful Payment Page</span>
               </button>
               <button
                 type="button"
-                onClick={onClose}
-                className="px-5 py-3 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl cursor-pointer"
+                onClick={handlePrintOrDownloadReceipt}
+                className="py-3 px-4 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-2 cursor-pointer"
               >
-                Close
+                <Printer className="w-4 h-4" />
+                <span>Print 1-Page PDF Receipt</span>
+              </button>
+            </div>
+            
+            <div className="text-center pt-1">
+              <button
+                type="button"
+                onClick={onClose}
+                className="text-xs text-slate-500 hover:text-slate-800 font-bold underline cursor-pointer"
+              >
+                Close Payment Gateway Window
               </button>
             </div>
           </div>

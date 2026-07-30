@@ -29,9 +29,11 @@ import {
   X
 } from 'lucide-react';
 import { useToast } from '../../context/ToastContext';
+import { useAuth } from '../../hooks/useAuth';
 import { StatCard } from './StatCard';
 import { DataTable } from './DataTable';
 import { AmbulanceTrackerModal } from './AmbulanceTrackerModal';
+import { Lock } from 'lucide-react';
 
 interface AmbulanceVehicle {
   id: string;
@@ -141,6 +143,11 @@ const INITIAL_FUEL: FuelRecord[] = [
 
 export const AmbulanceManagementModule: React.FC = () => {
   const { showToast } = useToast();
+  const { user } = useAuth();
+
+  const userRoleStr = (user?.role as string) || '';
+  const canRegisterAmbulance =
+    userRoleStr === 'SUPER_ADMIN' || userRoleStr === 'HOSPITAL_ADMIN' || userRoleStr === 'AMBULANCE_ADMIN';
 
   const [activeTab, setActiveTab] = useState<'DISPATCH' | 'FLEET' | 'DRIVER' | 'MAINTENANCE'>('DISPATCH');
   const [fleet, setFleet] = useState<AmbulanceVehicle[]>(INITIAL_FLEET);
@@ -553,6 +560,23 @@ export const AmbulanceManagementModule: React.FC = () => {
         )}
       </AnimatePresence>
 
+      {/* Non-Admin Role Security Access Restriction Notice */}
+      {!canRegisterAmbulance && (
+        <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs font-semibold text-amber-900 shadow-sm">
+          <div className="flex items-center gap-2.5">
+            <div className="w-8 h-8 rounded-xl bg-amber-100 border border-amber-300 flex items-center justify-center shrink-0">
+              <Lock className="w-4 h-4 text-amber-700" />
+            </div>
+            <div>
+              <span className="font-extrabold text-amber-950 block">View-Only Fleet Telemetry Access Mode</span>
+              <span className="text-amber-800">
+                Excluding Admin, no role can register ambulance vehicles. Log in as <code className="bg-amber-200/80 px-1.5 py-0.5 rounded text-amber-950 font-black">AmbulanceAdmin</code> (Password: <code className="bg-amber-200/80 px-1.5 py-0.5 rounded text-amber-950 font-black">Ambulance@321</code>) to add fleet vehicles.
+              </span>
+            </div>
+          </div>
+        </div>
+      )}
+
       {/* Module Banner */}
       <div className="bg-gradient-to-r from-slate-950 via-rose-950 to-slate-950 p-6 sm:p-8 rounded-3xl text-white shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6 border border-slate-800">
         <div className="space-y-2">
@@ -583,10 +607,29 @@ export const AmbulanceManagementModule: React.FC = () => {
           </button>
 
           <button
-            onClick={() => setIsRegisterAmbulanceOpen(true)}
-            className="px-5 py-3 bg-slate-800 hover:bg-slate-700 text-white font-extrabold text-xs rounded-2xl border border-slate-700 flex items-center gap-2 transition-all cursor-pointer"
+            onClick={() => {
+              if (canRegisterAmbulance) {
+                setIsRegisterAmbulanceOpen(true);
+              } else {
+                showToast({
+                  title: 'Vehicle Registration Restricted 🔒',
+                  message: 'Excluding Ambulance Admin (AmbulanceAdmin) or Super Admin, no other role can register ambulances.',
+                  type: 'warning',
+                });
+              }
+            }}
+            className={`px-5 py-3 text-xs font-extrabold rounded-2xl border flex items-center gap-2 transition-all cursor-pointer ${
+              canRegisterAmbulance
+                ? 'bg-slate-800 hover:bg-slate-700 text-white border-slate-700 shadow-md'
+                : 'bg-slate-900/60 text-slate-400 border-slate-800 opacity-80'
+            }`}
           >
-            <Plus className="w-4 h-4 text-blue-400" /> Register Vehicle
+            {canRegisterAmbulance ? (
+              <Plus className="w-4 h-4 text-blue-400" />
+            ) : (
+              <Lock className="w-4 h-4 text-amber-400" />
+            )}
+            <span>Register Vehicle</span>
           </button>
         </div>
       </div>

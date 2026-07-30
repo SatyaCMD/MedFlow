@@ -47,6 +47,8 @@ import { PharmacistDashboard } from '../components/dashboards/PharmacistDashboar
 import { PatientDashboard } from '../components/dashboards/PatientDashboard';
 import { LabTechnicianDashboard } from '../components/dashboards/LabTechnicianDashboard';
 import { BloodBankDashboard } from '../components/dashboards/BloodBankDashboard';
+import { AmbulanceAdminDashboard } from '../components/dashboards/AmbulanceAdminDashboard';
+import { HospitalAdminDashboard } from '../components/dashboards/HospitalAdminDashboard';
 
 export default function Home() {
   const router = useRouter();
@@ -210,13 +212,14 @@ export default function Home() {
 
   // Render Medical Dashboard if user is logged in
   if (user) {
-    const role = user.role || 'DOCTOR';
+    const role: string = (user.role as string) || 'DOCTOR';
 
     const getRoleBadge = () => {
-      switch (role) {
+      switch (role as string) {
         case 'SUPER_ADMIN':
+          return { label: '👑 ENTERPRISE SUPER ADMIN', bg: 'bg-purple-100 text-purple-800 border-purple-200' };
         case 'HOSPITAL_ADMIN':
-          return { label: '👑 ENTERPRISE SUPER ADMIN', bg: 'bg-blue-100 text-blue-800 border-blue-200' };
+          return { label: '🏢 HOSPITAL OPERATIONS ADMIN', bg: 'bg-blue-100 text-blue-800 border-blue-200' };
         case 'DOCTOR':
           return { label: '🩺 PHYSICIAN WORKSTATION', bg: 'bg-indigo-100 text-indigo-800 border-indigo-200' };
         case 'NURSE':
@@ -225,6 +228,8 @@ export default function Home() {
           return { label: '💊 DISPENSARY & PHARMACY', bg: 'bg-amber-100 text-amber-800 border-amber-200' };
         case 'BLOOD_BANK':
           return { label: '🩸 BLOOD BANK & TRANSFUSION', bg: 'bg-red-100 text-red-800 border-red-200' };
+        case 'AMBULANCE_ADMIN':
+          return { label: '🚨 AMBULANCE FLEET & DISPATCH COMMAND', bg: 'bg-rose-100 text-rose-800 border-rose-200' };
         case 'PATIENT':
         default:
           return { label: '👤 PATIENT PERSONAL PORTAL', bg: 'bg-emerald-100 text-emerald-800 border-emerald-200' };
@@ -258,8 +263,12 @@ export default function Home() {
           </div>
 
           {/* Render assigned role dashboard */}
-          {role === 'SUPER_ADMIN' || role === 'HOSPITAL_ADMIN' ? (
+          {role === 'SUPER_ADMIN' ? (
             <SuperAdminDashboard />
+          ) : role === 'HOSPITAL_ADMIN' ? (
+            <HospitalAdminDashboard />
+          ) : role === 'AMBULANCE_ADMIN' ? (
+            <AmbulanceAdminDashboard />
           ) : role === 'DOCTOR' ? (
             <DoctorDashboard />
           ) : role === 'NURSE' ? (

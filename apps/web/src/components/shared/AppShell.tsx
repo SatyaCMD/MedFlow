@@ -280,8 +280,32 @@ export const AppShell: React.FC<AppShellProps> = ({ children, userRole = 'DOCTOR
             { label: 'Blood Bank Settings', href: '/settings', icon: Settings },
           ],
         };
-      case 'SUPER_ADMIN':
+      case 'AMBULANCE_ADMIN':
+        return {
+          badge: 'AMBULANCE FLEET COMMAND NAV',
+          badgeBg: 'bg-rose-100 text-rose-800 border-rose-300',
+          items: [
+            { label: 'Ambulance Fleet Dashboard', href: '/', icon: Siren },
+            { label: 'Live GPS Dispatch Tracker', href: '/ambulance', icon: Siren },
+            { label: 'Emergency Patients', href: '/patients', icon: Users },
+            { label: 'Fleet Settings', href: '/settings', icon: Settings },
+          ],
+        };
       case 'HOSPITAL_ADMIN':
+        return {
+          badge: 'HOSPITAL OPERATIONS NAV',
+          badgeBg: 'bg-blue-100 text-blue-800 border-blue-300',
+          items: [
+            { label: 'Hospital Command Dashboard', href: '/', icon: Building2 },
+            { label: 'Staff Roster Directory', href: '/patients', icon: Users },
+            { label: 'Department Consultations', href: '/appointments', icon: Calendar },
+            { label: 'Emergency & Ambulance GPS', href: '/ambulance', icon: Siren },
+            { label: 'EMR Audit Vault', href: '/emr', icon: FileText },
+            { label: 'Financial Claims & GST', href: '/billing', icon: CreditCard },
+            { label: 'Hospital Settings', href: '/settings', icon: Settings },
+          ],
+        };
+      case 'SUPER_ADMIN':
       default:
         return {
           badge: 'COMMAND CENTER NAV',

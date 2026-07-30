@@ -1,0 +1,47 @@
+version: '3.8'
+
+services:
+  trivy-scanner:
+    image: aquasec/trivy:latest
+    container_name: medflow-trivy-security
+    entrypoint: ["trivy"]
+    command:
+      - "fs"
+      - "--format"
+      - "json"
+      - "--output"
+      - "/reports/trivy-fs-report.json"
+      - "/src"
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - .:/src:ro
+      - ./infra/security-reports:/reports
+    networks:
+      - medflow-network
+
+  owasp-dependency-check:
+    image: owasp/dependency-check:latest
+    container_name: medflow-owasp-dependency-check
+    command:
+      - "--project"
+      - "MediFlow Enterprise"
+      - "--scan"
+      - "/src"
+      - "--out"
+      - "/report"
+      - "--format"
+      - "ALL"
+    volumes:
+      - .:/src:ro
+      - ./infra/security-reports:/report
+      - owasp_data:/usr/share/dependency-check/data
+    networks:
+      - medflow-network
+
+volumes:
+  owasp_data:
+    driver: local
+
+networks:
+  medflow-network:
+    driver: bridge

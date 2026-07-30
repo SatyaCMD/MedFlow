@@ -41,6 +41,8 @@ export class AuthService {
   private async ensureSystemUsers() {
     const seedUsers = [
       { email: 'superadmin54@gmail.com', pass: 'Saisatya@772', firstName: 'Super', lastName: 'Admin', role: ROLES.SUPER_ADMIN, hospitalId: 'HOSP-001', kycStatus: 'VERIFIED' },
+      { email: 'hospital.admin@medflow.com', pass: 'Hospital@321', firstName: 'Hospital', lastName: 'Admin', role: ROLES.HOSPITAL_ADMIN, hospitalId: 'HOSP-001', kycStatus: 'VERIFIED', department: 'Hospital Administration', specialty: 'Operations Management' },
+      { email: 'ambulance.admin@medflow.com', pass: 'Ambulance@321', firstName: 'Ambulance', lastName: 'Admin', role: (ROLES as any).AMBULANCE_ADMIN || 'AMBULANCE_ADMIN', hospitalId: 'HOSP-001', kycStatus: 'VERIFIED', department: 'Emergency Fleet & Dispatch', specialty: 'Fleet Control' },
       { email: 'pharmacist@medflow.com', pass: 'Pharmacist@321', firstName: 'Pharmacist', lastName: 'Dispensary', role: ROLES.PHARMACIST, hospitalId: 'HOSP-001', kycStatus: 'VERIFIED' },
       { email: 'bloodbank@medflow.com', pass: 'BloodBank@321', firstName: 'BloodBank', lastName: 'Station', role: (ROLES as any).BLOOD_BANK || 'BLOOD_BANK', hospitalId: 'HOSP-001', kycStatus: 'VERIFIED', department: 'Blood Bank', specialty: 'Transfusion & Blood Reserve' },
       

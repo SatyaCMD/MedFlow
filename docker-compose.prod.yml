@@ -1,0 +1,131 @@
+version: '3.8'
+
+services:
+  nginx-proxy:
+    image: nginx:alpine
+    container_name: medflow-prod-nginx
+    restart: always
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      - ./infra/nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./infra/nginx/conf.d:/etc/nginx/conf.d:ro
+      - certs_data:/etc/nginx/certs:ro
+    depends_on:
+      - api
+      - web
+    networks:
+      - medflow-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider http://localhost/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  api:
+    build:
+      context: .
+      dockerfile: apps/api/Dockerfile
+    image: medflow-api:prod
+    container_name: medflow-prod-api
+    restart: always
+    ports:
+      - "4000:4000"
+    environment:
+      - NODE_ENV=production
+      - PORT=4000
+      - MONGO_URI=mongodb://mongo:27017/medflow_prod
+      - REDIS_URL=redis://redis:6379
+      - JWT_SECRET=medflow_enterprise_prod_secret_key_2026
+      - SMTP_HOST=mailpit
+      - SMTP_PORT=1025
+    depends_on:
+      mongo:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    networks:
+      - medflow-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider http://localhost:4000/health || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    image: medflow-web:prod
+    container_name: medflow-prod-web
+    restart: always
+    ports:
+      - "3000:3000"
+    environment:
+      - NODE_ENV=production
+      - NEXT_PUBLIC_API_URL=http://localhost:4000
+    depends_on:
+      - api
+    networks:
+      - medflow-network
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider http://localhost:3000/ || exit 1"]
+      interval: 15s
+      timeout: 5s
+      retries: 3
+
+  mongo:
+    image: mongo:6.0
+    container_name: medflow-prod-mongo
+    restart: always
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongo_prod_data:/data/db
+    networks:
+      - medflow-network
+    healthcheck:
+      test: ["CMD-SHELL", "mongosh --eval 'db.runCommand({ping: 1})' || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  redis:
+    image: redis:7-alpine
+    container_name: medflow-prod-redis
+    restart: always
+    ports:
+      - "6379:6379"
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_prod_data:/data
+    networks:
+      - medflow-network
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  mailpit:
+    image: axllent/mailpit:latest
+    container_name: medflow-prod-mailpit
+    restart: always
+    ports:
+      - "8026:8025"
+      - "1025:1025"
+    networks:
+      - medflow-network
+
+volumes:
+  mongo_prod_data:
+    driver: local
+  redis_prod_data:
+    driver: local
+  certs_data:
+    driver: local
+
+networks:
+  medflow-network:
+    driver: bridge

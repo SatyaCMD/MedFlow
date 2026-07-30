@@ -1,6 +1,50 @@
 # MediCore 360 (MedFlow EHMS)
 
-Production-grade, multi-tenant Enterprise Hospital Management System (EHMS) structured as a clean-architecture monorepo with distinct frontend and backend services, fully integrated with a modern DevOps, DevSecOps, and secure authentication stack.
+<div align="center">
+
+![MediCore 360 Banner](https://img.shields.io/badge/MediCore%20360-Enterprise%20EHMS-0052CC?style=for-the-badge&logo=hospital&logoColor=white)
+![Build Status](https://img.shields.io/badge/Build-Passing-brightgreen?style=for-the-badge&logo=github-actions)
+![Next.js](https://img.shields.io/badge/Next.js-14.2-black?style=for-the-badge&logo=next.js)
+![Express](https://img.shields.io/badge/Express-4.19-000000?style=for-the-badge&logo=express)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.4-3178C6?style=for-the-badge&logo=typescript&logoColor=white)
+![Docker](https://img.shields.io/badge/Docker-Enabled-2496ED?style=for-the-badge&logo=docker&logoColor=white)
+![Kubernetes](https://img.shields.io/badge/Kubernetes-EKS-326CE5?style=for-the-badge&logo=kubernetes&logoColor=white)
+![HIPAA](https://img.shields.io/badge/HIPAA-Compliant-008080?style=for-the-badge&logo=shield)
+
+**Production-grade, multi-tenant Enterprise Hospital Management System (EHMS) structured as a clean-architecture monorepo with distinct frontend and backend services, fully integrated with a modern DevOps, DevSecOps, and secure authentication stack.**
+
+[Architecture](#-complete-end-to-end-system-architecture) • [Role Portals](#-role-based-dashboards--demo-credentials) • [Getting Started](#-getting-started) • [Enterprise Stacks](#-enterprise-docker-infrastructure-stacks) • [Jenkins CI/CD](#-jenkins-cicd-integration-port-8080) • [Observability](#4-running-infrastructure--observability-stack-docker-compose)
+
+</div>
+
+---
+
+## 📋 Table of Contents
+- [🏗️ Complete End-to-End System Architecture](#-complete-end-to-end-system-architecture)
+  - [🧩 System Component Breakdown](#-system-component-breakdown)
+- [👑 Role-Based Dashboards & Demo Credentials](#-role-based-dashboards--demo-credentials)
+- [🛡️ Secure Authentication System](#%EF%B8%8F-secure-authentication-system)
+- [⚙️ DevOps & DevSecOps Stack Overview](#%EF%B8%8F-devops--devsecops-stack-overview)
+- [🚀 Getting Started](#-getting-started)
+  - [1. Prerequisites](#1-prerequisites)
+  - [2. Install Dependencies](#2-install-dependencies)
+  - [3. Choose How to Run the Application](#3-choose-how-to-run-the-application)
+    - [💡 OPTION A: Full Docker Mode (Zero Configuration)](#-option-a-full-docker-mode-zero-configuration)
+    - [💻 OPTION B: Mixed Mode (Databases in Docker + Code on Host)](#-option-b-mixed-mode-databases-in-docker--code-on-host)
+- [🐳 Enterprise Docker Infrastructure Stacks](#-enterprise-docker-infrastructure-stacks)
+- [🛠️ Workspace Command Summary](#%EF%B8%8F-workspace-command-summary)
+- [🔗 Jenkins CI/CD Integration (Port 8080)](#-jenkins-cicd-integration-port-8080)
+  - [1. Prerequisite Installations on Jenkins Host](#1-prerequisite-installations-on-jenkins-host)
+  - [2. Configure Jenkins Pipeline Job](#2-configure-jenkins-pipeline-job)
+  - [3. Pipeline & SonarQube Server Setup](#3-pipeline--sonarqube-server-setup-httplocalhost9000)
+  - [4. Running Infrastructure & Observability Stack](#4-running-infrastructure--observability-stack-docker-compose)
+  - [5. Grafana Setup](#5-grafana-setup-httplocalhost3005)
+  - [6. Prometheus Verification](#6-prometheus-verification-httplocalhost9090)
+  - [7. Mailpit Email Inspector](#7-mailpit-email-inspector-httplocalhost8025)
+  - [8. Running Your Jenkins CI/CD Pipeline](#8-running-your-jenkins-cicd-pipeline)
+- [⚡ How to Connect a Production Redis Instance](#-how-to-connect-a-production-redis-instance)
+- [☁️ How to Use Terraform for AWS Cloud KYC Storage](#%EF%B8%8F-how-to-use-terraform-for-aws-cloud-kyc-storage-s3_kyc-tf)
+- [🐛 Troubleshooting: Docker Compose Port 4000 Error](#-troubleshooting-docker-compose-port-4000-error)
 
 ---
 
@@ -13,7 +57,7 @@ graph TB
     subgraph Client ["💻 Frontend Client (apps/web)"]
         direction TB
         WebUI["Next.js App Router (TypeScript)"]
-        Dashboards["Role Dashboards\n(SuperAdmin | Doctor | Nurse | Pharmacist | Patient)"]
+        Dashboards["Role Dashboards\n(SuperAdmin | HospitalAdmin | AmbulanceAdmin | Doctor | Nurse | Pharmacist | Patient)"]
         WebPages["Core Modules\n(Auth | Appointments | EMR | Billing | Patients | Settings)"]
         WebUI --> Dashboards
         WebUI --> WebPages
@@ -109,7 +153,7 @@ graph TB
 
 ### 🧩 System Component Breakdown
 
-* **Frontend Web Application (`apps/web`)**: Next.js (App Router) with TypeScript, Tailwind CSS, Framer Motion, and Axios. Features role-tailored dashboards for SuperAdmins, Doctors, Nurses, Pharmacists, and Patients, plus dedicated pages for Appointments, EMR, Billing, Patients, Settings, and Auth flows.
+* **Frontend Web Application (`apps/web`)**: Next.js (App Router) with TypeScript, Tailwind CSS, Framer Motion, and Axios. Features role-tailored dashboards for SuperAdmins, HospitalAdmins, AmbulanceAdmins, Doctors, Nurses, Pharmacists, Lab Techs, Blood Bank, and Patients, plus dedicated pages for Appointments, EMR, Billing, Patients, Settings, and Auth flows.
 * **Backend REST API (`apps/api`)**: Built with Express.js and TypeScript, following modular service-repository architecture. Implements domain services for Auth (Argon2id + Salt + Pepper + OTP), Patients, Appointments, EMR, Billing, Pharmacy, Inventory, Lab, Messaging, AI, and Auditing.
 * **Shared Workspace Packages (`packages/`)**:
   * `packages/shared`: Shared Zod validation DTO schemas, TypeScript type declarations, and RBAC matrix constants.
@@ -126,6 +170,23 @@ graph TB
   * **Jenkins Pipeline (`Jenkinsfile`)**: CI/CD automation executing lint checks, SonarQube static code analysis, Trivy vulnerability scanning (repo & Docker image), and container builds.
   * **Monitoring (`infra/monitoring`)**: Integrated Prometheus metrics scraping and Grafana dashboard visualization for API performance, memory usage, and cluster health.
   * **Automated Testing (`tests/postman`)**: Postman API collection for automated integration testing across authentication and core endpoints.
+
+---
+
+## 👑 Role-Based Dashboards & Demo Credentials
+
+MedFlow provides 8 specialized role portals out-of-the-box. Access any portal via `/login` with 1-click preset authentication:
+
+| Role Portal | Demo User ID / Email | Password | Primary Key Capabilities & Scope |
+| :--- | :--- | :--- | :--- |
+| 👑 **Super Admin** | `superadmin54@gmail.com` | `Saisatya@772` | Multi-tenant governance, security audit logs, global EMR vault, enterprise settings |
+| 🏢 **Hospital Admin** | `HospitalAdmin` | `Hospital@321` | Real-time facility bed census (88%), department analytics, staff roster scheduling |
+| 🚨 **Ambulance Admin** | `AmbulanceAdmin` | `Ambulance@321` | Live GPS dispatch tracker map, emergency call queue, fleet telemetry & vehicle registration |
+| 🩺 **Doctor / Physician** | `Dr. Anup Singh` | `Doctor@321` | Clinical OPD workstation, EMR patient charts, prescription studio & lab orders |
+| ❤️ **Nurse & Caregiver** | `Sunita Patel` | `Caregiver@321` | Inpatient bed vitals log, triage queue, ward round management & care plans |
+| 💊 **Pharmacist** | `Pharmacist Dispensary` | `Pharmacist@321` | Prescription fulfillment studio, drug inventory stock control & dispensing |
+| 🧪 **Lab Technician** | `Rajesh Kumar` | `Technician@321` | Diagnostic pathology audits, specimen upload, lab report publishing |
+| 🩸 **Blood Bank** | `Blood Bank Reserve` | `BloodBank@321` | Blood group stock reserves (A+, O-, etc.), donor registry & emergency supply matching |
 
 ---
 
@@ -151,14 +212,14 @@ A complete pipeline is provided to deploy and monitor the application securely:
 *   **Redis**: Caches session records and tracks temporary verification states (OTP).
 *   **SMTP (Mailpit)**: Captures transactional registration and authentication mails.
 *   **Jenkins**: Automates the CI/CD pipeline, building images, auditing repositories, running quality checkers, and deploying using Helm (configured in `Jenkinsfile`).
-*   **Postman**: Comprehensive integration testing suite for verifying endpoint validation logic and authentication states (located at [tests/postman](file:///c:/Users/SATYA/OneDrive/Desktop/MedFlow/tests/postman)).
+*   **Postman**: Comprehensive integration testing suite for verifying endpoint validation logic and authentication states (located at [tests/postman](tests/postman)).
 *   **SonarQube**: Automatically analyzes static code quality, checking for security vulnerabilities, hotspots, and code smells.
 *   **Trivy**: DevSecOps scanner integrated into Jenkins pipeline stages to check dependency vulnerabilities (repo audit) and scan built Docker images for CVEs.
 *   **Prometheus & Grafana**: Monitors application telemetry, API latency, and database connectivity.
 *   **Helm**: Deploys the release components (Next.js, Express, databases) into Kubernetes namespaces.
 *   **Kubernetes (K8s)**: Container orchestration configuration with resource specifications, readiness/liveness probes, and ingress ssl-redirect annotation settings.
 *   **Argo CD**: Implements GitOps deployment mechanics, reconciling Helm chart configurations directly into the EKS production cluster.
-*   **Terraform**: Provisions core cloud resources including VPC, routing tables, and the EKS Kubernetes cluster in AWS (located in [infra/terraform](file:///c:/Users/SATYA/OneDrive/Desktop/MedFlow/infra/terraform)).
+*   **Terraform**: Provisions core cloud resources including VPC, routing tables, and the EKS Kubernetes cluster in AWS (located in [infra/terraform](infra/terraform)).
 
 ---
 
@@ -219,6 +280,16 @@ This is the recommended method for active development. Databases and the Mail se
    *   **Backend API**: [http://localhost:4000](http://localhost:4000)
    *   **Mailpit Webbox**: [http://localhost:8026](http://localhost:8026) (to fetch verification OTP codes)
 
+---
+
+### 🐳 Enterprise Docker Infrastructure Stacks
+
+| Docker Stack File | Services Included | Key Ports | Usage Command |
+| :--- | :--- | :--- | :--- |
+| `docker-compose.prod.yml` | Nginx, API, Web, Mongo, Redis, Mailpit | `80`, `443`, `4000`, `3000` | `docker compose -f docker-compose.prod.yml up -d` |
+| `docker-compose.monitoring.yml` | Prometheus, Grafana, Node Exporter, Redis Exporter | `9090`, `3001`, `9100`, `9121` | `docker compose -f docker-compose.monitoring.yml up -d` |
+| `docker-compose.ci.yml` | Jenkins CI/CD, SonarQube, Sonar PostgreSQL DB | `8080`, `9000`, `50000` | `docker compose -f docker-compose.ci.yml up -d` |
+| `docker-compose.security.yml` | Trivy CVE Scanner, OWASP Dependency-Check | Automated Scans | `docker compose -f docker-compose.security.yml run trivy-scanner` |
 
 ---
 
@@ -320,7 +391,7 @@ docker compose -f docker-compose.backend.yml up -d mongo redis mailpit prometheu
 #### B. Import the MedFlow Telemetry Dashboard:
 1. In Grafana, click the **`+`** icon at the top right $\rightarrow$ select **Import dashboard**.
 2. Click **Upload dashboard JSON file**.
-3. Browse and select the file from your workspace: `C:\Users\SATYA\OneDrive\Desktop\MedFlow\infra\monitoring\medflow-dashboard.json`.
+3. Browse and select the file from your workspace: `infra/monitoring/medflow-dashboard.json`.
 4. **Crucial Step**: At the bottom dropdown under **Prometheus**, select your **Prometheus** data source (instead of leaving it default).
 5. Click **Import**.
 6. *(If panels show "No data", click **Dashboard Settings** ⚙ at top right $\rightarrow$ select your **Prometheus** data source $\rightarrow$ click **Save**).*
@@ -359,7 +430,7 @@ git push origin main
 
 ## ⚡ How to Connect a Production Redis Instance
 
-To switch from local Redis (`redis://localhost:6380`) to **Production Redis**, update line 10 in your [.env](file:///c:/Users/SATYA/OneDrive/Desktop/MedFlow/.env) file with your production Redis connection URI.
+To switch from local Redis (`redis://localhost:6380`) to **Production Redis**, update line 10 in your `.env` file with your production Redis connection URI.
 
 Here are the 3 standard options depending on your cloud provider:
 
@@ -394,6 +465,8 @@ MedFlow's backend driver in `apps/api/src/lib/redis.ts` uses `ioredis`. As soon 
 * Manages connection retry strategies
 * Executes all session lockouts, failed login counters, and OTP caching in production!
 
+---
+
 ## ☁️ How to Use Terraform for AWS Cloud KYC Storage (`s3_kyc.tf`)
 
 We created `infra/terraform/s3_kyc.tf` which provisions a HIPAA-compliant AWS S3 Bucket (`medflow-kyc-documents-production`) with KMS Server-Side Encryption and IAM upload policies.
@@ -422,14 +495,7 @@ Port `4000` is occupied because `pnpm dev` (the local Express API process) is ru
 
 ### Solution:
 
-*   **Option A (If running dev server locally via `pnpm dev`)**: Start database containers in Docker without the duplicate API container:
-    ```bash
-    docker compose up redis mongo mailpit
-    ```
-*   **Option B (If running full Docker container suite)**: Stop `pnpm dev` (`Ctrl + C`) in your terminal first, then run:
-    ```bash
-    docker compose up -d
-    ```
-
-
-
+* **Option A (If running dev server locally via `pnpm dev`)**: Start database containers in Docker without the duplicate API container:
+  ```bash
+  docker compose -f docker-compose.dev.yml up -d mongo redis mailpit
+  ```
