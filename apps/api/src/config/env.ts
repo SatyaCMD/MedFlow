@@ -40,6 +40,8 @@ const envSchema = z.object({
   AWS_ACCESS_KEY_ID: z.string().optional().default(''),
   AWS_SECRET_ACCESS_KEY: z.string().optional().default(''),
   AWS_S3_KYC_BUCKET: z.string().default('medflow-kyc-documents-production'),
+  SUPER_ADMIN_EMAIL: z.string().email().default('superadmin54@gmail.com'),
+  SUPER_ADMIN_PASSWORD: z.string().min(8, 'SUPER_ADMIN_PASSWORD must be at least 8 characters').default('Admin@321'),
 });
 
 const parseEnv = () => {

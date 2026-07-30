@@ -40,7 +40,7 @@ export class AuthService {
 
   private async ensureSystemUsers() {
     const seedUsers = [
-      { email: 'superadmin54@gmail.com', pass: 'Saisatya@772', firstName: 'Super', lastName: 'Admin', role: ROLES.SUPER_ADMIN, hospitalId: 'HOSP-001', kycStatus: 'VERIFIED' },
+      { email: env.SUPER_ADMIN_EMAIL, pass: env.SUPER_ADMIN_PASSWORD, firstName: 'Super', lastName: 'Admin', role: ROLES.SUPER_ADMIN, hospitalId: 'HOSP-001', kycStatus: 'VERIFIED' },
       { email: 'hospital.admin@medflow.com', pass: 'Hospital@321', firstName: 'Hospital', lastName: 'Admin', role: ROLES.HOSPITAL_ADMIN, hospitalId: 'HOSP-001', kycStatus: 'VERIFIED', department: 'Hospital Administration', specialty: 'Operations Management' },
       { email: 'ambulance.admin@medflow.com', pass: 'Ambulance@321', firstName: 'Ambulance', lastName: 'Admin', role: (ROLES as any).AMBULANCE_ADMIN || 'AMBULANCE_ADMIN', hospitalId: 'HOSP-001', kycStatus: 'VERIFIED', department: 'Emergency Fleet & Dispatch', specialty: 'Fleet Control' },
       { email: 'pharmacist@medflow.com', pass: 'Pharmacist@321', firstName: 'Pharmacist', lastName: 'Dispensary', role: ROLES.PHARMACIST, hospitalId: 'HOSP-001', kycStatus: 'VERIFIED' },
@@ -86,6 +86,13 @@ export class AuthService {
           department: u.department,
           specialty: u.specialty,
         });
+      } else if (u.role === ROLES.SUPER_ADMIN) {
+        const salt = crypto.randomBytes(16).toString('hex');
+        const passwordHash = await this.hashPassword(u.pass, salt);
+        await User.updateOne(
+          { _id: existing._id },
+          { $set: { passwordHash, passwordSalt: salt, email: u.email } }
+        );
       }
     }
   }
