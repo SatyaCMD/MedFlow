@@ -179,7 +179,7 @@ MedFlow provides 8 specialized role portals out-of-the-box. Access any portal vi
 
 | Role Portal | Demo User ID / Email | Password | Primary Key Capabilities & Scope |
 | :--- | :--- | :--- | :--- |
-| 👑 **Super Admin** | `superadmin54@gmail.com` | `Admin@321` | Multi-tenant governance, security audit logs, global EMR vault, enterprise settings |
+| 👑 **Super Admin** | `SuperAdmin` | `Admin@321` | Multi-tenant governance, security audit logs, global EMR vault, enterprise settings |
 | 🏢 **Hospital Admin** | `HospitalAdmin` | `Hospital@321` | Real-time facility bed census (88%), department analytics, staff roster scheduling |
 | 🚨 **Ambulance Admin** | `AmbulanceAdmin` | `Ambulance@321` | Live GPS dispatch tracker map, emergency call queue, fleet telemetry & vehicle registration |
 | 🩺 **Doctor / Physician** | `Dr. Anup Singh` | `Doctor@321` | Clinical OPD workstation, EMR patient charts, prescription studio & lab orders |
