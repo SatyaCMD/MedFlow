@@ -26,6 +26,7 @@ import {
 import { useToast } from '../../context/ToastContext';
 import { api } from '../../lib/axios';
 import { MASTER_PHARMACY_CATALOG, PharmacyItem } from '../../data/pharmacyCatalog';
+import { saveClinicalRecord } from '../../data/medicalHistoryStore';
 
 export interface PrescribedItem {
   id: string;
@@ -378,7 +379,7 @@ export const DoctorPrescribeStudioModal: React.FC<DoctorPrescribeStudioModalProp
       diagnosis,
       medications: prescribedMedsList.map((p) => ({
         name: p.medicineName,
-        dosage: p.frequency,
+        dosage: `${p.frequency} (${p.duration})`,
         frequency: p.duration,
         duration: p.timing,
         instructions: p.instructions,
@@ -392,6 +393,21 @@ export const DoctorPrescribeStudioModal: React.FC<DoctorPrescribeStudioModalProp
       })),
       signatureHash: `SHA256: ${sigArr[0].toString(16)}${sigArr[1].toString(16)}`,
     };
+
+    saveClinicalRecord({
+      id: `cr-${Date.now()}`,
+      rxNumber: rxData.rxNumber,
+      patientName: rxData.patientName,
+      mrn: rxData.mrn,
+      doctorName: rxData.doctorName,
+      department: rxData.department,
+      date: rxData.date,
+      timestamp: Date.now(),
+      diagnosis: rxData.diagnosis,
+      medications: rxData.medications,
+      labTests: rxData.labTests,
+      signatureHash: rxData.signatureHash,
+    });
 
     onPrescriptionIssued(rxData);
 

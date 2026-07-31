@@ -17,7 +17,7 @@ export function printSinglePageReceipt(data: ReceiptPrintData) {
   const printWindow = window.open('', '_blank');
   if (!printWindow) return;
 
-  const numericAmount = parseFloat(data.amount.replace(/[^0-9.]/g, '')) || 45800;
+  const numericAmount = parseFloat(data.amount.replace(/[^0-9.]/g, '')) || 1500;
   const subtotal = (numericAmount / 1.05).toFixed(2);
   const taxAmount = (numericAmount - parseFloat(subtotal)).toFixed(2);
 
@@ -32,7 +32,7 @@ export function printSinglePageReceipt(data: ReceiptPrintData) {
         <meta charset="utf-8" />
         <title>MediFlow - Official Payment Receipt ${data.invoiceId}</title>
         <style>
-          @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap');
+          @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&family=Dancing+Script:wght@700&display=swap');
           
           @page {
             size: A4 portrait;
@@ -54,17 +54,18 @@ export function printSinglePageReceipt(data: ReceiptPrintData) {
             background: #ffffff;
             font-family: 'Inter', system-ui, -apple-system, sans-serif;
             color: #0f172a;
-            font-size: 11pt;
-            line-height: 1.4;
+            font-size: 10pt;
+            line-height: 1.35;
           }
 
           .page-wrapper {
             width: 210mm;
             height: 297mm;
-            padding: 12mm 14mm;
+            padding: 8mm 12mm;
             display: flex;
             flex-direction: column;
-            justify-content: space-between;
+            justify-content: flex-start;
+            gap: 10px;
             overflow: hidden;
             background: #ffffff;
             border: 1px solid #e2e8f0;
@@ -76,7 +77,7 @@ export function printSinglePageReceipt(data: ReceiptPrintData) {
             justify-content: space-between;
             align-items: center;
             border-bottom: 2.5px solid #2563eb;
-            padding-bottom: 12px;
+            padding-bottom: 8px;
           }
 
           .brand-logo {
@@ -86,27 +87,27 @@ export function printSinglePageReceipt(data: ReceiptPrintData) {
           }
 
           .brand-icon {
-            width: 38px;
-            height: 38px;
+            width: 36px;
+            height: 36px;
             background: linear-gradient(135deg, #1e40af, #3b82f6);
-            border-radius: 10px;
+            border-radius: 9px;
             display: flex;
             align-items: center;
             justify-content: center;
             color: #ffffff;
             font-weight: 900;
-            font-size: 18pt;
+            font-size: 16pt;
           }
 
           .brand-title {
-            font-size: 18pt;
+            font-size: 17pt;
             font-weight: 900;
             color: #1e3a8a;
             letter-spacing: -0.5px;
           }
 
           .brand-sub {
-            font-size: 8.5pt;
+            font-size: 8pt;
             font-weight: 700;
             color: #64748b;
             text-transform: uppercase;
@@ -118,7 +119,7 @@ export function printSinglePageReceipt(data: ReceiptPrintData) {
           }
 
           .invoice-title {
-            font-size: 16pt;
+            font-size: 15pt;
             font-weight: 900;
             color: #0f172a;
             text-transform: uppercase;
@@ -130,11 +131,11 @@ export function printSinglePageReceipt(data: ReceiptPrintData) {
             background: #dcfce7;
             color: #15803d;
             border: 1px solid #86efac;
-            padding: 2px 10px;
+            padding: 2px 9px;
             border-radius: 20px;
-            font-size: 8pt;
+            font-size: 7.5pt;
             font-weight: 800;
-            margin-top: 4px;
+            margin-top: 3px;
             text-transform: uppercase;
           }
 
@@ -142,15 +143,14 @@ export function printSinglePageReceipt(data: ReceiptPrintData) {
           .info-grid {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-top: 14px;
+            gap: 10px;
           }
 
           .info-card {
             background: #f8fafc;
             border: 1px solid #e2e8f0;
-            border-radius: 12px;
-            padding: 10px 14px;
+            border-radius: 10px;
+            padding: 8px 12px;
           }
 
           .card-label {
@@ -159,26 +159,25 @@ export function printSinglePageReceipt(data: ReceiptPrintData) {
             color: #64748b;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            margin-bottom: 4px;
+            margin-bottom: 2px;
           }
 
           .info-value {
-            font-size: 9.5pt;
-            font-weight: 700;
+            font-size: 9pt;
+            font-weight: 800;
             color: #0f172a;
           }
 
           .info-sub {
-            font-size: 8.5pt;
+            font-size: 8pt;
             color: #475569;
-            margin-top: 2px;
+            margin-top: 1px;
           }
 
-          /* Table Styling */
+          /* Table Styling - NO QTY COLUMN */
           .table-container {
-            margin-top: 16px;
             border: 1px solid #e2e8f0;
-            border-radius: 12px;
+            border-radius: 10px;
             overflow: hidden;
           }
 
@@ -190,17 +189,17 @@ export function printSinglePageReceipt(data: ReceiptPrintData) {
           th {
             background: #0f172a;
             color: #ffffff;
-            font-size: 8.5pt;
+            font-size: 8pt;
             font-weight: 800;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            padding: 10px 12px;
+            padding: 8px 12px;
             text-align: left;
           }
 
           td {
-            padding: 10px 12px;
-            font-size: 9.5pt;
+            padding: 8px 12px;
+            font-size: 9pt;
             border-bottom: 1px solid #f1f5f9;
             color: #1e293b;
           }
@@ -214,67 +213,66 @@ export function printSinglePageReceipt(data: ReceiptPrintData) {
             display: flex;
             justify-content: space-between;
             align-items: flex-start;
-            margin-top: 16px;
-            gap: 20px;
+            gap: 16px;
           }
 
           .payment-card-box {
             flex: 1;
             background: linear-gradient(135deg, #0f172a, #1e293b);
             color: #ffffff;
-            padding: 12px 16px;
-            border-radius: 12px;
-            font-size: 8.5pt;
+            padding: 10px 14px;
+            border-radius: 10px;
+            font-size: 8pt;
           }
 
           .payment-card-title {
-            font-size: 8pt;
+            font-size: 7.5pt;
             font-weight: 800;
             color: #94a3b8;
             text-transform: uppercase;
             letter-spacing: 0.5px;
-            margin-bottom: 6px;
+            margin-bottom: 4px;
           }
 
           .payment-card-num {
             font-family: monospace;
-            font-size: 11pt;
+            font-size: 10.5pt;
             font-weight: 700;
             letter-spacing: 1px;
             color: #38bdf8;
           }
 
           .totals-box {
-            width: 220px;
+            width: 210px;
             background: #f0fdf4;
             border: 1px solid #bbf7d0;
-            border-radius: 12px;
-            padding: 12px 14px;
+            border-radius: 10px;
+            padding: 10px 12px;
           }
 
           .totals-row {
             display: flex;
             justify-content: space-between;
-            font-size: 8.5pt;
+            font-size: 8pt;
             color: #475569;
-            margin-bottom: 4px;
+            margin-bottom: 3px;
           }
 
           .grand-total {
             border-top: 1.5px solid #86efac;
-            padding-top: 6px;
-            margin-top: 6px;
+            padding-top: 5px;
+            margin-top: 5px;
             display: flex;
             justify-content: space-between;
-            font-size: 11pt;
+            font-size: 10.5pt;
             font-weight: 900;
             color: #15803d;
           }
 
           /* Security & Sign Footer */
           .footer-section {
-            margin-top: auto;
-            padding-top: 14px;
+            margin-top: 4px;
+            padding-top: 8px;
             border-top: 1px dashed #cbd5e1;
             display: flex;
             justify-content: space-between;
@@ -284,27 +282,27 @@ export function printSinglePageReceipt(data: ReceiptPrintData) {
           .seal-box {
             display: flex;
             align-items: center;
-            gap: 12px;
+            gap: 10px;
           }
 
           .qr-placeholder {
-            width: 54px;
-            height: 54px;
+            width: 46px;
+            height: 46px;
             background: #0f172a;
-            border-radius: 8px;
+            border-radius: 7px;
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             color: #ffffff;
-            font-size: 6pt;
+            font-size: 5.5pt;
             font-weight: 800;
             text-align: center;
-            padding: 4px;
+            padding: 3px;
           }
 
           .seal-text {
-            font-size: 7.5pt;
+            font-size: 7pt;
             color: #64748b;
             line-height: 1.3;
           }
@@ -314,14 +312,50 @@ export function printSinglePageReceipt(data: ReceiptPrintData) {
             display: block;
           }
 
+          .stamp-and-signature {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+          }
+
+          /* Circular Blue Ink Stamp */
+          .circular-blue-stamp {
+            width: 52px;
+            height: 52px;
+            border: 2px double #1d4ed8;
+            border-radius: 50%;
+            color: #1d4ed8;
+            font-size: 5pt;
+            font-weight: 900;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-transform: uppercase;
+            transform: rotate(-6deg);
+            background: rgba(29, 78, 216, 0.03);
+            box-shadow: inset 0 0 3px rgba(29, 78, 216, 0.15);
+            line-height: 1.1;
+          }
+
           .signature-box {
             text-align: right;
+          }
+
+          .handwritten-sign {
+            font-family: 'Dancing Script', 'Brush Script MT', cursive, sans-serif;
+            font-size: 16pt;
+            font-weight: 700;
+            color: #1d4ed8;
+            line-height: 1;
+            margin-bottom: 2px;
           }
 
           .sign-line {
             width: 140px;
             border-bottom: 1.5px solid #0f172a;
-            margin-bottom: 4px;
+            margin-bottom: 3px;
             margin-left: auto;
           }
 
@@ -333,9 +367,9 @@ export function printSinglePageReceipt(data: ReceiptPrintData) {
 
           .compliance-note {
             text-align: center;
-            font-size: 7pt;
+            font-size: 6.5pt;
             color: #94a3b8;
-            margin-top: 8px;
+            margin-top: 4px;
             font-weight: 600;
           }
         </style>
@@ -374,14 +408,13 @@ export function printSinglePageReceipt(data: ReceiptPrintData) {
             </div>
           </div>
 
-          <!-- Itemized Table -->
+          <!-- Itemized Table (NO QTY COLUMN) -->
           <div class="table-container">
             <table>
               <thead>
                 <tr>
-                  <th style="width: 45%;">Healthcare Description / Service Item</th>
-                  <th style="width: 20%;">Category</th>
-                  <th style="width: 15%;">Qty</th>
+                  <th style="width: 55%;">Healthcare Description / Service Item</th>
+                  <th style="width: 25%;">Category</th>
                   <th style="width: 20%; text-align: right;">Total Amount (₹)</th>
                 </tr>
               </thead>
@@ -389,12 +422,11 @@ export function printSinglePageReceipt(data: ReceiptPrintData) {
                 <tr>
                   <td>
                     <strong>${data.itemTitle}</strong>
-                    <div style="font-size: 8pt; color: #64748b; margin-top: 2px;">
+                    <div style="font-size: 7.5pt; color: #64748b; margin-top: 1px;">
                       Verified EHR billing entry & digitally processed service charge.
                     </div>
                   </td>
                   <td>${data.itemCategory || 'Medical Service'}</td>
-                  <td>1</td>
                   <td style="text-align: right; font-weight: 800;">${data.amount}</td>
                 </tr>
               </tbody>
@@ -406,7 +438,7 @@ export function printSinglePageReceipt(data: ReceiptPrintData) {
             <div class="payment-card-box">
               <div class="payment-card-title">Payment Method Authorization</div>
               <div class="payment-card-num">${cardInfo}</div>
-              <div style="margin-top: 6px; font-size: 7.5pt; color: #cbd5e1;">
+              <div style="margin-top: 4px; font-size: 7.5pt; color: #cbd5e1;">
                 256-Bit SSL Encrypted • PCI-DSS Level 1 Compliant Transaction
               </div>
             </div>
@@ -427,7 +459,7 @@ export function printSinglePageReceipt(data: ReceiptPrintData) {
             </div>
           </div>
 
-          <!-- Bottom Footer & Compliance -->
+          <!-- Bottom Footer with Circular Blue Ink Stamp & Handwritten Signature -->
           <div>
             <div class="footer-section">
               <div class="seal-box">
@@ -438,15 +470,25 @@ export function printSinglePageReceipt(data: ReceiptPrintData) {
                 </div>
                 <div class="seal-text">
                   <strong>MediFlow Cryptographic Telemetry Stamp</strong>
-                  Verified by Automated Payment Gateway Gateway Hash
-                  <br />SHA-256: ${Math.random().toString(36).substring(2, 15)}${Math.random().toString(36).substring(2, 10)}
+                  Verified by Automated Payment Gateway Hash
+                  <br />SHA-256: 59v9cddtwyg8ci1weum
                 </div>
               </div>
 
-              <div class="signature-box">
-                <div class="sign-line"></div>
-                <div class="sign-title">Authorized Finance Officer</div>
-                <div style="font-size: 7pt; color: #64748b;">MediFlow Enterprise Billing System</div>
+              <div class="stamp-and-signature">
+                <!-- Circular Blue Ink Stamp -->
+                <div class="circular-blue-stamp">
+                  <span>★ MEDIFLOW ★</span>
+                  <span style="font-size: 4.5pt;">AUDIT PASSED</span>
+                  <span>FINANCE</span>
+                </div>
+
+                <div class="signature-box">
+                  <div class="handwritten-sign">S. K. Mukherjee</div>
+                  <div class="sign-line"></div>
+                  <div class="sign-title">Authorized Finance Officer</div>
+                  <div style="font-size: 6.5pt; color: #64748b;">MediFlow Enterprise Billing System</div>
+                </div>
               </div>
             </div>
 

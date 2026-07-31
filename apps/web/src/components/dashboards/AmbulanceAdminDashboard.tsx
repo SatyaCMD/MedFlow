@@ -511,6 +511,20 @@ export const AmbulanceAdminDashboard: React.FC = () => {
         {/* Action Buttons */}
         <div className="flex flex-wrap gap-2.5 w-full md:w-auto shrink-0">
           <button
+            onClick={() => {
+              showToast({
+                title: 'Ambulance Invoice Issued 🚑',
+                message: 'Generated itemized Ambulance Service Invoice #AMB-INV-2026-881 for Sarah Connor (12 KM ALS Transport + Oxygen = ₹3,465 incl. GST).',
+                type: 'success',
+              });
+              if (typeof window !== 'undefined') window.print();
+            }}
+            className="px-5 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs rounded-2xl shadow-lg hover:shadow-emerald-600/30 transition-all flex items-center gap-2 cursor-pointer hover:scale-[1.02]"
+          >
+            <Siren className="w-4 h-4" /> Bill Emergency Transport
+          </button>
+
+          <button
             onClick={() => setIsTrackerOpen(true)}
             className="px-5 py-3 bg-rose-600 hover:bg-rose-500 text-white font-black text-xs rounded-2xl shadow-lg shadow-rose-600/30 flex items-center gap-2 transition-all cursor-pointer hover:scale-[1.02]"
           >
@@ -585,6 +599,82 @@ export const AmbulanceAdminDashboard: React.FC = () => {
                   </span>
                 )}
               </div>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Emergency Transport Service Invoices & Patient Billing */}
+      <div className="bg-white border border-slate-200 rounded-3xl p-6 shadow-sm space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+          <div>
+            <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+              <Siren className="w-5 h-5 text-rose-600" /> Emergency Ambulance Transport Billing Ledger
+            </h3>
+            <p className="text-xs text-slate-500 font-semibold mt-0.5">
+              Itemized billing for ALS/BLS ambulance dispatches, per-kilometer rates, oxygen therapy, and TPA insurance clearance.
+            </p>
+          </div>
+
+          <button
+            onClick={() => {
+              showToast({
+                title: 'Ambulance Invoice Issued 🚑',
+                message: 'Generated itemized Ambulance Service Invoice #AMB-INV-2026-881 for Sarah Connor (12 KM ALS Transport + Oxygen = ₹3,465 incl. GST).',
+                type: 'success',
+              });
+              if (typeof window !== 'undefined') window.print();
+            }}
+            className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-md shadow-emerald-600/20 flex items-center gap-1.5 cursor-pointer transition-all shrink-0"
+          >
+            + Bill Emergency Transport
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {[
+            { id: 'AMB-INV-881', date: '2026-07-28', patient: 'Sarah Connor (MC-1001)', type: 'ALS Advanced Life Support', distance: '12 KM', subtotal: 3300, gst: 165, total: 3465, tpa: 'TPA Cashless Pre-Approved' },
+            { id: 'AMB-INV-882', date: '2026-07-27', patient: 'John Doe (MC-1002)', type: 'Trauma & ICU Mobile Unit', distance: '18 KM', subtotal: 4800, gst: 240, total: 5040, tpa: 'Direct Patient Payment' },
+          ].map((inv) => (
+            <div key={inv.id} className="p-4 bg-slate-50/70 border border-slate-200/90 rounded-2xl space-y-3">
+              <div className="flex items-center justify-between border-b border-slate-200/60 pb-2.5">
+                <div>
+                  <span className="font-mono font-black text-rose-600 text-xs block">{inv.id}</span>
+                  <h4 className="font-black text-slate-900 text-sm mt-0.5">{inv.patient}</h4>
+                </div>
+                <span className="px-2.5 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-black rounded-full uppercase border border-emerald-300">
+                  {inv.tpa}
+                </span>
+              </div>
+
+              <div className="space-y-1 text-xs text-slate-600 font-semibold">
+                <div className="flex justify-between">
+                  <span>Transport Type: <strong className="text-slate-800">{inv.type}</strong></span>
+                  <span>Distance: <strong className="text-slate-800">{inv.distance}</strong></span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Subtotal + Oxygen: <strong className="text-slate-800">₹{inv.subtotal}</strong></span>
+                  <span>GST (5%): <strong className="text-slate-800">₹{inv.gst}</strong></span>
+                </div>
+                <div className="flex justify-between text-sm font-black text-slate-900 border-t border-slate-200 pt-2">
+                  <span>Total Emergency Transport Bill:</span>
+                  <span className="text-rose-600">₹{inv.total.toLocaleString('en-IN')}</span>
+                </div>
+              </div>
+
+              <button
+                onClick={() => {
+                  showToast({
+                    title: 'Downloading Transport Invoice 📄',
+                    message: `Exporting ambulance invoice #${inv.id}...`,
+                    type: 'info',
+                  });
+                  if (typeof window !== 'undefined') window.print();
+                }}
+                className="w-full py-1.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
+              >
+                <Siren className="w-3.5 h-3.5 text-rose-400" /> Print Ambulance Service Invoice PDF
+              </button>
             </div>
           ))}
         </div>

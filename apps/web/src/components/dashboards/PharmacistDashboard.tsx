@@ -175,13 +175,45 @@ export const PharmacistDashboard: React.FC = () => {
           </p>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-3 flex-wrap">
           <button
             onClick={() => setIsSalesHistoryOpen(true)}
             className="px-4 py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl shadow-lg flex items-center gap-2 cursor-pointer transition-all"
           >
             <History className="w-4 h-4 text-amber-400" />
             <span>Dispensary & Sales Audit History</span>
+          </button>
+
+          <button
+            onClick={() => {
+              const newSale: PharmacySaleRecord = {
+                id: `ps-${Date.now()}`,
+                invoiceNo: `INV-2026-${Math.floor(1000 + Math.random() * 9000)}`,
+                date: `${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`,
+                timestamp: Date.now(),
+                customerName: 'Sarah Connor (MC-1001)',
+                mrn: 'MC-1001',
+                type: 'PATIENT_DISPENSARY',
+                items: [
+                  { medicineName: 'Amlodipine Besylate 5mg Tablets', qty: 30, unitPrice: 8.5, total: 255 },
+                  { medicineName: 'Atorvastatin 10mg Tablets', qty: 30, unitPrice: 14.0, total: 420 },
+                ],
+                totalAmount: 675,
+                paymentMethod: 'Credit Card (Paid)',
+                dispensedBy: 'Pharmacist Dispensary',
+              };
+              savePharmacySale(newSale);
+              setSalesRecords(getPharmacySales());
+              showToast({
+                title: 'Prescription Dispensed & Billed! 💊',
+                message: `Generated GST Dispensary Invoice #${newSale.invoiceNo} for ${newSale.customerName}.`,
+                type: 'success',
+              });
+            }}
+            className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-md shadow-emerald-600/20 flex items-center gap-2 transition-all cursor-pointer"
+          >
+            <ShoppingBag className="w-4 h-4" />
+            <span>Dispense & Bill Patient</span>
           </button>
 
           <button

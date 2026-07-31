@@ -46,6 +46,15 @@ export class BillingController {
     }
   };
 
+  processPayment = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const result = await this.service.processPayment(req.body);
+      res.status(200).json({ success: true, data: result });
+    } catch (err) {
+      next(err);
+    }
+  };
+
   update = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const hospitalId = req.user!.hospitalId;
@@ -66,4 +75,3 @@ export class BillingController {
     }
   };
 }
-

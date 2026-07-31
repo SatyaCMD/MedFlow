@@ -588,10 +588,67 @@ export const DoctorDashboard: React.FC = () => {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+        <StatCard title="Total Patients Diagnosed" value={`${clinicalRecords.length + appointments.filter(a => a.status.includes('Prescribed')).length} Patients`} change={14.5} changeLabel="total diagnosed" icon={UserCheck} />
         <StatCard title="Today's Consultations" value={`${appointments.length} Visits`} change={12.0} changeLabel="OPD active" icon={Calendar} />
         <StatCard title="Pending Lab Diagnostics" value={`${labOrders.filter(l => l.status !== 'REPORT_SUBMITTED').length} Test Orders`} change={-1.0} changeLabel="assigned to lab tech" icon={FlaskConical} />
-        <StatCard title="Nurse Vitals Synced" value="100% Complete" change={0.0} changeLabel="BP, HR & Temp logged" icon={UserCheck} />
         <StatCard title="Signed EMR Rx Notes" value={`${clinicalRecords.length} Issued`} change={8.5} changeLabel="SHA-256 verified" icon={FileText} />
+      </div>
+
+      {/* Diagnosed Patients Ledger & Medical Records */}
+      <div className="space-y-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs">
+        <div className="flex items-center justify-between border-b border-slate-100 pb-4">
+          <div>
+            <h2 className="text-base font-black text-slate-900 flex items-center gap-2">
+              <UserCheck className="w-5 h-5 text-blue-600" /> Diagnosed Patients Ledger & Clinical Summary
+            </h2>
+            <p className="text-xs text-slate-500 font-semibold mt-0.5">
+              Comprehensive registry of all diagnosed patients, primary clinical diagnoses, prescribed medications, and diagnostic test status.
+            </p>
+          </div>
+          <span className="px-3 py-1 bg-blue-50 text-blue-800 border border-blue-200 rounded-full text-xs font-black">
+            {clinicalRecords.length} Verified Diagnoses
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {clinicalRecords.map((rec) => (
+            <div key={rec.id} className="p-4 bg-slate-50/70 border border-slate-200/90 rounded-2xl space-y-3">
+              <div className="flex items-center justify-between border-b border-slate-200/60 pb-2.5">
+                <div>
+                  <h4 className="font-black text-slate-900 text-sm">{rec.patientName}</h4>
+                  <span className="text-xs font-bold text-blue-600">MRN: {rec.mrn} • Rx #{rec.rxNumber}</span>
+                </div>
+                <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-black rounded-md border border-emerald-300">
+                  {rec.date}
+                </span>
+              </div>
+
+              <div className="space-y-1.5 text-xs">
+                <div className="font-extrabold text-slate-800 flex items-center gap-1.5">
+                  <Stethoscope className="w-3.5 h-3.5 text-blue-600" />
+                  <span>Clinical Diagnosis: <strong className="text-blue-900">{rec.diagnosis}</strong></span>
+                </div>
+                <div className="text-slate-600 font-semibold flex items-center justify-between">
+                  <span>Prescribed Medications: <strong>{rec.medications?.length || 0} Drugs</strong></span>
+                  <span>Lab Tests: <strong>{rec.labTests?.length || 0} Tests</strong></span>
+                </div>
+              </div>
+
+              <button
+                onClick={() => openPatientHistory(rec.patientName, rec.mrn)}
+                className="w-full py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
+              >
+                <FileText className="w-3.5 h-3.5" /> View Clinical Diagnosis Details
+              </button>
+            </div>
+          ))}
+
+          {clinicalRecords.length === 0 && (
+            <div className="p-6 bg-slate-50 border border-dashed border-slate-200 rounded-2xl text-center text-xs text-slate-500 font-semibold col-span-2">
+              No clinical diagnosis records found. Issue a prescription in the OPD Queue to record a diagnosis.
+            </div>
+          )}
+        </div>
       </div>
 
       {/* OPD Consultations Table */}

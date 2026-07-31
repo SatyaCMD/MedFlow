@@ -6,6 +6,7 @@ import { NurseVitalsModal } from '../shared/NurseVitalsModal';
 import { PharmacyPurchaseModal } from '../shared/PharmacyPurchaseModal';
 import { useToast } from '../../context/ToastContext';
 import { getSharedAppointments, updateSharedAppointmentVitals, SharedAppointment } from '../../data/appointmentStore';
+import { getNurseSupplyInvoices } from '../../data/patientBillingStore';
 import {
   Heart,
   Activity,
@@ -202,8 +203,74 @@ export const NurseDashboard: React.FC = () => {
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
         <StatCard title="Ward Census Occupancy" value="48 / 50 Beds" change={96.0} changeLabel="high occupancy" icon={Bed} />
         <StatCard title="Pending Vitals Checks" value="1 Ward Patient" change={-2.0} changeLabel="needs recording" icon={Activity} />
-        <StatCard title="Medications Due (1hr)" value="8 Doses" change={0.0} changeLabel="on schedule" icon={Pill} />
+        <StatCard title="Ward Supplies Purchased" value={`₹${getNurseSupplyInvoices().reduce((a, b) => a + b.totalAmount, 0).toLocaleString('en-IN')}`} change={14.0} changeLabel="ward consumable inventory" icon={ShoppingBag} />
         <StatCard title="Telemetry Monitors" value="100% Live" change={0.0} changeLabel="all sensors active" icon={Thermometer} />
+      </div>
+
+      {/* Ward Consumable Billing & Supply Invoices */}
+      <div className="p-6 bg-white border border-slate-200 rounded-3xl space-y-4 shadow-2xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+          <div>
+            <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+              <ShoppingBag className="w-5 h-5 text-rose-600" /> Ward Consumables Purchase Ledger & Invoices
+            </h3>
+            <p className="text-xs text-slate-500 font-semibold mt-0.5">
+              Itemized billing for ward supplies, syringes, IV fluids, and dressing kits purchased for patient care.
+            </p>
+          </div>
+
+          <button
+            onClick={() => setIsBuySuppliesOpen(true)}
+            className="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white font-bold text-xs rounded-xl shadow-md shadow-rose-600/20 flex items-center gap-1.5 cursor-pointer transition-all shrink-0"
+          >
+            <Plus className="w-4 h-4" /> Order & Bill Ward Consumables
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {getNurseSupplyInvoices().map((inv) => (
+            <div key={inv.id} className="p-4 bg-slate-50/70 border border-slate-200/90 rounded-2xl space-y-3">
+              <div className="flex items-center justify-between border-b border-slate-200/60 pb-2.5">
+                <div>
+                  <span className="font-mono font-black text-rose-600 text-xs block">{inv.invoiceNo}</span>
+                  <h4 className="font-black text-slate-900 text-sm mt-0.5">{inv.itemName}</h4>
+                </div>
+                <span className="px-2.5 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-black rounded-full uppercase border border-emerald-300">
+                  {inv.paymentStatus}
+                </span>
+              </div>
+
+              <div className="space-y-1 text-xs text-slate-600 font-semibold">
+                <div className="flex justify-between">
+                  <span>Supplier: <strong className="text-slate-800">{inv.supplierName}</strong></span>
+                  <span>Date: <strong className="text-slate-800">{inv.purchaseDate}</strong></span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Ward: <strong className="text-rose-700">{inv.allocatedWard}</strong></span>
+                  <span>Qty: <strong className="text-slate-800">{inv.quantity} Units</strong></span>
+                </div>
+                <div className="flex justify-between text-sm font-black text-slate-900 border-t border-slate-200 pt-2">
+                  <span>Total Supply Billing:</span>
+                  <span className="text-rose-600">₹{inv.totalAmount.toLocaleString('en-IN')}</span>
+                </div>
+              </div>
+
+              <button
+                onClick={() => {
+                  showToast({
+                    title: 'Downloading Supply Invoice 📄',
+                    message: `Generating vendor invoice #${inv.invoiceNo}...`,
+                    type: 'info',
+                  });
+                  if (typeof window !== 'undefined') window.print();
+                }}
+                className="w-full py-1.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
+              >
+                <ShoppingBag className="w-3.5 h-3.5 text-rose-400" /> Print Vendor Supply Invoice PDF
+              </button>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Ward Inventory Stock Tracker */}

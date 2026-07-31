@@ -75,10 +75,92 @@ const STORAGE_KEYS = {
 };
 
 // Initial Seed Clinical Records (Within 1 Year)
-const INITIAL_CLINICAL_RECORDS: ClinicalRecord[] = [];
+const INITIAL_CLINICAL_RECORDS: ClinicalRecord[] = [
+  {
+    id: 'cr-101',
+    rxNumber: 'RX-2026-9901',
+    patientName: 'Jane Patient',
+    mrn: 'MC-1001',
+    doctorName: 'Dr. Devendra Roy, M.D.',
+    department: 'Cardiology & Internal Medicine',
+    date: 'Jul 21, 2026',
+    timestamp: new Date('2026-07-21').getTime(),
+    diagnosis: 'Essential Hypertension (ICD-10 I10)',
+    medications: [
+      { name: 'Amlodipine Besylate 5mg Tablets', dosage: 'Once Daily (QD - Morning)', instructions: 'Take after breakfast with water for 30 Days' },
+      { name: 'Atorvastatin 10mg Tablets', dosage: 'At Bedtime (HS - Night)', instructions: 'Take before bed for 30 Days' },
+    ],
+    labTests: [
+      { name: 'Lipid Profile Panel', category: 'Metabolic & Hormonal', specimen: 'Serum', instructions: '12-Hour Fasting Required' },
+      { name: 'CBC Complete Blood Count', category: 'Blood & Pathology', specimen: 'Venous Blood', instructions: 'Fasting Not Required' },
+    ],
+    signatureHash: 'SHA256: 8f92a40b192c78d011fe928410294ab12',
+  },
+  {
+    id: 'cr-102',
+    rxNumber: 'RX-2026-9902',
+    patientName: 'John Doe',
+    mrn: 'MC-1002',
+    doctorName: 'Dr. Siddharth Joshi',
+    department: 'Neurology',
+    date: 'Jul 15, 2026',
+    timestamp: new Date('2026-07-15').getTime(),
+    diagnosis: 'Acute Migraine Aura (ICD-10 G43.1)',
+    medications: [
+      { name: 'Sumatriptan 50mg Tablets', dosage: 'As Needed (PRN - Symptomatic)', instructions: 'Take 1 tablet at onset of migraine aura' },
+      { name: 'Propranolol 40mg Sustained Release', dosage: 'Twice Daily (BID)', instructions: 'Take 1 tablet morning & evening' },
+    ],
+    labTests: [
+      { name: 'Brain MRI 1.5T Scan', category: 'Radiology & Scans', specimen: 'MRI Scan', instructions: 'Fasting Not Required' },
+    ],
+    signatureHash: 'SHA256: 4e91b20a11fc78d099be20194ab99',
+  },
+  {
+    id: 'cr-103',
+    rxNumber: 'RX-2026-9903',
+    patientName: 'Sarah Connor',
+    mrn: 'MC-1003',
+    doctorName: 'Dr. Anup Singh',
+    department: 'Cardiology',
+    date: 'Jul 28, 2026',
+    timestamp: new Date('2026-07-28').getTime(),
+    diagnosis: 'Coronary Post-Op Recovery (ICD-10 Z95.5)',
+    medications: [
+      { name: 'Clopidogrel 75mg Tablets', dosage: 'Once Daily (QD)', instructions: 'Take morning after breakfast' },
+      { name: 'Aspirin 81mg Gastro-resistant', dosage: 'Once Daily (QD)', instructions: 'Take after lunch' },
+    ],
+    labTests: [
+      { name: 'Cardiac Troponin I Test', category: 'Cardiac & ECG', specimen: 'Plasma', instructions: 'STAT Emergency' },
+    ],
+    signatureHash: 'SHA256: 9a88b10c44fd99a221ce30194bc00',
+  },
+];
 
 // Initial Seed Lab Orders
-const INITIAL_LAB_ORDERS: LabOrderRecord[] = [];
+const INITIAL_LAB_ORDERS: LabOrderRecord[] = [
+  {
+    id: 'lo-101',
+    rxNumber: 'RX-2026-9901',
+    patientName: 'Jane Patient',
+    mrn: 'MC-1001',
+    doctorName: 'Dr. Devendra Roy, M.D.',
+    department: 'Cardiology',
+    testName: 'Lipid Profile Panel',
+    category: 'Metabolic & Hormonal',
+    specimen: 'Serum',
+    fastingRequirement: '12-Hour Fasting Required',
+    date: 'Jul 21, 2026',
+    timestamp: new Date('2026-07-21').getTime(),
+    status: 'REPORT_SUBMITTED',
+    report: {
+      findings: 'Total Cholesterol: 215 mg/dL, HDL: 46 mg/dL, LDL: 138 mg/dL, Triglycerides: 160 mg/dL',
+      notes: 'Mild hyperlipidemia noted. Continue Statin therapy.',
+      technicianName: 'Rajesh Lab Tech',
+      submittedAt: '2026-07-21 04:30 PM',
+      doctorName: 'Dr. Devendra Roy, M.D.',
+    },
+  },
+];
 
 // Initial Seed Pharmacy Sales Records
 const INITIAL_PHARMACY_SALES: PharmacySaleRecord[] = [

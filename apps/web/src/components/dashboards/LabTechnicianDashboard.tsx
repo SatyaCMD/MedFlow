@@ -12,6 +12,7 @@ import {
   submitLabReport,
   LabOrderRecord,
 } from '../../data/medicalHistoryStore';
+import { getLabEquipmentInvoices } from '../../data/patientBillingStore';
 import { PaymentModal } from '../shared/PaymentModal';
 import {
   FlaskConical,
@@ -244,10 +245,82 @@ export const LabTechnicianDashboard: React.FC = () => {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard title="Pending Lab Orders" value={`${pendingOrders.length} Samples`} change={-2.0} changeLabel="processing queue" icon={FlaskConical} />
-        <StatCard title="Submitted Lab Reports" value={`${historyOrders.length} Dispatched`} change={14.0} changeLabel="sent to doctor" icon={FileCheck2} />
-        <StatCard title="Avg Turnaround SLA" value="2.4 Hours" change={0.0} changeLabel="within 4hr target" icon={Clock} />
+        <StatCard title="Total Diagnostic Tests Done" value={`${historyOrders.length + 42} Conducted`} change={18.4} changeLabel="total tests done" icon={FlaskConical} />
+        <StatCard title="Pending Diagnostic Orders" value={`${pendingOrders.length} Sample Orders`} change={-2.0} changeLabel="active queue" icon={Clock} />
+        <StatCard title="Lab Equipment Assets" value={`₹${getLabEquipmentInvoices().reduce((a, b) => a + b.totalCost, 0).toLocaleString('en-IN')}`} change={12.5} changeLabel="analyzers & centrifuges" icon={Building2} />
         <StatCard title="Specimen Quality Assurance" value="100% Verified" change={0.0} changeLabel="zero errors" icon={CheckCircle2} />
+      </div>
+
+      {/* Lab Equipment & Reagents Purchase Invoices */}
+      <div className="p-6 bg-white border border-slate-200 rounded-3xl space-y-4 shadow-2xs">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+          <div>
+            <h3 className="text-base font-black text-slate-900 flex items-center gap-2">
+              <Building2 className="w-5 h-5 text-indigo-600" /> Lab Equipment & Reagent Purchase Ledger
+            </h3>
+            <p className="text-xs text-slate-500 font-semibold mt-0.5">
+              Itemized equipment purchases, model numbers, vendor invoices, cost telemetry, and warranty maintenance logs.
+            </p>
+          </div>
+
+          <button
+            onClick={() => {
+              showToast({
+                title: 'Log New Equipment Purchase 🔬',
+                message: 'Opening equipment procurement invoice entry studio...',
+                type: 'info',
+              });
+            }}
+            className="px-4 py-2 bg-indigo-600 hover:bg-indigo-500 text-white font-bold text-xs rounded-xl shadow-md shadow-indigo-600/20 flex items-center gap-1.5 cursor-pointer transition-all shrink-0"
+          >
+            + Log Equipment Purchase Invoice
+          </button>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {getLabEquipmentInvoices().map((eqp) => (
+            <div key={eqp.id} className="p-4 bg-slate-50/70 border border-slate-200/90 rounded-2xl space-y-3">
+              <div className="flex items-center justify-between border-b border-slate-200/60 pb-2.5">
+                <div>
+                  <span className="font-mono font-black text-indigo-600 text-xs block">{eqp.invoiceNo}</span>
+                  <h4 className="font-black text-slate-900 text-sm mt-0.5">{eqp.equipmentName}</h4>
+                </div>
+                <span className="px-2.5 py-0.5 bg-indigo-100 text-indigo-800 text-[10px] font-black rounded-full uppercase border border-indigo-300">
+                  {eqp.maintenanceStatus}
+                </span>
+              </div>
+
+              <div className="space-y-1 text-xs text-slate-600 font-semibold">
+                <div className="flex justify-between">
+                  <span>Vendor: <strong className="text-slate-800">{eqp.vendorName}</strong></span>
+                  <span>Date: <strong className="text-slate-800">{eqp.purchaseDate}</strong></span>
+                </div>
+                <div className="flex justify-between">
+                  <span>Model/Serial: <strong className="text-indigo-900">{eqp.modelNumber} ({eqp.serialNumber})</strong></span>
+                  <span>Warranty: <strong className="text-emerald-700">{eqp.warrantyPeriod}</strong></span>
+                </div>
+                <div className="flex justify-between text-sm font-black text-slate-900 border-t border-slate-200 pt-2">
+                  <span>Total Equipment Cost:</span>
+                  <span className="text-indigo-700">₹{eqp.totalCost.toLocaleString('en-IN')}</span>
+                </div>
+              </div>
+
+              <button
+                onClick={() => {
+                  showToast({
+                    title: 'Downloading Equipment Invoice 📄',
+                    message: `Exporting equipment purchase invoice #${eqp.invoiceNo}...`,
+                    type: 'info',
+                  });
+                  if (typeof window !== 'undefined') window.print();
+                }}
+                className="w-full py-1.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
+              >
+                <Building2 className="w-3.5 h-3.5 text-indigo-400" /> Print Vendor Equipment Invoice PDF
+              </button>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Main Diagnostic Queue */}

@@ -409,7 +409,7 @@ export default function LoginPage() {
             <span className="block text-[11px] font-black uppercase tracking-wider text-slate-500 mb-2">
               Select Workstation Portal View
             </span>
-            <div className="grid grid-cols-2 sm:grid-cols-4 gap-1.5 p-1.5 bg-slate-100/90 rounded-2xl border border-slate-200/80">
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2 p-2 bg-slate-100/90 rounded-2xl border border-slate-200/80">
               {ROLE_PORTALS.map((portal) => {
                 const isActive = activeTab === portal.id;
                 const IconComp = portal.icon;
@@ -418,14 +418,14 @@ export default function LoginPage() {
                     key={portal.id}
                     type="button"
                     onClick={() => handleTabChange(portal.id)}
-                    className={`py-2 px-2.5 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer ${
+                    className={`py-2.5 px-3 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-1.5 cursor-pointer shrink-0 ${
                       isActive
                         ? 'bg-white text-slate-900 shadow-md border border-slate-200/80 scale-[1.02]'
                         : 'text-slate-600 hover:text-slate-900 hover:bg-slate-200/50'
                     }`}
                   >
-                    <IconComp className={`w-3.5 h-3.5 shrink-0 ${isActive ? 'text-blue-600' : 'text-slate-400'}`} />
-                    <span className="whitespace-nowrap font-bold text-xs">{portal.tabLabel}</span>
+                    <IconComp className={`w-4 h-4 shrink-0 ${isActive ? 'text-blue-600' : 'text-slate-400'}`} />
+                    <span className="font-bold text-xs whitespace-nowrap">{portal.tabLabel}</span>
                   </button>
                 );
               })}

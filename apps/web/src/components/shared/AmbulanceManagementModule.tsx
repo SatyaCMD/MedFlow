@@ -560,23 +560,6 @@ export const AmbulanceManagementModule: React.FC = () => {
         )}
       </AnimatePresence>
 
-      {/* Non-Admin Role Security Access Restriction Notice */}
-      {!canRegisterAmbulance && (
-        <div className="p-4 bg-amber-50 border border-amber-200 rounded-2xl flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 text-xs font-semibold text-amber-900 shadow-sm">
-          <div className="flex items-center gap-2.5">
-            <div className="w-8 h-8 rounded-xl bg-amber-100 border border-amber-300 flex items-center justify-center shrink-0">
-              <Lock className="w-4 h-4 text-amber-700" />
-            </div>
-            <div>
-              <span className="font-extrabold text-amber-950 block">View-Only Fleet Telemetry Access Mode</span>
-              <span className="text-amber-800">
-                Excluding Admin, no role can register ambulance vehicles. Log in as <code className="bg-amber-200/80 px-1.5 py-0.5 rounded text-amber-950 font-black">AmbulanceAdmin</code> (Password: <code className="bg-amber-200/80 px-1.5 py-0.5 rounded text-amber-950 font-black">Ambulance@321</code>) to add fleet vehicles.
-              </span>
-            </div>
-          </div>
-        </div>
-      )}
-
       {/* Module Banner */}
       <div className="bg-gradient-to-r from-slate-950 via-rose-950 to-slate-950 p-6 sm:p-8 rounded-3xl text-white shadow-xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6 border border-slate-800">
         <div className="space-y-2">
@@ -606,31 +589,15 @@ export const AmbulanceManagementModule: React.FC = () => {
             <Radio className="w-4 h-4" /> Open Dispatch Tracker Map
           </button>
 
-          <button
-            onClick={() => {
-              if (canRegisterAmbulance) {
-                setIsRegisterAmbulanceOpen(true);
-              } else {
-                showToast({
-                  title: 'Vehicle Registration Restricted 🔒',
-                  message: 'Excluding Ambulance Admin (AmbulanceAdmin) or Super Admin, no other role can register ambulances.',
-                  type: 'warning',
-                });
-              }
-            }}
-            className={`px-5 py-3 text-xs font-extrabold rounded-2xl border flex items-center gap-2 transition-all cursor-pointer ${
-              canRegisterAmbulance
-                ? 'bg-slate-800 hover:bg-slate-700 text-white border-slate-700 shadow-md'
-                : 'bg-slate-900/60 text-slate-400 border-slate-800 opacity-80'
-            }`}
-          >
-            {canRegisterAmbulance ? (
+          {canRegisterAmbulance && (
+            <button
+              onClick={() => setIsRegisterAmbulanceOpen(true)}
+              className="px-5 py-3 bg-slate-800 hover:bg-slate-700 text-white font-extrabold text-xs rounded-2xl border border-slate-700 flex items-center gap-2 transition-all cursor-pointer shadow-md"
+            >
               <Plus className="w-4 h-4 text-blue-400" />
-            ) : (
-              <Lock className="w-4 h-4 text-amber-400" />
-            )}
-            <span>Register Vehicle</span>
-          </button>
+              <span>Register Vehicle</span>
+            </button>
+          )}
         </div>
       </div>
 
@@ -656,29 +623,33 @@ export const AmbulanceManagementModule: React.FC = () => {
           <span>Dispatcher Emergency Center</span>
         </button>
 
-        <button
-          onClick={() => setActiveTab('FLEET')}
-          className={`px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 ${
-            activeTab === 'FLEET'
-              ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20'
-              : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100'
-          }`}
-        >
-          <Truck className="w-4 h-4" />
-          <span>Fleet Overview & Driver Assignments</span>
-        </button>
+        {canRegisterAmbulance && (
+          <>
+            <button
+              onClick={() => setActiveTab('FLEET')}
+              className={`px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 ${
+                activeTab === 'FLEET'
+                  ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20'
+                  : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100'
+              }`}
+            >
+              <Truck className="w-4 h-4" />
+              <span>Fleet Overview & Driver Assignments</span>
+            </button>
 
-        <button
-          onClick={() => setActiveTab('MAINTENANCE')}
-          className={`px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 ${
-            activeTab === 'MAINTENANCE'
-              ? 'bg-slate-900 text-white shadow-md'
-              : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100'
-          }`}
-        >
-          <Wrench className="w-4 h-4 text-amber-400" />
-          <span>Maintenance & Fuel Telemetry Logs</span>
-        </button>
+            <button
+              onClick={() => setActiveTab('MAINTENANCE')}
+              className={`px-4 py-2 rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 ${
+                activeTab === 'MAINTENANCE'
+                  ? 'bg-slate-900 text-white shadow-md'
+                  : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100'
+              }`}
+            >
+              <Wrench className="w-4 h-4 text-amber-400" />
+              <span>Maintenance & Fuel Telemetry Logs</span>
+            </button>
+          </>
+        )}
       </div>
 
       {/* TAB 1: DISPATCHER EMERGENCY CENTER */}

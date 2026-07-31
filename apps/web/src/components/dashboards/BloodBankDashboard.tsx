@@ -1,7 +1,7 @@
 'use client';
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import {
   Droplets,
@@ -12,10 +12,22 @@ import {
   Plus,
   Search,
   Clock,
-  Activity
+  Activity,
+  ShieldCheck,
+  Stethoscope,
+  Building2,
+  Check,
+  X,
+  FileCheck2
 } from 'lucide-react';
 import { BloodBankModal } from '../shared/BloodBankModal';
 import { useToast } from '../../context/ToastContext';
+import {
+  BloodTransfusionRequest,
+  getBloodRequests,
+  doctorApproveBloodRequest,
+  bloodBankDispatchBloodRequest
+} from '../../data/patientCensusStore';
 
 interface BloodStock {
   group: string;
@@ -27,8 +39,10 @@ interface BloodStock {
 export const BloodBankDashboard: React.FC = () => {
   const { showToast } = useToast();
   const [isModalOpen, setIsModalOpen] = useState(false);
-  const [activeTab, setActiveTab] = useState<'inventory' | 'transfusions' | 'donors'>('inventory');
+  const [activeTab, setActiveTab] = useState<'inventory' | 'transfusions' | 'donors'>('transfusions');
   const [searchTerm, setSearchTerm] = useState('');
+
+  const [bloodRequests, setBloodRequests] = useState<BloodTransfusionRequest[]>([]);
 
   const [stocks, setStocks] = useState<BloodStock[]>([
     { group: 'A+', units: 28, status: 'OPTIMAL', shelfLifeDays: 35 },
@@ -41,19 +55,40 @@ export const BloodBankDashboard: React.FC = () => {
     { group: 'O-', units: 12, status: 'MODERATE', shelfLifeDays: 25 },
   ]);
 
-  const transfusions = [
-    { id: 'TR-9041', patient: 'Rohan Sharma', bloodGroup: 'O+', units: 2, doctor: 'Dr. Anup Singh', priority: 'URGENT', status: 'DISPACHED', time: '10 mins ago' },
-    { id: 'TR-9042', patient: 'Meena Verma', bloodGroup: 'A-', units: 1, doctor: 'Dr. Devendra Roy', priority: 'CRITICAL', status: 'CROSS_MATCHING', time: '25 mins ago' },
-    { id: 'TR-9043', patient: 'Vikram Malhotra', bloodGroup: 'B+', units: 3, doctor: 'Dr. Priya Sharma', priority: 'ROUTINE', status: 'PENDING', time: '1 hour ago' },
-    { id: 'TR-9044', patient: 'Sunita Rao', bloodGroup: 'AB+', units: 1, doctor: 'Dr. Siddharth Joshi', priority: 'ROUTINE', status: 'RESERVED', time: '2 hours ago' },
-  ];
-
   const donors = [
     { id: 'DN-301', name: 'Amitabh Sen', group: 'O+', contact: '+91 98765-43210', lastDonated: '2026-07-20', status: 'ELIGIBLE' },
     { id: 'DN-302', name: 'Kavita Reddy', group: 'A-', contact: '+91 91234-56789', lastDonated: '2026-06-15', status: 'ELIGIBLE' },
     { id: 'DN-303', name: 'Suresh Menon', group: 'B+', contact: '+91 99887-76655', lastDonated: '2026-07-26', status: 'DONATED_TODAY' },
     { id: 'DN-304', name: 'Pooja Hegde', group: 'O-', contact: '+91 94433-22110', lastDonated: '2026-05-10', status: 'ELIGIBLE' },
   ];
+
+  const loadRequests = () => {
+    setBloodRequests(getBloodRequests());
+  };
+
+  useEffect(() => {
+    loadRequests();
+  }, []);
+
+  const handleDoctorApprove = (reqId: string, doctorName: string) => {
+    const updated = doctorApproveBloodRequest(reqId, doctorName);
+    setBloodRequests(updated);
+    showToast({
+      title: 'Doctor Approved Blood Request 🩺',
+      message: `Request #${reqId} approved by ${doctorName}. Now pending Blood Bank Admin dispatch clearance.`,
+      type: 'success',
+    });
+  };
+
+  const handleBloodBankDispatch = (reqId: string) => {
+    const updated = bloodBankDispatchBloodRequest(reqId);
+    setBloodRequests(updated);
+    showToast({
+      title: 'Blood Unit Dispatched & Released! 🩸',
+      message: `Request #${reqId} cleared by Blood Bank Admin. Blood bag dispatched to ward.`,
+      type: 'success',
+    });
+  };
 
   const handleAddUnit = (group: string) => {
     setStocks(prev =>
@@ -77,15 +112,30 @@ export const BloodBankDashboard: React.FC = () => {
           <div className="space-y-1.5">
             <div className="inline-flex items-center gap-2 px-3 py-1 bg-red-500/20 border border-red-400/30 rounded-full text-red-200 text-xs font-bold">
               <Activity className="w-3.5 h-3.5 text-red-400 animate-pulse" />
-              Blood Bank & Transfusion Control Center
+              Dual-Approval Blood Transfusion & Dispatch Pipeline
             </div>
-            <h1 className="text-2xl md:text-3xl font-black tracking-tight">Blood Reserve Management</h1>
+            <h1 className="text-2xl md:text-3xl font-black tracking-tight">Blood Bank Admin Portal</h1>
             <p className="text-xs md:text-sm text-red-100/80 font-medium max-w-2xl">
-              Real-time monitoring of blood inventories, donor exchange requests, cross-matching validation, and emergency donor mobilization.
+              Strict 2-step verification protocol: Patient/Nurse Request ➔ Doctor Approval ➔ Blood Bank Admin Final Clearance & Dispatch.
             </p>
           </div>
 
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 flex-wrap">
+            <button
+              onClick={() => {
+                showToast({
+                  title: 'Transfusion Invoice Issued 🩸',
+                  message: 'Generated itemized Blood Transfusion Invoice #BT-2026-9901 for John Doe (2 Units O- @ ₹1,800/unit + Crossmatch ₹450 = ₹4,252 incl. GST).',
+                  type: 'success',
+                });
+                if (typeof window !== 'undefined') window.print();
+              }}
+              className="px-4 py-3 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black rounded-2xl shadow-lg hover:shadow-emerald-600/30 transition-all flex items-center gap-2 cursor-pointer active:scale-95"
+            >
+              <Droplets className="w-4 h-4" />
+              Issue Blood & Bill Patient
+            </button>
+
             <button
               onClick={() => setIsModalOpen(true)}
               className="px-5 py-3 bg-red-600 hover:bg-red-500 text-white text-xs font-black rounded-2xl shadow-lg hover:shadow-red-600/30 transition-all flex items-center gap-2 cursor-pointer active:scale-95"
@@ -99,7 +149,7 @@ export const BloodBankDashboard: React.FC = () => {
 
       {/* Metric Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div className="p-5 bg-white border border-slate-200/90 rounded-2xl shadow-sm space-y-2">
+        <div className="p-5 bg-white border border-slate-200/90 rounded-2xl shadow-xs space-y-2">
           <div className="flex items-center justify-between text-slate-500">
             <span className="text-xs font-bold uppercase tracking-wider">Total Reserve Units</span>
             <div className="w-8 h-8 rounded-xl bg-red-50 text-red-600 flex items-center justify-center">
@@ -113,79 +163,85 @@ export const BloodBankDashboard: React.FC = () => {
           <p className="text-[11px] text-slate-500 font-semibold">Ready for emergency dispatch</p>
         </div>
 
-        <div className="p-5 bg-white border border-slate-200/90 rounded-2xl shadow-sm space-y-2">
+        <div className="p-5 bg-white border border-slate-200/90 rounded-2xl shadow-xs space-y-2">
           <div className="flex items-center justify-between text-slate-500">
-            <span className="text-xs font-bold uppercase tracking-wider">Critical Low Groups</span>
+            <span className="text-xs font-bold uppercase tracking-wider">Pending Doctor Approvals</span>
             <div className="w-8 h-8 rounded-xl bg-amber-50 text-amber-600 flex items-center justify-center">
-              <AlertTriangle className="w-4 h-4" />
+              <Stethoscope className="w-4 h-4" />
             </div>
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-2xl font-black text-amber-600">{criticalGroups}</span>
-            <span className="text-xs text-amber-600 font-bold">Groups &lt; 10 Units</span>
+            <span className="text-2xl font-black text-amber-600">
+              {bloodRequests.filter(r => r.doctorStatus === 'PENDING').length}
+            </span>
+            <span className="text-xs text-amber-600 font-bold">Awaiting Doctor</span>
           </div>
-          <p className="text-[11px] text-slate-500 font-semibold">Requires donor mobilization (A-, AB-)</p>
+          <p className="text-[11px] text-slate-500 font-semibold">Phase 1 Verification Queue</p>
         </div>
 
-        <div className="p-5 bg-white border border-slate-200/90 rounded-2xl shadow-sm space-y-2">
+        <div className="p-5 bg-white border border-slate-200/90 rounded-2xl shadow-xs space-y-2">
           <div className="flex items-center justify-between text-slate-500">
-            <span className="text-xs font-bold uppercase tracking-wider">Pending Transfusions</span>
+            <span className="text-xs font-bold uppercase tracking-wider">Pending Dispatch Clearance</span>
             <div className="w-8 h-8 rounded-xl bg-blue-50 text-blue-600 flex items-center justify-center">
-              <Clock className="w-4 h-4" />
+              <Building2 className="w-4 h-4" />
             </div>
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-2xl font-black text-slate-900">{transfusions.length}</span>
-            <span className="text-xs text-blue-600 font-bold">Active Orders</span>
+            <span className="text-2xl font-black text-blue-600">
+              {bloodRequests.filter(r => r.doctorStatus === 'APPROVED' && r.bloodBankAdminStatus === 'PENDING').length}
+            </span>
+            <span className="text-xs text-blue-600 font-bold">Ready for Dispatch</span>
           </div>
-          <p className="text-[11px] text-slate-500 font-semibold">Cross-matching & dispatch active</p>
+          <p className="text-[11px] text-slate-500 font-semibold">Phase 2 Blood Bank Admin Queue</p>
         </div>
 
-        <div className="p-5 bg-white border border-slate-200/90 rounded-2xl shadow-sm space-y-2">
+        <div className="p-5 bg-white border border-slate-200/90 rounded-2xl shadow-xs space-y-2">
           <div className="flex items-center justify-between text-slate-500">
-            <span className="text-xs font-bold uppercase tracking-wider">Donors Today</span>
+            <span className="text-xs font-bold uppercase tracking-wider">Dispatched Blood Units</span>
             <div className="w-8 h-8 rounded-xl bg-emerald-50 text-emerald-600 flex items-center justify-center">
-              <Users className="w-4 h-4" />
+              <FileCheck2 className="w-4 h-4" />
             </div>
           </div>
           <div className="flex items-baseline gap-2">
-            <span className="text-2xl font-black text-slate-900">14</span>
-            <span className="text-xs text-emerald-600 font-bold">+4 vs yesterday</span>
+            <span className="text-2xl font-black text-emerald-600">
+              {bloodRequests.filter(r => r.bloodBankAdminStatus === 'DISPATCHED').length}
+            </span>
+            <span className="text-xs text-emerald-600 font-bold">Released to Wards</span>
           </div>
-          <p className="text-[11px] text-slate-500 font-semibold">Screened and verified donors</p>
+          <p className="text-[11px] text-slate-500 font-semibold">Fully dual-approved & released</p>
         </div>
       </div>
 
       {/* Main Content Card */}
-      <div className="bg-white border border-slate-200/90 rounded-3xl p-6 shadow-sm space-y-6">
+      <div className="bg-white border border-slate-200/90 rounded-3xl p-6 shadow-xs space-y-6">
         {/* Navigation Bar */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
           <div className="flex items-center gap-2 p-1 bg-slate-100 rounded-2xl">
             <button
+              onClick={() => setActiveTab('transfusions')}
+              className={`px-4 py-2 text-xs font-black rounded-xl transition-all cursor-pointer ${
+                activeTab === 'transfusions'
+                  ? 'bg-white text-slate-900 shadow-xs'
+                  : 'text-slate-600 hover:text-slate-900'
+              }`}
+            >
+              Dual-Approval Transfusions ({bloodRequests.length})
+            </button>
+            <button
               onClick={() => setActiveTab('inventory')}
-              className={`px-4 py-2 text-xs font-black rounded-xl transition-all ${
+              className={`px-4 py-2 text-xs font-black rounded-xl transition-all cursor-pointer ${
                 activeTab === 'inventory'
-                  ? 'bg-white text-slate-900 shadow-sm'
+                  ? 'bg-white text-slate-900 shadow-xs'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
               Live Blood Reserves
             </button>
             <button
-              onClick={() => setActiveTab('transfusions')}
-              className={`px-4 py-2 text-xs font-black rounded-xl transition-all ${
-                activeTab === 'transfusions'
-                  ? 'bg-white text-slate-900 shadow-sm'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              Transfusion Orders ({transfusions.length})
-            </button>
-            <button
               onClick={() => setActiveTab('donors')}
-              className={`px-4 py-2 text-xs font-black rounded-xl transition-all ${
+              className={`px-4 py-2 text-xs font-black rounded-xl transition-all cursor-pointer ${
                 activeTab === 'donors'
-                  ? 'bg-white text-slate-900 shadow-sm'
+                  ? 'bg-white text-slate-900 shadow-xs'
                   : 'text-slate-600 hover:text-slate-900'
               }`}
             >
@@ -205,7 +261,116 @@ export const BloodBankDashboard: React.FC = () => {
           </div>
         </div>
 
-        {/* Tab 1: Live Blood Reserves Grid */}
+        {/* Tab 1: Dual-Approval Transfusions Queue */}
+        {activeTab === 'transfusions' && (
+          <div className="space-y-4">
+            <div className="p-3.5 bg-blue-50/70 border border-blue-200 rounded-2xl flex items-center justify-between text-xs text-blue-900 font-medium">
+              <div className="flex items-center gap-2">
+                <ShieldCheck className="w-4 h-4 text-blue-600" />
+                <span><strong>Dual-Approval Workflow Enforced:</strong> Blood units are held in vault until <strong>Attending Doctor</strong> signs clinical approval AND <strong>Blood Bank Admin</strong> releases dispatch code.</span>
+              </div>
+            </div>
+
+            <div className="overflow-x-auto">
+              <table className="w-full text-left border-collapse">
+                <thead>
+                  <tr className="border-b border-slate-200 text-[11px] font-black text-slate-500 uppercase tracking-wider">
+                    <th className="pb-3">Request Ref</th>
+                    <th className="pb-3">Patient Name & MRN</th>
+                    <th className="pb-3">Group & Units</th>
+                    <th className="pb-3">Requested By & Physician</th>
+                    <th className="pb-3">Step 1: Doctor Approval</th>
+                    <th className="pb-3">Step 2: Blood Bank Admin Dispatch</th>
+                    <th className="pb-3 text-right">Action Pipeline</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-slate-100 text-xs font-semibold text-slate-700">
+                  {bloodRequests
+                    .filter((r) => !searchTerm || r.patientName.toLowerCase().includes(searchTerm.toLowerCase()) || r.mrn.toLowerCase().includes(searchTerm.toLowerCase()) || r.bloodGroup.toLowerCase().includes(searchTerm.toLowerCase()))
+                    .map((r) => (
+                      <tr key={r.id} className="hover:bg-slate-50/80 transition-colors">
+                        <td className="py-3 font-mono font-black text-blue-700">{r.id}</td>
+                        <td className="py-3">
+                          <div className="font-bold text-slate-900">{r.patientName}</div>
+                          <div className="text-[10px] text-slate-400 font-bold">{r.mrn}</div>
+                        </td>
+                        <td className="py-3">
+                          <span className="px-2 py-0.5 bg-rose-100 text-rose-800 font-black rounded-md">
+                            {r.bloodGroup} • {r.units} Unit(s)
+                          </span>
+                        </td>
+                        <td className="py-3">
+                          <div className="text-slate-800 font-bold">{r.requestedBy}</div>
+                          <div className="text-[10px] text-slate-500">Doctor: {r.doctorName}</div>
+                        </td>
+
+                        {/* Step 1: Doctor Status */}
+                        <td className="py-3">
+                          {r.doctorStatus === 'APPROVED' ? (
+                            <div>
+                              <span className="inline-flex items-center gap-1 text-emerald-700 bg-emerald-50 border border-emerald-200 px-2 py-0.5 rounded-full text-[10px] font-black">
+                                <Check className="w-3 h-3" /> Doctor Approved
+                              </span>
+                              <div className="text-[9px] text-slate-400 mt-0.5">{r.doctorApprovedAt}</div>
+                            </div>
+                          ) : (
+                            <span className="inline-flex items-center gap-1 text-amber-700 bg-amber-50 border border-amber-200 px-2 py-0.5 rounded-full text-[10px] font-bold">
+                              <Clock className="w-3 h-3 animate-spin" /> Pending Doctor Sign-Off
+                            </span>
+                          )}
+                        </td>
+
+                        {/* Step 2: Blood Bank Status */}
+                        <td className="py-3">
+                          {r.bloodBankAdminStatus === 'DISPATCHED' ? (
+                            <div>
+                              <span className="inline-flex items-center gap-1 text-emerald-700 bg-emerald-50 border border-emerald-200 px-2.5 py-0.5 rounded-full text-[10px] font-black">
+                                <Droplets className="w-3 h-3 text-rose-600" /> Dispatched ({r.dispatchCode})
+                              </span>
+                              <div className="text-[9px] text-slate-400 mt-0.5">{r.bloodBankDispatchedAt}</div>
+                            </div>
+                          ) : r.doctorStatus === 'APPROVED' ? (
+                            <span className="inline-flex items-center gap-1 text-blue-700 bg-blue-50 border border-blue-200 px-2 py-0.5 rounded-full text-[10px] font-bold">
+                              <Building2 className="w-3 h-3" /> Ready for Admin Dispatch
+                            </span>
+                          ) : (
+                            <span className="text-slate-400 text-[10px] italic">Awaiting Step 1 Approval</span>
+                          )}
+                        </td>
+
+                        {/* Dual Approval Trigger Buttons */}
+                        <td className="py-3 text-right space-y-1">
+                          {r.doctorStatus === 'PENDING' && (
+                            <button
+                              onClick={() => handleDoctorApprove(r.id, r.doctorName)}
+                              className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white rounded-xl text-[11px] font-bold flex items-center gap-1 ml-auto cursor-pointer shadow-xs"
+                            >
+                              <Stethoscope className="w-3.5 h-3.5" /> Doctor Approve
+                            </button>
+                          )}
+
+                          {r.doctorStatus === 'APPROVED' && r.bloodBankAdminStatus === 'PENDING' && (
+                            <button
+                              onClick={() => handleBloodBankDispatch(r.id)}
+                              className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl text-[11px] font-black flex items-center gap-1 ml-auto cursor-pointer shadow-xs"
+                            >
+                              <Droplets className="w-3.5 h-3.5" /> Approve & Dispatch Blood Unit
+                            </button>
+                          )}
+
+                          {r.bloodBankAdminStatus === 'DISPATCHED' && (
+                            <span className="text-[10px] text-slate-400 font-bold block">✓ Completed</span>
+                          )}
+                        </td>
+                      </tr>
+                    ))}
+                </tbody>
+              </table>
+            </div>
+          </div>
+        )}
+
+        {/* Tab 2: Live Blood Reserves Grid */}
         {activeTab === 'inventory' && (
           <div>
             <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
@@ -261,59 +426,6 @@ export const BloodBankDashboard: React.FC = () => {
                   </motion.div>
                 ))}
             </div>
-          </div>
-        )}
-
-        {/* Tab 2: Transfusion Orders */}
-        {activeTab === 'transfusions' && (
-          <div className="overflow-x-auto">
-            <table className="w-full text-left border-collapse">
-              <thead>
-                <tr className="border-b border-slate-200 text-[11px] font-black text-slate-500 uppercase tracking-wider">
-                  <th className="pb-3">Order ID</th>
-                  <th className="pb-3">Patient</th>
-                  <th className="pb-3">Group Required</th>
-                  <th className="pb-3">Units</th>
-                  <th className="pb-3">Prescribing Physician</th>
-                  <th className="pb-3">Priority</th>
-                  <th className="pb-3">Status</th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-slate-100 text-xs font-semibold text-slate-700">
-                {transfusions.map((t) => (
-                  <tr key={t.id} className="hover:bg-slate-50/80 transition-colors">
-                    <td className="py-3 font-mono font-bold text-slate-900">{t.id}</td>
-                    <td className="py-3 font-bold text-slate-900">{t.patient}</td>
-                    <td className="py-3">
-                      <span className="px-2 py-0.5 bg-red-100 text-red-700 font-bold rounded-md">
-                        {t.bloodGroup}
-                      </span>
-                    </td>
-                    <td className="py-3 font-bold">{t.units} Unit(s)</td>
-                    <td className="py-3">{t.doctor}</td>
-                    <td className="py-3">
-                      <span
-                        className={`px-2 py-0.5 rounded-full text-[10px] font-black ${
-                          t.priority === 'CRITICAL'
-                            ? 'bg-red-100 text-red-700 border border-red-200'
-                            : t.priority === 'URGENT'
-                            ? 'bg-amber-100 text-amber-700 border border-amber-200'
-                            : 'bg-slate-100 text-slate-700'
-                        }`}
-                      >
-                        {t.priority}
-                      </span>
-                    </td>
-                    <td className="py-3">
-                      <span className="flex items-center gap-1.5 text-emerald-600 font-bold">
-                        <CheckCircle2 className="w-3.5 h-3.5" />
-                        {t.status}
-                      </span>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
           </div>
         )}
 
