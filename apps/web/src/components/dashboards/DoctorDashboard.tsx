@@ -42,7 +42,9 @@ import {
   Lock,
   LockKeyhole,
   CheckCircle2,
-  HeartPulse
+  HeartPulse,
+  ChevronRight,
+  AlertCircle
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
 
@@ -247,60 +249,116 @@ export const DoctorDashboard: React.FC = () => {
 
   const columns = [
     {
-      header: 'Time Slot',
+      header: 'TIME SLOT',
       accessor: (row: SharedAppointment) => (
-        <span className="font-bold text-blue-600 flex items-center gap-1.5 tabular-nums">
+        <span className="font-bold text-blue-600 flex items-center gap-1.5 tabular-nums text-xs">
           <Clock className="w-3.5 h-3.5 text-blue-500" /> {row.timeSlot || row.date}
         </span>
       ),
     },
     {
-      header: 'Patient Name',
+      header: 'PATIENT NAME',
       accessor: (row: SharedAppointment) => (
         <button
           onClick={() => openPrescribeStudio(row)}
-          className="font-black text-slate-900 hover:text-blue-600 hover:underline cursor-pointer flex items-center gap-1.5 text-left"
+          className="font-black text-slate-900 hover:text-blue-600 hover:underline cursor-pointer flex items-center gap-1.5 text-left text-xs"
         >
           <User className="w-3.5 h-3.5 text-slate-400" />
           <span>{row.patientName}</span>
         </button>
       ),
     },
-    { header: 'MRN Code', accessor: (row: SharedAppointment) => <span className="text-blue-600 font-bold">{row.mrn}</span> },
-    { header: 'Consultation Purpose', accessor: (row: SharedAppointment) => <span className="text-slate-700 font-semibold">{row.purpose || row.department}</span> },
+    { header: 'MRN CODE', accessor: (row: SharedAppointment) => <span className="text-blue-600 font-bold text-xs">{row.mrn}</span> },
+    { header: 'CONSULTATION PURPOSE', accessor: (row: SharedAppointment) => <span className="text-slate-700 font-semibold text-xs">{row.purpose || row.department}</span> },
     {
-      header: 'Approval & Vitals Status',
+      header: 'APPROVAL STATUS',
       accessor: (row: SharedAppointment) => {
-        const locked = isTabLocked(row);
+        const isDocApproved = row.status !== 'PENDING DOCTOR APPROVAL';
+        const isVitalsDone = !!row.vitals || row.status === 'VITALS RECORDED & READY FOR DOCTOR' || row.status.includes('Completed');
+
         return (
-          <div className="flex flex-col gap-1">
-            <span
-              className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase w-fit ${
-                row.status === 'VITALS RECORDED & READY FOR DOCTOR' || row.status.includes('Completed')
-                  ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
-                  : row.status === 'PENDING NURSE VITALS'
-                    ? 'bg-amber-100 text-amber-800 border border-amber-300 animate-pulse'
-                    : 'bg-blue-100 text-blue-800 border border-blue-300'
-              }`}
-            >
-              {row.status}
-            </span>
-            {locked && (
-              <span className="text-[10px] text-amber-700 font-extrabold flex items-center gap-1">
-                <Lock className="w-3 h-3 text-amber-600" /> Awaiting Vitals Check (Room 204)
-              </span>
-            )}
+          <div className="min-w-[210px] space-y-1.5 py-1">
+            {/* Status Pill Badge */}
+            <div className="flex items-center gap-1.5">
+              {row.status === 'PENDING DOCTOR APPROVAL' && (
+                <button
+                  onClick={() => showToast({ title: 'Status: Pending Doctor Approval ⏳', message: 'Click "Approve" in Doctor Actions column to confirm appointment and send vitals email.', type: 'info' })}
+                  className="px-3 py-1 bg-amber-50 hover:bg-amber-100 text-amber-900 border border-amber-300 rounded-full font-extrabold text-[11px] flex items-center gap-1.5 transition-all shadow-2xs cursor-pointer"
+                >
+                  <span className="w-2 h-2 rounded-full bg-amber-500 animate-ping" />
+                  <span>Pending Doctor Approval</span>
+                </button>
+              )}
+
+              {row.status === 'PENDING NURSE VITALS' && (
+                <button
+                  onClick={() => showToast({ title: 'Status: Pending Nurse Vitals 🩺', message: 'Patient notified via email to report to OPD Room 204 for vitals checkup.', type: 'info' })}
+                  className="px-3 py-1 bg-amber-500/10 hover:bg-amber-500/20 text-amber-900 border border-amber-400 rounded-full font-extrabold text-[11px] flex items-center gap-1.5 transition-all shadow-2xs cursor-pointer"
+                >
+                  <Lock className="w-3 h-3 text-amber-600 animate-pulse" />
+                  <span>Pending Nurse Vitals (Room 204)</span>
+                </button>
+              )}
+
+              {(row.status === 'VITALS RECORDED & READY FOR DOCTOR' || row.status === 'Approved' || row.status === 'Approved & Confirmed') && (
+                <button
+                  onClick={() => showToast({ title: 'Status: Ready for Doctor 🔓', message: `Vitals recorded (${row.vitals?.bp || '120/80'}). Consultation action tabs are fully unlocked!`, type: 'success' })}
+                  className="px-3 py-1 bg-emerald-50 hover:bg-emerald-100 text-emerald-900 border border-emerald-300 rounded-full font-extrabold text-[11px] flex items-center gap-1.5 transition-all shadow-2xs cursor-pointer"
+                >
+                  <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                  <span>Ready for Consultation 🔓</span>
+                </button>
+              )}
+
+              {row.status.includes('Completed') && (
+                <span className="px-3 py-1 bg-blue-50 text-blue-900 border border-blue-300 rounded-full font-extrabold text-[11px] flex items-center gap-1.5">
+                  <CheckCircle2 className="w-3.5 h-3.5 text-blue-600" />
+                  <span>Consultation Complete</span>
+                </span>
+              )}
+
+              {row.status === 'Rescheduled' && (
+                <span className="px-3 py-1 bg-purple-50 text-purple-900 border border-purple-300 rounded-full font-extrabold text-[11px] flex items-center gap-1.5">
+                  <RefreshCw className="w-3.5 h-3.5 text-purple-600" />
+                  <span>Rescheduled Slot</span>
+                </span>
+              )}
+            </div>
+
+            {/* Interactive 2-Step Progress Stepper Telemetry */}
+            <div className="flex items-center gap-2 text-[10px] font-bold text-slate-600 bg-slate-50 p-1.5 rounded-xl border border-slate-200/80">
+              {/* Step 1: Doctor Sign-Off */}
+              <div className="flex items-center gap-1">
+                <span className={`w-2 h-2 rounded-full ${isDocApproved ? 'bg-emerald-500' : 'bg-amber-400 animate-ping'}`} />
+                <span className={isDocApproved ? 'text-emerald-700 font-extrabold' : 'text-slate-500'}>
+                  1. Doctor {isDocApproved ? '✓' : '⏳'}
+                </span>
+              </div>
+
+              <span className="text-slate-300">──</span>
+
+              {/* Step 2: Nurse Vitals Check */}
+              <div className="flex items-center gap-1">
+                <span className={`w-2 h-2 rounded-full ${isVitalsDone ? 'bg-emerald-500' : 'bg-amber-400 animate-ping'}`} />
+                <span className={isVitalsDone ? 'text-emerald-700 font-extrabold' : 'text-slate-500'}>
+                  2. Vitals {isVitalsDone ? '✓' : '🔒'}
+                </span>
+              </div>
+            </div>
+
+            {/* Vitals Data Subtext */}
             {row.vitals && (
-              <span className="text-[10px] text-emerald-700 font-bold flex items-center gap-1">
-                <HeartPulse className="w-3 h-3 text-emerald-600" /> BP: {row.vitals.bp} • HR: {row.vitals.hr}
-              </span>
+              <div className="text-[10px] text-emerald-800 font-extrabold flex items-center gap-1.5 pl-0.5">
+                <HeartPulse className="w-3 h-3 text-emerald-600" />
+                <span>BP: {row.vitals.bp} • HR: {row.vitals.hr} • SpO2: {row.vitals.spo2 || '99%'}</span>
+              </div>
             )}
           </div>
         );
       },
     },
     {
-      header: 'Doctor Actions',
+      header: 'DOCTOR ACTIONS',
       accessor: (row: SharedAppointment) => {
         const locked = isTabLocked(row);
 
@@ -309,10 +367,10 @@ export const DoctorDashboard: React.FC = () => {
             {row.status === 'PENDING DOCTOR APPROVAL' && (
               <button
                 onClick={() => handleApprove(row)}
-                className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold rounded-lg shadow-2xs flex items-center gap-1 cursor-pointer transition-all"
+                className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-black rounded-xl shadow-md shadow-emerald-600/20 flex items-center gap-1 cursor-pointer transition-all hover:scale-105 active:scale-95"
               >
                 <Check className="w-3.5 h-3.5" />
-                <span>Approve & Send Vitals Notice</span>
+                <span>Approve</span>
               </button>
             )}
 
@@ -320,7 +378,7 @@ export const DoctorDashboard: React.FC = () => {
             {locked && (
               <button
                 onClick={() => setVitalsModalAppointment(row)}
-                className="px-2.5 py-1 bg-amber-500 hover:bg-amber-400 text-slate-900 text-[11px] font-black rounded-lg shadow-xs flex items-center gap-1 cursor-pointer transition-all animate-pulse"
+                className="px-3 py-1.5 bg-amber-500 hover:bg-amber-400 text-slate-900 text-[11px] font-black rounded-xl shadow-md flex items-center gap-1 cursor-pointer transition-all animate-pulse"
                 title="Record Pre-Consultation Nurse Vitals (Room 204)"
               >
                 <Activity className="w-3.5 h-3.5" />
@@ -331,10 +389,10 @@ export const DoctorDashboard: React.FC = () => {
             {/* Tab 1: Prescribe Rx */}
             <button
               onClick={() => openPrescribeStudio(row)}
-              className={`px-2.5 py-1 text-[11px] font-bold rounded-lg shadow-2xs flex items-center gap-1 transition-all cursor-pointer ${
+              className={`px-3 py-1.5 text-[11px] font-black rounded-xl shadow-md flex items-center gap-1 transition-all cursor-pointer ${
                 locked
-                  ? 'bg-slate-100 text-slate-400 border border-slate-200 hover:bg-slate-200/60'
-                  : 'bg-blue-600 hover:bg-blue-500 text-white'
+                  ? 'bg-slate-100 text-slate-400 border border-slate-200 hover:bg-slate-200/60 shadow-none'
+                  : 'bg-blue-600 hover:bg-blue-500 text-white shadow-blue-600/20 hover:scale-105 active:scale-95'
               }`}
               title={locked ? '🔒 Locked: Awaiting Nurse Vitals Check (Room 204)' : 'Prescribe E-Prescription'}
             >
@@ -345,10 +403,10 @@ export const DoctorDashboard: React.FC = () => {
             {/* Tab 2: View Reports */}
             <button
               onClick={() => openLabReportsModal(row)}
-              className={`px-2.5 py-1 text-[11px] font-bold rounded-lg shadow-2xs flex items-center gap-1 transition-all cursor-pointer ${
+              className={`px-3 py-1.5 text-[11px] font-black rounded-xl shadow-md flex items-center gap-1 transition-all cursor-pointer ${
                 locked
-                  ? 'bg-slate-100 text-slate-400 border border-slate-200 hover:bg-slate-200/60'
-                  : 'bg-cyan-600 hover:bg-cyan-500 text-white'
+                  ? 'bg-slate-100 text-slate-400 border border-slate-200 hover:bg-slate-200/60 shadow-none'
+                  : 'bg-cyan-600 hover:bg-cyan-500 text-white shadow-cyan-600/20 hover:scale-105 active:scale-95'
               }`}
               title={locked ? '🔒 Locked: Awaiting Nurse Vitals Check (Room 204)' : 'View Lab Diagnostic Reports'}
             >
@@ -359,10 +417,10 @@ export const DoctorDashboard: React.FC = () => {
             {/* Tab 3: History */}
             <button
               onClick={() => openPatientHistory(row)}
-              className={`px-2.5 py-1 text-[11px] font-bold rounded-lg border transition-all cursor-pointer ${
+              className={`px-3 py-1.5 text-[11px] font-bold rounded-xl border transition-all cursor-pointer ${
                 locked
                   ? 'bg-slate-100 text-slate-400 border-slate-200 hover:bg-slate-200/60'
-                  : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border-indigo-200'
+                  : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border-indigo-200 hover:scale-105 active:scale-95'
               }`}
               title={locked ? '🔒 Locked: Awaiting Nurse Vitals Check (Room 204)' : 'View Patient Medical History'}
             >
@@ -373,10 +431,10 @@ export const DoctorDashboard: React.FC = () => {
             {/* Tab 4: Reschedule */}
             <button
               onClick={() => openReschedule(row)}
-              className={`px-2.5 py-1 text-[11px] font-bold rounded-lg border transition-all cursor-pointer ${
+              className={`px-3 py-1.5 text-[11px] font-bold rounded-xl border transition-all cursor-pointer ${
                 locked
                   ? 'bg-slate-100 text-slate-400 border-slate-200 hover:bg-slate-200/60'
-                  : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-300'
+                  : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-300 hover:scale-105 active:scale-95'
               }`}
               title={locked ? '🔒 Locked: Awaiting Nurse Vitals Check (Room 204)' : 'Reschedule Appointment Slot'}
             >
@@ -426,11 +484,11 @@ export const DoctorDashboard: React.FC = () => {
       <div className="space-y-4">
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
-            <Users className="w-4 h-4 text-blue-600" />
-            Active OPD Consultation Appointments ({appointments.length})
+            <Clock className="w-4 h-4 text-blue-600" />
+            OUTPATIENT CONSULTATION QUEUE & APPROVAL MANAGER ({appointments.length})
           </h2>
-          <span className="text-xs text-blue-600 font-bold flex items-center gap-1">
-            <ShieldCheck className="w-4 h-4" /> Vitals-Locked Consultation Safeguard Active
+          <span className="text-xs text-emerald-700 font-bold flex items-center gap-1 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
+            <CheckCircle2 className="w-4 h-4 text-emerald-600" /> E-Prescriber & Nurse Vitals Sync Active
           </span>
         </div>
 
