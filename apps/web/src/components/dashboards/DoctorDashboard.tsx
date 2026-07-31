@@ -5,37 +5,32 @@ import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { StatCard } from '../shared/StatCard';
 import { DataTable } from '../shared/DataTable';
-import { useToast } from '../../context/ToastContext';
 import { DoctorPrescribeStudioModal } from '../shared/DoctorPrescribeStudioModal';
-import { useAuth } from '../../hooks/useAuth';
-import {
-  getClinicalRecords,
-  saveClinicalRecord,
-  getLabOrders,
-  ClinicalRecord,
-  LabOrderRecord,
-} from '../../data/medicalHistoryStore';
+import { useToast } from '../../context/ToastContext';
+import { api } from '../../lib/axios';
 import {
   getSharedAppointments,
   updateSharedAppointmentStatus,
-  SharedAppointment,
+  updateSharedAppointmentVitals,
+  SharedAppointment
 } from '../../data/appointmentStore';
 import {
-  Stethoscope,
+  getClinicalRecords,
+  getLabOrders,
+  ClinicalRecord,
+  LabOrderRecord
+} from '../../data/medicalHistoryStore';
+import {
+  User,
+  Users,
   Calendar,
   Clock,
-  UserCheck,
-  FileText,
-  Plus,
-  CheckCircle2,
-  AlertCircle,
+  Check,
+  Stethoscope,
   Pill,
   X,
-  Sparkles,
-  FlaskConical,
-  User,
   History,
-  Check,
+  FlaskConical,
   RefreshCw,
   FileCheck2,
   Activity,
@@ -43,8 +38,13 @@ import {
   Search,
   FileSpreadsheet,
   Download,
-  Printer
+  Printer,
+  Lock,
+  LockKeyhole,
+  CheckCircle2,
+  HeartPulse
 } from 'lucide-react';
+import { useAuth } from '../../hooks/useAuth';
 
 export const DoctorDashboard: React.FC = () => {
   const { user } = useAuth();
@@ -88,6 +88,13 @@ export const DoctorDashboard: React.FC = () => {
   const [isRescheduleModalOpen, setIsRescheduleModalOpen] = useState(false);
   const [isHistoryModalOpen, setIsHistoryModalOpen] = useState(false);
   const [isLabReportsModalOpen, setIsLabReportsModalOpen] = useState(false);
+  const [vitalsModalAppointment, setVitalsModalAppointment] = useState<SharedAppointment | null>(null);
+
+  // Vitals form state
+  const [bpInput, setBpInput] = useState('120/80');
+  const [hrInput, setHrInput] = useState('74 bpm');
+  const [tempInput, setTempInput] = useState('98.6 °F');
+  const [spo2Input, setSpo2Input] = useState('99 %');
 
   // Selected Patient & Search Queries
   const [activePatient, setActivePatient] = useState<any>(null);
@@ -100,17 +107,66 @@ export const DoctorDashboard: React.FC = () => {
     setLabOrders(getLabOrders());
   }, [isPrescribeStudioOpen, isHistoryModalOpen, isLabReportsModalOpen]);
 
-  const handleApprove = (apptId: string, patientName: string) => {
-    updateSharedAppointmentStatus(apptId, 'PENDING NURSE VITALS');
+  const handleApprove = async (row: SharedAppointment) => {
+    updateSharedAppointmentStatus(row.id, 'PENDING NURSE VITALS');
     refreshAppointments();
+
+    // Call API to send Vitals Notice Email
+    try {
+      await api.post('/appointments/send-vitals-mail', {
+        patientEmail: row.patientEmail || 'patient@medflow.com',
+        patientName: row.patientName,
+        doctorName: doctorDisplayName,
+        appointmentTime: `${row.date} at ${row.timeSlot}`,
+        roomNumber: 'OPD Room 204 — Pre-Consultation Triage Station',
+      });
+    } catch {
+      // Non-blocking mail fallback
+    }
+
     showToast({
-      title: 'Appointment Approved! 🩺',
-      message: `Confirmed consultation for ${patientName}. Request routed to Nursing Ward for pre-consultation vitals checkup.`,
+      title: 'Appointment Approved & Patient Email Sent! 🩺',
+      message: `Confirmed for ${row.patientName}. Vitals notice email sent (Room 204). Consultation action tabs are temporarily locked until Nurse Vitals are recorded.`,
       type: 'success',
     });
   };
 
-  const openReschedule = (appt: any) => {
+  const handleSaveVitals = (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!vitalsModalAppointment) return;
+
+    updateSharedAppointmentVitals(vitalsModalAppointment.id, {
+      bp: bpInput,
+      hr: hrInput,
+      temp: tempInput,
+      spo2: spo2Input,
+      recordedAt: new Date().toLocaleTimeString(),
+      nurseName: 'Nurse Clara Barton (Room 204)',
+    });
+
+    refreshAppointments();
+    setVitalsModalAppointment(null);
+
+    showToast({
+      title: 'Nurse Vitals Recorded! 🩺',
+      message: `Vitals logged for ${vitalsModalAppointment.patientName}. Consultation action tabs (Prescribe Rx, Reports, History, Reschedule) are now UNLOCKED 🔓!`,
+      type: 'success',
+    });
+  };
+
+  const handleLockedClick = (patientName: string) => {
+    showToast({
+      title: '🔒 Action Tabs Temporarily Locked!',
+      message: `Patient ${patientName} must complete mandatory Pre-Consultation Nurse Vitals Checkup in OPD Room 204 before doctor consultation tabs unlock.`,
+      type: 'warning',
+    });
+  };
+
+  const openReschedule = (appt: SharedAppointment) => {
+    if (isTabLocked(appt)) {
+      handleLockedClick(appt.patientName);
+      return;
+    }
     setActivePatient(appt);
     setIsRescheduleModalOpen(true);
   };
@@ -120,39 +176,47 @@ export const DoctorDashboard: React.FC = () => {
     if (!activePatient) return;
     setAppointments((prev) =>
       prev.map((a) =>
-        a.id === activePatient.id ? { ...a, time: newTimeSlot, status: 'Rescheduled' } : a
+        a.id === activePatient.id ? { ...a, timeSlot: newTimeSlot, status: 'Rescheduled' } : a
       )
     );
     setIsRescheduleModalOpen(false);
     showToast({
       title: 'Appointment Rescheduled!',
-      message: `Moved ${activePatient.patient}'s visit to ${newTimeSlot}.`,
+      message: `Moved ${activePatient.patientName}'s visit to ${newTimeSlot}.`,
       type: 'info',
     });
   };
 
+  const isTabLocked = (row: SharedAppointment) => {
+    return (row.status === 'PENDING NURSE VITALS' || row.status === 'PENDING DOCTOR APPROVAL') && !row.vitals;
+  };
+
   const openPrescribeStudio = (row: SharedAppointment) => {
-    if (!row.vitals && row.status !== 'VITALS RECORDED & READY FOR DOCTOR') {
-      showToast({
-        title: 'Vitals Checkup Required! 🩺',
-        message: `Nurse vitals checkup required before issuing digital E-Prescription for ${row.patientName}. Patient is currently in Nursing Ward Queue.`,
-        type: 'warning',
-      });
+    if (isTabLocked(row)) {
+      handleLockedClick(row.patientName);
       return;
     }
     setActivePatient({ name: row.patientName, mrn: row.mrn, id: row.id });
     setIsPrescribeStudioOpen(true);
   };
 
-  const openPatientHistory = (patientName: string, mrn: string) => {
-    setActivePatient({ name: patientName, mrn });
-    setHistorySearchQuery(mrn);
+  const openPatientHistory = (row: SharedAppointment) => {
+    if (isTabLocked(row)) {
+      handleLockedClick(row.patientName);
+      return;
+    }
+    setActivePatient({ name: row.patientName, mrn: row.mrn });
+    setHistorySearchQuery(row.mrn);
     setIsHistoryModalOpen(true);
   };
 
-  const openLabReportsModal = (patientName: string, mrn: string) => {
-    setActivePatient({ name: patientName, mrn });
-    setLabReportSearchQuery(mrn);
+  const openLabReportsModal = (row: SharedAppointment) => {
+    if (isTabLocked(row)) {
+      handleLockedClick(row.patientName);
+      return;
+    }
+    setActivePatient({ name: row.patientName, mrn: row.mrn });
+    setLabReportSearchQuery(row.mrn);
     setIsLabReportsModalOpen(true);
   };
 
@@ -205,76 +269,272 @@ export const DoctorDashboard: React.FC = () => {
     { header: 'MRN Code', accessor: (row: SharedAppointment) => <span className="text-blue-600 font-bold">{row.mrn}</span> },
     { header: 'Consultation Purpose', accessor: (row: SharedAppointment) => <span className="text-slate-700 font-semibold">{row.purpose || row.department}</span> },
     {
-      header: 'Approval Status',
-      accessor: (row: SharedAppointment) => (
-        <span
-          className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase ${
-            row.status.includes('Completed')
-              ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
-              : row.status.includes('Approved') || row.status.includes('VITALS')
-                ? 'bg-blue-100 text-blue-800 border border-blue-300'
-                : row.status === 'Rescheduled'
-                  ? 'bg-purple-100 text-purple-800 border border-purple-300'
-                  : 'bg-amber-100 text-amber-800 border border-amber-300 animate-pulse'
-          }`}
-        >
-          {row.status}
-        </span>
-      ),
+      header: 'Approval & Vitals Status',
+      accessor: (row: SharedAppointment) => {
+        const locked = isTabLocked(row);
+        return (
+          <div className="flex flex-col gap-1">
+            <span
+              className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase w-fit ${
+                row.status === 'VITALS RECORDED & READY FOR DOCTOR' || row.status.includes('Completed')
+                  ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                  : row.status === 'PENDING NURSE VITALS'
+                    ? 'bg-amber-100 text-amber-800 border border-amber-300 animate-pulse'
+                    : 'bg-blue-100 text-blue-800 border border-blue-300'
+              }`}
+            >
+              {row.status}
+            </span>
+            {locked && (
+              <span className="text-[10px] text-amber-700 font-extrabold flex items-center gap-1">
+                <Lock className="w-3 h-3 text-amber-600" /> Awaiting Vitals Check (Room 204)
+              </span>
+            )}
+            {row.vitals && (
+              <span className="text-[10px] text-emerald-700 font-bold flex items-center gap-1">
+                <HeartPulse className="w-3 h-3 text-emerald-600" /> BP: {row.vitals.bp} • HR: {row.vitals.hr}
+              </span>
+            )}
+          </div>
+        );
+      },
     },
     {
       header: 'Doctor Actions',
-      accessor: (row: SharedAppointment) => (
-        <div className="flex items-center gap-1.5 flex-wrap">
-          {row.status === 'PENDING DOCTOR APPROVAL' && (
+      accessor: (row: SharedAppointment) => {
+        const locked = isTabLocked(row);
+
+        return (
+          <div className="flex items-center gap-1.5 flex-wrap">
+            {row.status === 'PENDING DOCTOR APPROVAL' && (
+              <button
+                onClick={() => handleApprove(row)}
+                className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold rounded-lg shadow-2xs flex items-center gap-1 cursor-pointer transition-all"
+              >
+                <Check className="w-3.5 h-3.5" />
+                <span>Approve & Send Vitals Notice</span>
+              </button>
+            )}
+
+            {/* Record Vitals Action Button */}
+            {locked && (
+              <button
+                onClick={() => setVitalsModalAppointment(row)}
+                className="px-2.5 py-1 bg-amber-500 hover:bg-amber-400 text-slate-900 text-[11px] font-black rounded-lg shadow-xs flex items-center gap-1 cursor-pointer transition-all animate-pulse"
+                title="Record Pre-Consultation Nurse Vitals (Room 204)"
+              >
+                <Activity className="w-3.5 h-3.5" />
+                <span>Record Vitals (Room 204)</span>
+              </button>
+            )}
+
+            {/* Tab 1: Prescribe Rx */}
             <button
-              onClick={() => handleApprove(row.id, row.patientName)}
-              className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white text-[11px] font-bold rounded-lg shadow-2xs flex items-center gap-1 cursor-pointer transition-all"
+              onClick={() => openPrescribeStudio(row)}
+              className={`px-2.5 py-1 text-[11px] font-bold rounded-lg shadow-2xs flex items-center gap-1 transition-all cursor-pointer ${
+                locked
+                  ? 'bg-slate-100 text-slate-400 border border-slate-200 hover:bg-slate-200/60'
+                  : 'bg-blue-600 hover:bg-blue-500 text-white'
+              }`}
+              title={locked ? '🔒 Locked: Awaiting Nurse Vitals Check (Room 204)' : 'Prescribe E-Prescription'}
             >
-              <Check className="w-3.5 h-3.5" />
-              <span>Approve</span>
+              {locked ? <Lock className="w-3 h-3 text-slate-400" /> : <Pill className="w-3.5 h-3.5" />}
+              <span>Prescribe Rx</span>
             </button>
-          )}
 
-          <button
-            onClick={() => openPrescribeStudio(row)}
-            className="px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white text-[11px] font-bold rounded-lg shadow-2xs flex items-center gap-1 cursor-pointer transition-all"
-          >
-            <Pill className="w-3.5 h-3.5" />
-            <span>Prescribe Rx</span>
-          </button>
+            {/* Tab 2: View Reports */}
+            <button
+              onClick={() => openLabReportsModal(row)}
+              className={`px-2.5 py-1 text-[11px] font-bold rounded-lg shadow-2xs flex items-center gap-1 transition-all cursor-pointer ${
+                locked
+                  ? 'bg-slate-100 text-slate-400 border border-slate-200 hover:bg-slate-200/60'
+                  : 'bg-cyan-600 hover:bg-cyan-500 text-white'
+              }`}
+              title={locked ? '🔒 Locked: Awaiting Nurse Vitals Check (Room 204)' : 'View Lab Diagnostic Reports'}
+            >
+              {locked ? <Lock className="w-3 h-3 text-slate-400" /> : <FlaskConical className="w-3.5 h-3.5" />}
+              <span>View Reports</span>
+            </button>
 
-          <button
-            onClick={() => openLabReportsModal(row.patientName, row.mrn)}
-            className="px-2.5 py-1 bg-cyan-600 hover:bg-cyan-500 text-white text-[11px] font-bold rounded-lg shadow-2xs flex items-center gap-1 cursor-pointer transition-all"
-          >
-            <FlaskConical className="w-3.5 h-3.5" />
-            <span>View Reports</span>
-          </button>
+            {/* Tab 3: History */}
+            <button
+              onClick={() => openPatientHistory(row)}
+              className={`px-2.5 py-1 text-[11px] font-bold rounded-lg border transition-all cursor-pointer ${
+                locked
+                  ? 'bg-slate-100 text-slate-400 border-slate-200 hover:bg-slate-200/60'
+                  : 'bg-indigo-50 hover:bg-indigo-100 text-indigo-700 border-indigo-200'
+              }`}
+              title={locked ? '🔒 Locked: Awaiting Nurse Vitals Check (Room 204)' : 'View Patient Medical History'}
+            >
+              {locked ? <Lock className="w-3 h-3 text-slate-400" /> : <History className="w-3.5 h-3.5 text-indigo-600" />}
+              <span>History</span>
+            </button>
 
-          <button
-            onClick={() => openPatientHistory(row.patientName, row.mrn)}
-            className="px-2.5 py-1 bg-indigo-50 hover:bg-indigo-100 text-indigo-700 text-[11px] font-bold rounded-lg border border-indigo-200 flex items-center gap-1 cursor-pointer transition-all"
-          >
-            <History className="w-3.5 h-3.5 text-indigo-600" />
-            <span>History</span>
-          </button>
-
-          <button
-            onClick={() => openReschedule(row)}
-            className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 text-[11px] font-bold rounded-lg border border-slate-300 flex items-center gap-1 cursor-pointer transition-all"
-          >
-            <RefreshCw className="w-3 h-3 text-slate-500" />
-            <span>Reschedule</span>
-          </button>
-        </div>
-      ),
+            {/* Tab 4: Reschedule */}
+            <button
+              onClick={() => openReschedule(row)}
+              className={`px-2.5 py-1 text-[11px] font-bold rounded-lg border transition-all cursor-pointer ${
+                locked
+                  ? 'bg-slate-100 text-slate-400 border-slate-200 hover:bg-slate-200/60'
+                  : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-300'
+              }`}
+              title={locked ? '🔒 Locked: Awaiting Nurse Vitals Check (Room 204)' : 'Reschedule Appointment Slot'}
+            >
+              {locked ? <Lock className="w-3 h-3 text-slate-400" /> : <RefreshCw className="w-3.5 h-3.5 text-slate-600" />}
+              <span>Reschedule</span>
+            </button>
+          </div>
+        );
+      },
     },
   ];
 
   return (
-    <div className="space-y-8 relative">
-      {/* Doctor E-Prescribing Studio Modal */}
+    <div className="space-y-8 relative pb-12">
+      {/* Header Banner */}
+      <div className="p-6 bg-gradient-to-r from-blue-900 via-indigo-900 to-slate-900 rounded-3xl text-white shadow-xl relative overflow-hidden">
+        <div className="relative z-10 flex flex-col md:flex-row md:items-center justify-between gap-4">
+          <div className="space-y-1.5">
+            <div className="inline-flex items-center gap-2 px-3 py-1 bg-blue-500/20 border border-blue-400/30 rounded-full text-blue-200 text-xs font-bold">
+              <Stethoscope className="w-3.5 h-3.5 text-blue-400" />
+              Physician Consultation Workstation Active
+            </div>
+            <h1 className="text-2xl md:text-3xl font-black tracking-tight">Welcome, {doctorDisplayName}</h1>
+            <p className="text-xs md:text-sm text-blue-100/80 font-medium max-w-2xl">
+              OPD consultation schedule, EMR prescriptions, lab report verification, and pre-consultation vitals checkup lock workflow.
+            </p>
+          </div>
+
+          <div className="flex items-center gap-3">
+            <span className="px-3.5 py-2 bg-emerald-500/20 text-emerald-300 border border-emerald-400/30 rounded-2xl text-xs font-extrabold flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-emerald-400 animate-ping" />
+              OPD Triage Station: Room 204 Active
+            </span>
+          </div>
+        </div>
+      </div>
+
+      {/* Metrics Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        <StatCard title="Today's Consultation Schedule" value={`${appointments.length} Visits`} change={2.1} changeLabel="active OPD slots" icon={Calendar} />
+        <StatCard title="Pending Nurse Vitals Check" value={`${appointments.filter(a => isTabLocked(a)).length} Patients`} change={0.0} changeLabel="Room 204 queue" icon={Lock} />
+        <StatCard title="Ready for Prescription" value={`${appointments.filter(a => !isTabLocked(a)).length} Unlocked`} change={5.4} changeLabel="vitals recorded" icon={CheckCircle2} />
+        <StatCard title="Diagnostic Reports Reviewed" value={`${labOrders.length} Reports`} change={12.0} changeLabel="verified pathology" icon={FlaskConical} />
+      </div>
+
+      {/* Appointments Data Table */}
+      <div className="space-y-4">
+        <div className="flex items-center justify-between">
+          <h2 className="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
+            <Users className="w-4 h-4 text-blue-600" />
+            Active OPD Consultation Appointments ({appointments.length})
+          </h2>
+          <span className="text-xs text-blue-600 font-bold flex items-center gap-1">
+            <ShieldCheck className="w-4 h-4" /> Vitals-Locked Consultation Safeguard Active
+          </span>
+        </div>
+
+        <DataTable
+          columns={columns}
+          data={appointments}
+          currentPage={currentPage}
+          totalPages={1}
+          onPageChange={(page) => setCurrentPage(page)}
+        />
+      </div>
+
+      {/* Record Nurse Vitals Modal */}
+      {vitalsModalAppointment && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4">
+          <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-200">
+            <div className="p-6 bg-gradient-to-r from-amber-600 to-amber-800 text-white flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-amber-500/20 border border-amber-400/30 rounded-2xl">
+                  <Activity className="w-5 h-5 text-amber-200" />
+                </div>
+                <div>
+                  <h3 className="text-base font-black">Record Pre-Consultation Nurse Vitals</h3>
+                  <p className="text-xs text-amber-100">OPD Room 204 Triage Station</p>
+                </div>
+              </div>
+              <button
+                onClick={() => setVitalsModalAppointment(null)}
+                className="p-2 text-slate-300 hover:text-white rounded-full hover:bg-white/10 cursor-pointer"
+              >
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+
+            <form onSubmit={handleSaveVitals} className="p-6 space-y-4 text-xs font-semibold text-slate-800">
+              <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-amber-900 text-xs">
+                Patient: <strong>{vitalsModalAppointment.patientName}</strong> ({vitalsModalAppointment.mrn})<br />
+                Logging vitals will unlock consultation action tabs for the attending physician.
+              </div>
+
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Blood Pressure (mmHg)</label>
+                  <input
+                    type="text"
+                    value={bpInput}
+                    onChange={(e) => setBpInput(e.target.value)}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Heart Rate / Pulse</label>
+                  <input
+                    type="text"
+                    value={hrInput}
+                    onChange={(e) => setHrInput(e.target.value)}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Body Temperature</label>
+                  <input
+                    type="text"
+                    value={tempInput}
+                    onChange={(e) => setTempInput(e.target.value)}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    required
+                  />
+                </div>
+                <div>
+                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Oxygen Saturation (SpO2)</label>
+                  <input
+                    type="text"
+                    value={spo2Input}
+                    onChange={(e) => setSpo2Input(e.target.value)}
+                    className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-amber-500"
+                    required
+                  />
+                </div>
+              </div>
+
+              <div className="pt-3 flex items-center justify-end gap-2 border-t border-slate-100">
+                <button
+                  type="button"
+                  onClick={() => setVitalsModalAppointment(null)}
+                  className="px-4 py-2 text-slate-600 font-bold hover:bg-slate-100 rounded-xl"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  className="px-5 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs rounded-xl shadow-md cursor-pointer"
+                >
+                  Unlock Consultation Action Tabs 🔓
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      )}
+
+      {/* Doctor Prescribe Studio Modal */}
       {activePatient && (
         <DoctorPrescribeStudioModal
           isOpen={isPrescribeStudioOpen}
@@ -282,446 +542,108 @@ export const DoctorDashboard: React.FC = () => {
           patientName={activePatient.name}
           patientMrn={activePatient.mrn}
           doctorName={doctorDisplayName}
-          doctorSpecialty="Department of Cardiology & Internal Medicine"
-          onPrescriptionIssued={() => {
-            if (activePatient) {
-              setAppointments((prev) =>
-                prev.map((a) =>
-                  a.mrn === activePatient.mrn ? { ...a, status: 'Completed & Prescribed' } : a
-                )
-              );
-            }
-          }}
         />
       )}
 
-      {/* Patient Diagnostic Lab & Pathology Reports Review Modal */}
-      <AnimatePresence>
-        {isLabReportsModalOpen && (
-          <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.94 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.94 }}
-              className="bg-white border border-slate-200 rounded-3xl max-w-4xl w-full p-6 sm:p-8 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto"
-            >
-              <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-cyan-50 border border-cyan-200 flex items-center justify-center text-cyan-600 shadow-sm">
-                    <FlaskConical className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h3 className="font-black text-base text-slate-900 flex items-center gap-2">
-                      Patient Diagnostic Lab Reports & Pathology Findings
-                      {activePatient && (
-                        <span className="text-[10px] font-bold px-2 py-0.5 rounded-full bg-cyan-100 text-cyan-800 border border-cyan-300">
-                          {activePatient.name} ({activePatient.mrn})
-                        </span>
-                      )}
-                    </h3>
-                    <p className="text-xs font-semibold text-slate-500">Review lab technician findings, diagnostic parameter values, and pathologist notes</p>
-                  </div>
-                </div>
-                <button onClick={() => setIsLabReportsModalOpen(false)} className="text-slate-400 hover:text-slate-600 p-2 rounded-xl cursor-pointer">
-                  <X className="w-5 h-5" />
-                </button>
-              </div>
-
-              {/* Search filter for lab reports */}
-              <div className="relative">
-                <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
-                <input
-                  type="text"
-                  value={labReportSearchQuery}
-                  onChange={(e) => setLabReportSearchQuery(e.target.value)}
-                  placeholder="Filter lab reports by Patient Name, MRN Code, Test Name or Date..."
-                  className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 outline-none focus:ring-2 focus:ring-cyan-500/20"
-                />
-              </div>
-
-              {/* List of Diagnostic Reports */}
-              <div className="space-y-4">
-                {filteredLabReports.map((report) => (
-                  <div key={report.id} className="p-5 bg-slate-50 border border-slate-200 rounded-2xl space-y-3 text-xs shadow-2xs">
-                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 pb-3">
-                      <div>
-                        <span className="font-black text-slate-900 text-base block">{report.testName}</span>
-                        <span className="text-xs font-bold text-cyan-700 block">
-                          Category: {report.category} • Specimen: {report.specimen}
-                        </span>
-                      </div>
-                      <div className="text-right">
-                        <span
-                          className={`px-3 py-1 rounded-full text-[10px] font-black uppercase inline-block ${
-                            report.status === 'REPORT_SUBMITTED'
-                              ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
-                              : 'bg-amber-100 text-amber-800 border border-amber-300 animate-pulse'
-                          }`}
-                        >
-                          {report.status === 'REPORT_SUBMITTED' ? '✓ REPORT VERIFIED & DISPATCHED' : 'Sample Processing in Lab'}
-                        </span>
-                        <span className="text-[10px] text-slate-500 font-semibold block mt-1">Prescribed: {report.date}</span>
-                      </div>
-                    </div>
-
-                    <div className="grid grid-cols-2 gap-3 text-slate-700 font-semibold bg-white p-3 border border-slate-200 rounded-xl">
-                      <div><span className="text-slate-400 block text-[10px] font-bold">PATIENT NAME & MRN</span><strong className="text-slate-900">{report.patientName} ({report.mrn})</strong></div>
-                      <div><span className="text-slate-400 block text-[10px] font-bold">ORDERING PHYSICIAN</span><strong className="text-slate-900">{report.doctorName} ({report.department})</strong></div>
-                      <div><span className="text-slate-400 block text-[10px] font-bold">FASTING REQUIREMENT</span><strong>{report.fastingRequirement}</strong></div>
-                      <div><span className="text-slate-400 block text-[10px] font-bold">SAMPLE SPECIMEN</span><strong>{report.specimen}</strong></div>
-                    </div>
-
-                    {/* Submitted Lab Findings & Pathologist Impressions */}
-                    {report.report ? (
-                      <div className="p-4 bg-emerald-50/70 border border-emerald-200 rounded-xl space-y-2 text-slate-900">
-                        <div className="flex items-center justify-between text-emerald-950 font-black text-xs">
-                          <span className="flex items-center gap-1.5"><FileCheck2 className="w-4 h-4 text-emerald-600" /> LAB TECHNICIAN FINDINGS & PARAMETER VALUES</span>
-                          <span className="text-[10px] font-mono text-emerald-800">ISO-15189 Verified</span>
-                        </div>
-
-                        <div className="p-3 bg-white border border-emerald-200 rounded-lg text-xs font-bold text-slate-900">
-                          {report.report.findings}
-                        </div>
-
-                        <div className="text-xs font-semibold text-slate-700 italic">
-                          <strong>Pathologist Remarks:</strong> {report.report.notes}
-                        </div>
-
-                        <div className="text-[10px] text-slate-500 font-bold flex items-center justify-between pt-1 border-t border-emerald-200/60">
-                          <span>Report Generated By: {report.report.technicianName}</span>
-                          <span>Dispatched At: {report.report.submittedAt}</span>
-                        </div>
-                      </div>
-                    ) : (
-                      <div className="p-4 bg-amber-50 border border-amber-200 rounded-xl text-amber-900 text-xs font-bold flex items-center justify-between">
-                        <span>⏳ Specimen collected and undergoing pathology diagnostic evaluation in lab...</span>
-                        <span className="text-[10px] bg-amber-200 text-amber-900 px-2 py-0.5 rounded-md">Pending Report</span>
-                      </div>
-                    )}
-                  </div>
-                ))}
-
-                {filteredLabReports.length === 0 && (
-                  <div className="p-8 text-center text-slate-400 text-xs font-bold border border-dashed border-slate-200 rounded-2xl">
-                    No lab test reports found matching "{labReportSearchQuery}".
-                  </div>
-                )}
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
       {/* Patient History Modal */}
-      <AnimatePresence>
-        {isHistoryModalOpen && (
-          <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.94 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.94 }}
-              className="bg-white border border-slate-200 rounded-3xl max-w-4xl w-full p-6 sm:p-8 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto"
-            >
-              <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 rounded-2xl bg-indigo-50 border border-indigo-200 flex items-center justify-center text-indigo-600 shadow-sm">
-                    <History className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h3 className="font-black text-base text-slate-900">Patient EMR Vault & Clinical History</h3>
-                    <p className="text-xs font-semibold text-slate-500">Query previous diagnoses, prescribed medications, and diagnostic lab reports by MRN or Name</p>
-                  </div>
-                </div>
-                <button onClick={() => setIsHistoryModalOpen(false)} className="text-slate-400 hover:text-slate-600 p-2 rounded-xl cursor-pointer">
-                  <X className="w-5 h-5" />
-                </button>
+      {isHistoryModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4">
+          <div className="w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-200 flex flex-col max-h-[85vh]">
+            <div className="p-5 bg-gradient-to-r from-indigo-900 to-slate-900 text-white flex items-center justify-between">
+              <div>
+                <h3 className="font-black text-base">Patient Medical History Vault</h3>
+                <p className="text-xs text-indigo-200">MRN: {activePatient?.mrn} • {activePatient?.name}</p>
               </div>
-
-              <div className="relative">
-                <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-3" />
-                <input
-                  type="text"
-                  value={historySearchQuery}
-                  onChange={(e) => setHistorySearchQuery(e.target.value)}
-                  placeholder="Search EMR Vault by Patient Name, MRN Code, Diagnosis, or Rx #..."
-                  className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 outline-none focus:ring-2 focus:ring-indigo-500/20"
-                />
-              </div>
-
-              <div className="space-y-4">
-                {filteredHistoryRecords.map((rec) => (
-                  <div key={rec.id} className="p-5 bg-slate-50 border border-slate-200 rounded-2xl space-y-3 text-xs shadow-2xs">
-                    <div className="flex items-center justify-between border-b border-slate-200 pb-2.5">
-                      <div>
-                        <span className="font-black text-slate-900 text-base block">{rec.patientName} ({rec.mrn})</span>
-                        <span className="text-xs font-bold text-indigo-700 block">Rx #{rec.rxNumber} • Attending: {rec.doctorName}</span>
-                      </div>
-                      <span className="px-3 py-1 bg-blue-100 text-blue-800 text-xs font-black rounded-lg border border-blue-200">
-                        Date: {rec.date}
-                      </span>
-                    </div>
-
-                    <div>
-                      <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 block mb-1">CLINICAL DIAGNOSIS</span>
-                      <span className="font-bold text-xs text-blue-900 bg-blue-50 px-3 py-1.5 rounded-xl border border-blue-200 block">
-                        {rec.diagnosis}
-                      </span>
-                    </div>
-
-                    {/* Prescribed Medications */}
-                    <div>
-                      <span className="text-[10px] font-black uppercase tracking-wider text-slate-500 block mb-1">PRESCRIBED MEDICATIONS</span>
-                      <div className="space-y-1.5">
-                        {rec.medications?.map((m, idx) => (
-                          <div key={idx} className="p-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold flex items-center justify-between">
-                            <span className="text-blue-950 flex items-center gap-1.5"><Pill className="w-3.5 h-3.5 text-blue-600" /> {m.name}</span>
-                            <span className="text-[11px] text-slate-600 bg-slate-100 px-2 py-0.5 rounded-md">{m.dosage}</span>
-                          </div>
-                        ))}
-                      </div>
-                    </div>
-
-                    {/* Diagnostic Lab Tests & Submitted Reports */}
-                    {rec.labTests && rec.labTests.length > 0 && (
-                      <div>
-                        <span className="text-[10px] font-black uppercase tracking-wider text-indigo-700 block mb-1">DIAGNOSTIC LAB TESTS & PATHOLOGY REPORTS</span>
-                        <div className="space-y-2">
-                          {rec.labTests.map((t, idx) => {
-                            const matchingOrder = labOrders.find((lo) => lo.mrn === rec.mrn && lo.testName.includes(t.name));
-                            return (
-                              <div key={idx} className="p-3 bg-indigo-50/60 border border-indigo-200 rounded-xl space-y-1.5 text-xs">
-                                <div className="flex items-center justify-between font-bold">
-                                  <span className="text-indigo-950 flex items-center gap-1.5"><FlaskConical className="w-3.5 h-3.5 text-indigo-600" /> {t.name}</span>
-                                  <span className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase ${
-                                    matchingOrder?.status === 'REPORT_SUBMITTED' ? 'bg-emerald-100 text-emerald-800' : 'bg-amber-100 text-amber-800'
-                                  }`}>
-                                    {matchingOrder?.status === 'REPORT_SUBMITTED' ? '✓ Report Submitted' : 'Pending Lab Report'}
-                                  </span>
-                                </div>
-
-                                {matchingOrder?.report && (
-                                  <div className="p-2.5 bg-white border border-indigo-200 rounded-lg space-y-1 text-[11px]">
-                                    <div className="font-bold text-slate-900">Lab Findings: {matchingOrder.report.findings}</div>
-                                    <div className="text-slate-600 italic">Pathologist Notes: {matchingOrder.report.notes}</div>
-                                    <div className="text-[10px] text-slate-400 pt-0.5">Submitted by {matchingOrder.report.technicianName} on {matchingOrder.report.submittedAt}</div>
-                                  </div>
-                                )}
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </div>
-                    )}
-                  </div>
-                ))}
-
-                {filteredHistoryRecords.length === 0 && (
-                  <div className="p-8 text-center text-slate-400 text-xs font-bold border border-dashed border-slate-200 rounded-2xl">
-                    No clinical history records found matching "{historySearchQuery}".
-                  </div>
-                )}
-              </div>
-            </motion.div>
-          </div>
-        )}
-      </AnimatePresence>
-
-      {/* Header Banner */}
-      <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-200 pb-6">
-        <div>
-          <div className="flex items-center gap-2 mb-1">
-            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-blue-100 text-blue-800 border border-blue-200 flex items-center gap-1">
-              <ShieldCheck className="w-3 h-3 text-blue-600" /> Verified Doctor Workstation
-            </span>
-            <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-emerald-100 text-emerald-800 border border-emerald-200">
-              KYC Approved
-            </span>
-          </div>
-          <h1 className="text-2xl font-black text-slate-900 flex items-center gap-2">
-            <Stethoscope className="w-6 h-6 text-blue-600" />
-            Welcome, {doctorDisplayName}
-          </h1>
-          <p className="text-xs font-semibold text-slate-600 mt-1">
-            Clinical Workstation & E-Prescribing Studio • Multi-tenant EMR & Patient OPD Queue
-          </p>
-        </div>
-
-        <div className="flex items-center gap-3">
-          <button
-            onClick={() => {
-              setLabReportSearchQuery('');
-              setIsLabReportsModalOpen(true);
-            }}
-            className="px-3.5 py-2.5 bg-cyan-600 hover:bg-cyan-500 text-white font-bold text-xs rounded-xl shadow-md shadow-cyan-600/20 flex items-center gap-2 cursor-pointer transition-all"
-          >
-            <FlaskConical className="w-4 h-4 text-cyan-200" />
-            <span>Diagnostic Lab Reports Hub</span>
-          </button>
-
-          <button
-            onClick={() => {
-              setHistorySearchQuery('');
-              setIsHistoryModalOpen(true);
-            }}
-            className="px-3.5 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs rounded-xl border border-slate-300 flex items-center gap-2 cursor-pointer transition-all"
-          >
-            <History className="w-4 h-4 text-indigo-600" />
-            <span>Patient EMR Vault & History</span>
-          </button>
-
-          <button
-            onClick={() => {
-              const appt = appointments[0];
-              if (appt) {
-                openPrescribeStudio(appt);
-              } else {
-                showToast({ title: 'No Patient Selected', message: 'Please select an appointment from the queue to prescribe.', type: 'info' });
-              }
-            }}
-            className="px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-blue-600/20 flex items-center gap-2 cursor-pointer transition-all"
-          >
-            <Sparkles className="w-4 h-4 text-blue-200" />
-            <span>Open E-Prescribe Studio (Rx & Lab Tests)</span>
-          </button>
-        </div>
-      </div>
-
-      {/* KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard title="Total Patients Diagnosed" value={`${clinicalRecords.length + appointments.filter(a => a.status.includes('Prescribed')).length} Patients`} change={14.5} changeLabel="total diagnosed" icon={UserCheck} />
-        <StatCard title="Today's Consultations" value={`${appointments.length} Visits`} change={12.0} changeLabel="OPD active" icon={Calendar} />
-        <StatCard title="Pending Lab Diagnostics" value={`${labOrders.filter(l => l.status !== 'REPORT_SUBMITTED').length} Test Orders`} change={-1.0} changeLabel="assigned to lab tech" icon={FlaskConical} />
-        <StatCard title="Signed EMR Rx Notes" value={`${clinicalRecords.length} Issued`} change={8.5} changeLabel="SHA-256 verified" icon={FileText} />
-      </div>
-
-      {/* Diagnosed Patients Ledger & Medical Records */}
-      <div className="space-y-4 bg-white p-6 rounded-2xl border border-slate-200 shadow-2xs">
-        <div className="flex items-center justify-between border-b border-slate-100 pb-4">
-          <div>
-            <h2 className="text-base font-black text-slate-900 flex items-center gap-2">
-              <UserCheck className="w-5 h-5 text-blue-600" /> Diagnosed Patients Ledger & Clinical Summary
-            </h2>
-            <p className="text-xs text-slate-500 font-semibold mt-0.5">
-              Comprehensive registry of all diagnosed patients, primary clinical diagnoses, prescribed medications, and diagnostic test status.
-            </p>
-          </div>
-          <span className="px-3 py-1 bg-blue-50 text-blue-800 border border-blue-200 rounded-full text-xs font-black">
-            {clinicalRecords.length} Verified Diagnoses
-          </span>
-        </div>
-
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {clinicalRecords.map((rec) => (
-            <div key={rec.id} className="p-4 bg-slate-50/70 border border-slate-200/90 rounded-2xl space-y-3">
-              <div className="flex items-center justify-between border-b border-slate-200/60 pb-2.5">
-                <div>
-                  <h4 className="font-black text-slate-900 text-sm">{rec.patientName}</h4>
-                  <span className="text-xs font-bold text-blue-600">MRN: {rec.mrn} • Rx #{rec.rxNumber}</span>
-                </div>
-                <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-black rounded-md border border-emerald-300">
-                  {rec.date}
-                </span>
-              </div>
-
-              <div className="space-y-1.5 text-xs">
-                <div className="font-extrabold text-slate-800 flex items-center gap-1.5">
-                  <Stethoscope className="w-3.5 h-3.5 text-blue-600" />
-                  <span>Clinical Diagnosis: <strong className="text-blue-900">{rec.diagnosis}</strong></span>
-                </div>
-                <div className="text-slate-600 font-semibold flex items-center justify-between">
-                  <span>Prescribed Medications: <strong>{rec.medications?.length || 0} Drugs</strong></span>
-                  <span>Lab Tests: <strong>{rec.labTests?.length || 0} Tests</strong></span>
-                </div>
-              </div>
-
-              <button
-                onClick={() => openPatientHistory(rec.patientName, rec.mrn)}
-                className="w-full py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
-              >
-                <FileText className="w-3.5 h-3.5" /> View Clinical Diagnosis Details
+              <button onClick={() => setIsHistoryModalOpen(false)} className="p-2 text-slate-400 hover:text-white rounded-full cursor-pointer">
+                <X className="w-5 h-5" />
               </button>
             </div>
-          ))}
-
-          {clinicalRecords.length === 0 && (
-            <div className="p-6 bg-slate-50 border border-dashed border-slate-200 rounded-2xl text-center text-xs text-slate-500 font-semibold col-span-2">
-              No clinical diagnosis records found. Issue a prescription in the OPD Queue to record a diagnosis.
+            <div className="p-6 overflow-y-auto space-y-3 flex-1 text-xs">
+              {filteredHistoryRecords.length > 0 ? (
+                filteredHistoryRecords.map((r) => (
+                  <div key={r.id} className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-1">
+                    <div className="flex justify-between font-bold text-slate-900">
+                      <span>Rx #{r.rxNumber} • {r.diagnosis}</span>
+                      <span className="text-blue-600">{r.date}</span>
+                    </div>
+                    <div className="text-[11px] text-slate-500">Attending: {r.doctorName}</div>
+                  </div>
+                ))
+              ) : (
+                <div className="text-center text-slate-500 py-8">No prior clinical history records found for this patient.</div>
+              )}
             </div>
-          )}
-        </div>
-      </div>
-
-      {/* OPD Consultations Table */}
-      <div className="space-y-4">
-        <div className="flex items-center justify-between">
-          <h2 className="text-xs font-black uppercase tracking-wider text-slate-700 flex items-center gap-2">
-            <Clock className="w-4 h-4 text-blue-600" />
-            OUTPATIENT CONSULTATION QUEUE & APPROVAL MANAGER
-          </h2>
-          <span className="text-[10px] font-bold text-emerald-700 bg-emerald-50 px-2 py-1 rounded-lg border border-emerald-200 flex items-center gap-1">
-            <CheckCircle2 className="w-3 h-3" /> E-Prescriber & Nurse Vitals Sync Active
-          </span>
-        </div>
-
-        {appointments.length > 0 ? (
-          <DataTable columns={columns} data={appointments} />
-        ) : (
-          <div className="p-8 bg-white border border-slate-200 rounded-3xl text-center space-y-3">
-            <div className="w-12 h-12 rounded-2xl bg-blue-50 text-blue-600 mx-auto flex items-center justify-center font-bold">
-              <Clock className="w-6 h-6" />
-            </div>
-            <h3 className="font-black text-slate-900 text-sm">Consultation Queue Empty</h3>
-            <p className="text-xs text-slate-500 max-w-sm mx-auto">
-              There are currently no outpatient consultations scheduled. When patients book an OPD visit, their appointments will appear here in real-time.
-            </p>
           </div>
-        )}
-      </div>
+        </div>
+      )}
+
+      {/* Lab Reports Modal */}
+      {isLabReportsModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4">
+          <div className="w-full max-w-2xl bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-200 flex flex-col max-h-[85vh]">
+            <div className="p-5 bg-gradient-to-r from-cyan-900 to-slate-900 text-white flex items-center justify-between">
+              <div>
+                <h3 className="font-black text-base">Pathology & Diagnostic Lab Reports</h3>
+                <p className="text-xs text-cyan-200">MRN: {activePatient?.mrn} • {activePatient?.name}</p>
+              </div>
+              <button onClick={() => setIsLabReportsModalOpen(false)} className="p-2 text-slate-400 hover:text-white rounded-full cursor-pointer">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="p-6 overflow-y-auto space-y-3 flex-1 text-xs">
+              {filteredLabReports.length > 0 ? (
+                filteredLabReports.map((l) => (
+                  <div key={l.id} className="p-4 bg-cyan-50/50 border border-cyan-200 rounded-2xl space-y-1">
+                    <div className="flex justify-between font-bold text-slate-900">
+                      <span>{l.testName}</span>
+                      <span className="text-emerald-700">{l.status}</span>
+                    </div>
+                    {l.report && (
+                      <div className="p-2.5 bg-white rounded-xl text-[11px] text-slate-700 mt-2 space-y-1">
+                        <div><strong>Findings:</strong> {l.report.findings}</div>
+                        <div className="text-slate-500"><strong>Notes:</strong> {l.report.notes}</div>
+                      </div>
+                    )}
+                  </div>
+                ))
+              ) : (
+                <div className="text-center text-slate-500 py-8">No diagnostic lab reports uploaded yet.</div>
+              )}
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Reschedule Modal */}
-      <AnimatePresence>
-        {isRescheduleModalOpen && (
-          <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm">
-            <motion.div
-              initial={{ opacity: 0, scale: 0.94 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.94 }}
-              className="bg-white border border-slate-200 rounded-3xl max-w-md w-full p-6 shadow-2xl space-y-5"
-            >
-              <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                <h3 className="font-black text-sm text-slate-900 flex items-center gap-2">
-                  <RefreshCw className="w-4 h-4 text-blue-600" /> Reschedule Consultation
-                </h3>
-                <button onClick={() => setIsRescheduleModalOpen(false)} className="text-slate-400 hover:text-slate-600 p-1.5 rounded-xl cursor-pointer">
-                  <X className="w-4 h-4" />
-                </button>
+      {isRescheduleModalOpen && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/60 backdrop-blur-xs p-4">
+          <div className="w-full max-w-md bg-white rounded-3xl shadow-2xl overflow-hidden border border-slate-200">
+            <div className="p-5 bg-gradient-to-r from-slate-900 to-slate-800 text-white flex items-center justify-between">
+              <h3 className="font-black text-sm">Reschedule Consultation Slot</h3>
+              <button onClick={() => setIsRescheduleModalOpen(false)} className="p-2 text-slate-400 hover:text-white rounded-full cursor-pointer">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <form onSubmit={handleRescheduleSubmit} className="p-6 space-y-4 text-xs font-semibold text-slate-800">
+              <div>
+                <label className="block text-slate-600 mb-1">New Consultation Date & Time</label>
+                <input
+                  type="text"
+                  value={newTimeSlot}
+                  onChange={(e) => setNewTimeSlot(e.target.value)}
+                  className="w-full p-2.5 bg-slate-50 border border-slate-200 rounded-xl font-bold text-slate-900"
+                  required
+                />
               </div>
-
-              <form onSubmit={handleRescheduleSubmit} className="space-y-4">
-                <div>
-                  <label htmlFor="reschedulePatient" className="text-xs font-bold text-slate-700 block mb-1">Patient</label>
-                  <input id="reschedulePatient" type="text" readOnly value={`${activePatient?.patient} (${activePatient?.mrn})`} className="w-full px-3 py-2 bg-slate-100 border border-slate-200 rounded-xl text-xs font-bold text-slate-800" />
-                </div>
-
-                <div>
-                  <label htmlFor="newTimeSlot" className="text-xs font-bold text-slate-700 block mb-1">New Consultation Time Slot</label>
-                  <select id="newTimeSlot" value={newTimeSlot} onChange={(e) => setNewTimeSlot(e.target.value)} className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 outline-none focus:ring-2 focus:ring-blue-500">
-                    <option value="Today 04:30 PM">Today 04:30 PM</option>
-                    <option value="Tomorrow 10:00 AM">Tomorrow 10:00 AM</option>
-                    <option value="Tomorrow 02:30 PM">Tomorrow 02:30 PM</option>
-                    <option value="Day After 11:00 AM">Day After 11:00 AM</option>
-                  </select>
-                </div>
-
-                <div className="flex items-center justify-end gap-2 pt-2">
-                  <button type="button" onClick={() => setIsRescheduleModalOpen(false)} className="px-3.5 py-2 bg-slate-100 text-slate-700 font-bold text-xs rounded-xl cursor-pointer">Cancel</button>
-                  <button type="submit" className="px-4 py-2 bg-blue-600 text-white font-bold text-xs rounded-xl cursor-pointer">Confirm Reschedule</button>
-                </div>
-              </form>
-            </motion.div>
+              <div className="pt-2 flex justify-end gap-2">
+                <button type="button" onClick={() => setIsRescheduleModalOpen(false)} className="px-4 py-2 text-slate-600">Cancel</button>
+                <button type="submit" className="px-5 py-2 bg-blue-600 text-white font-black rounded-xl">Confirm Reschedule</button>
+              </div>
+            </form>
           </div>
-        )}
-      </AnimatePresence>
+        </div>
+      )}
+
     </div>
   );
 };

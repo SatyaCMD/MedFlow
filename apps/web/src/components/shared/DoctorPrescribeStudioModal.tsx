@@ -114,8 +114,8 @@ interface DoctorPrescribeStudioModalProps {
   patientName: string;
   patientMrn: string;
   doctorName: string;
-  doctorSpecialty: string;
-  onPrescriptionIssued: (rxData: any) => void;
+  doctorSpecialty?: string;
+  onPrescriptionIssued?: (rxData: any) => void;
 }
 
 // Custom Interactive Dropdown Component
@@ -400,7 +400,7 @@ export const DoctorPrescribeStudioModal: React.FC<DoctorPrescribeStudioModalProp
       patientName: rxData.patientName,
       mrn: rxData.mrn,
       doctorName: rxData.doctorName,
-      department: rxData.department,
+      department: rxData.department || 'General Medicine',
       date: rxData.date,
       timestamp: Date.now(),
       diagnosis: rxData.diagnosis,
@@ -409,7 +409,9 @@ export const DoctorPrescribeStudioModal: React.FC<DoctorPrescribeStudioModalProp
       signatureHash: rxData.signatureHash,
     });
 
-    onPrescriptionIssued(rxData);
+    if (onPrescriptionIssued) {
+      onPrescriptionIssued(rxData);
+    }
 
     try {
       await api.post('/emr/dispatch-prescription', rxData);

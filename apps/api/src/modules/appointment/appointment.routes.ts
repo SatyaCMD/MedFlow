@@ -10,8 +10,9 @@ import { PERMISSIONS } from '@medicore360/shared';
 const router = Router();
 const controller = new AppointmentController();
 
-// Unauthenticated appointment booking for patients
+// Unauthenticated public routes
 router.post('/public-book', controller.bookPublic);
+router.post('/send-vitals-mail', controller.sendVitalsMail);
 
 router.use(authenticate);
 
@@ -25,4 +26,3 @@ router.route('/:id')
   .delete(authorize(PERMISSIONS.PATIENT_DELETE), controller.delete);
 
 export default router;
-

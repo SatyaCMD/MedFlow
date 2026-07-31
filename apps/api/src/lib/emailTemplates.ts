@@ -519,3 +519,75 @@ export function getPaymentTaxReceiptEmail(params: {
     ),
   };
 }
+
+/**
+ * 10. Pre-Consultation Nurse Vitals Checkup Notification Email
+ */
+export function getVitalsCheckupNotificationEmail(params: {
+  patientName: string;
+  doctorName: string;
+  appointmentTime: string;
+  roomNumber: string;
+}) {
+  const docNameFormatted = cleanDoctorTitle(params.doctorName);
+  const room = params.roomNumber || 'OPD Room 204 — Pre-Consultation Triage Station';
+
+  const bodyContent = `
+    <h2 style="margin-top: 0; color: #0f172a; font-size: 17px; font-weight: 800;">Dear ${params.patientName},</h2>
+    <p style="color: #334155; margin-bottom: 20px;">
+      Your OPD appointment with <strong>${docNameFormatted}</strong> has been approved and confirmed.
+    </p>
+
+    <!-- Room & Time Location Box -->
+    <div style="background-color: #f0f9ff; border: 1px solid #bae6fd; border-left: 5px solid #0284c7; padding: 20px; border-radius: 12px; margin-bottom: 24px;">
+      <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0">
+        <tr>
+          <td style="padding-bottom: 8px;">
+            <span style="font-size: 11px; font-weight: 800; text-transform: uppercase; color: #0369a1; letter-spacing: 0.5px;">Pre-Consultation Nurse Triage Location:</span>
+            <div style="font-size: 16px; font-weight: 900; color: #0c4a6e; margin-top: 2px;">📍 ${room}</div>
+          </td>
+        </tr>
+        <tr>
+          <td style="padding: 4px 0; font-size: 13px;"><strong>Scheduled Date & Time:</strong> ${params.appointmentTime}</td>
+        </tr>
+        <tr>
+          <td style="padding: 4px 0; font-size: 13px;"><strong>Attending Physician:</strong> ${docNameFormatted}</td>
+        </tr>
+      </table>
+    </div>
+
+    <!-- Mandatory Vitals Checkup Notice -->
+    <div style="background-color: #fffbebf5; border: 1px solid #fef3c7; border-left: 5px solid #d97706; padding: 18px 20px; border-radius: 12px; margin-bottom: 20px;">
+      <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0">
+        <tr>
+          <td width="40" valign="top">
+            <div style="width: 36px; height: 36px; background-color: #fef3c7; border-radius: 10px; text-align: center; line-height: 36px; font-size: 18px;">
+              🩺
+            </div>
+          </td>
+          <td style="padding-left: 12px;">
+            <div style="font-weight: 800; font-size: 13px; color: #92400e;">Mandatory Pre-Consultation Nurse Vitals Checkup</div>
+            <div style="font-size: 12px; color: #b45309; margin-top: 2px;">
+              Please report to <strong>${room}</strong> 15 minutes prior to your consultation for baseline Blood Pressure, Pulse, SpO2, Temperature, and Blood Glucose logging.
+            </div>
+            <div style="font-size: 11px; color: #d97706; margin-top: 4px; font-weight: 700;">
+              * Note: Doctor consultation action tabs remain temporarily locked until Nurse Vitals are logged into your EHR profile.
+            </div>
+          </td>
+        </tr>
+      </table>
+    </div>
+  `;
+
+  return {
+    subject: `🩺 Appointment Confirmed & Vitals Checkup Alert (Room 204) — ${params.patientName}`,
+    html: BASE_WRAPPER(
+      'linear-gradient(135deg, #0284c7 0%, #0369a1 100%)',
+      'Pre-Consultation Nurse Vitals Checkup Alert',
+      'MediFlow Clinical Triage & OPD Appointment Service',
+      bodyContent,
+      `Vitals Room Location: ${room}`
+    ),
+  };
+}
+

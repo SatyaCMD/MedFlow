@@ -15,6 +15,15 @@ export class AppointmentController {
     }
   };
 
+  sendVitalsMail = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const result = await this.service.sendVitalsNoticeMail(req.body);
+      res.status(200).json({ success: true, data: result });
+    } catch (err) {
+      next(err);
+    }
+  };
+
   getMany = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const hospitalId = req.user!.hospitalId;
@@ -70,10 +79,9 @@ export class AppointmentController {
     try {
       const hospitalId = req.user!.hospitalId;
       await this.service.deleteAppointment(req.params.id, hospitalId);
-      res.status(200).json({ success: true, data: null });
+      res.status(204).send();
     } catch (err) {
       next(err);
     }
   };
 }
-

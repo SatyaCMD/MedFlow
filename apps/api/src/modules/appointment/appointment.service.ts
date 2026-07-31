@@ -2,7 +2,7 @@
 import { AppointmentRepository } from './appointment.repository.js';
 import { AppError } from '../../middleware/errorHandler.js';
 import { sendMail } from '../../lib/mailer.js';
-import { getAppointmentConfirmationEmail } from '../../lib/emailTemplates.js';
+import { getAppointmentConfirmationEmail, getVitalsCheckupNotificationEmail } from '../../lib/emailTemplates.js';
 
 export class AppointmentService {
   private repository = new AppointmentRepository();
@@ -50,6 +50,28 @@ export class AppointmentService {
     }
 
     return created;
+  }
+
+  async sendVitalsNoticeMail(data: any) {
+    const targetEmail = data.patientEmail || data.email || 'patient@medflow.com';
+    const patientName = data.patientName || 'Patient';
+    const doctorName = data.doctorName || 'Dr. Anup Singh';
+    const appointmentTime = data.appointmentTime || `${data.date || 'Today'} at 10:30 AM`;
+    const roomNumber = data.roomNumber || 'OPD Room 204 — Pre-Consultation Triage Station';
+
+    try {
+      const mailTpl = getVitalsCheckupNotificationEmail({
+        patientName,
+        doctorName,
+        appointmentTime,
+        roomNumber,
+      });
+
+      await sendMail({ to: targetEmail, subject: mailTpl.subject, html: mailTpl.html });
+      return { success: true, message: `Vitals notification email sent to ${targetEmail}` };
+    } catch (mailErr: any) {
+      return { success: false, error: mailErr?.message };
+    }
   }
 
   async updateAppointment(id: string, data: any, hospitalId: string) {
