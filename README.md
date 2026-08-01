@@ -45,7 +45,7 @@
 - [⚡ How to Connect a Production Redis Instance](#-how-to-connect-a-production-redis-instance)
 - [☁️ How to Use Terraform for AWS Cloud KYC Storage](#%EF%B8%8F-how-to-use-terraform-for-aws-cloud-kyc-storage-s3_kyc-tf)
 - [🐛 Troubleshooting: Docker Compose Port 4000 Error](#-troubleshooting-docker-compose-port-4000-error)
-- [💳 Patient Portal, Digital Wallet & Ongoing Diagnosis Protocol](#-patient-portal-digital-wallet--ongoing-diagnosis-protocol)
+<!-- - [💳 Patient Portal, Digital Wallet & Ongoing Diagnosis Protocol](#-patient-portal-digital-wallet--ongoing-diagnosis-protocol) -->
 
 ---
 
@@ -567,7 +567,7 @@ Port `4000` is occupied because `pnpm dev` (the local Express API process) is ru
 
 ---
 
-## 💳 Patient Portal, Digital Wallet & Ongoing Diagnosis Protocol
+<!-- ## 💳 Patient Portal, Digital Wallet & Ongoing Diagnosis Protocol
 
 <div align="center">
 
@@ -614,4 +614,4 @@ Port `4000` is occupied because `pnpm dev` (the local Express API process) is ru
 > [!IMPORTANT]
 > **Blue Architectural Rule — Fixed Workstation Layout**
 > - **Non-Scrolling Sidebar**: Side menu navigation in `AppShell` uses `sticky top-0 h-screen overflow-y-auto` layout architecture.
-> - **Independent Main Scroll**: Page content scrolls independently inside the main workspace container (`main`), preventing sidebar displacement while scrolling.
+> - **Independent Main Scroll**: Page content scrolls independently inside the main workspace container (`main`), preventing sidebar displacement while scrolling. -->
