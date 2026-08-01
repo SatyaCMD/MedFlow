@@ -19,6 +19,11 @@ export const apiGatewayMiddleware = (req: GatewayRequest, res: Response, next: N
   res.setHeader('X-Trace-ID', traceId);
   res.setHeader('X-API-Version', 'v1');
 
-  logger.debug({ path: req.path, method: req.method, correlationId }, 'API Gateway request received.');
+  // Exclude internal telemetry/health check scraping endpoints from logging pollution
+  const internalPaths = ['/metrics', '/health', '/ready', '/favicon.ico'];
+  if (!internalPaths.includes(req.path)) {
+    logger.debug({ path: req.path, method: req.method, correlationId }, 'API Gateway request received.');
+  }
+
   next();
 };

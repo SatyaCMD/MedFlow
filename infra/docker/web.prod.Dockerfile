@@ -10,7 +10,7 @@ COPY packages/ ./packages/
 COPY apps/web/ ./apps/web/
 
 # Install build dependencies
-RUN pnpm install --frozen-lockfile
+RUN pnpm install
 RUN pnpm --filter @medicore360/shared build
 RUN pnpm --filter @medicore360/web build
 

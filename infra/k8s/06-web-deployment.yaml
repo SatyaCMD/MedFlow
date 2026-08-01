@@ -23,7 +23,7 @@ spec:
     spec:
       containers:
       - name: web
-        image: medicore360/web:latest
+        image: medicore360/web:v1.0.0
         imagePullPolicy: IfNotPresent
         ports:
         - containerPort: 3000

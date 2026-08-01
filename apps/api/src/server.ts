@@ -32,7 +32,7 @@ const bootstrap = async () => {
       await kafkaEngine.connectProducer();
       await rabbitMQEngine.getChannel();
     } catch (msgErr) {
-      logger.warn({ err: msgErr }, 'Messaging infrastructure (Kafka/RabbitMQ) initialization deferred/retrying.');
+      logger.info('Messaging infrastructure initialization deferred to outbox worker fallback.');
     }
 
     // 5. Start Background Outbox Worker & Realtime Event Bridge

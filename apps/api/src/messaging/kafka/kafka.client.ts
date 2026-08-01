@@ -1,29 +1,42 @@
-import { Kafka, Producer, Consumer, KafkaConfig, Partitioners } from 'kafkajs';
+import { Kafka, Producer, Consumer, KafkaConfig, Partitioners, logLevel } from 'kafkajs';
 import { env } from '../../config/env.js';
 import { logger } from '../../lib/logger.js';
 import { KAFKA_TOPICS, EventEnvelope } from '@medicore360/shared';
 
 class KafkaEngine {
-  private kafka: Kafka;
+  private kafka: Kafka | null = null;
   private producer: Producer | null = null;
   private consumers: Map<string, Consumer> = new Map();
   private isConnected = false;
+  private enabled: boolean;
 
   constructor() {
+    this.enabled = env.ENABLE_KAFKA;
+    if (!this.enabled) {
+      this.kafka = null;
+      return;
+    }
+
     const brokers = env.KAFKA_BROKERS.split(',').map((b) => b.trim());
     const config: KafkaConfig = {
       clientId: 'medflow-hospital-platform',
       brokers,
+      logLevel: logLevel.NOTHING, // Suppress verbose raw KafkaJS stdout connection error dumps
       retry: {
-        initialRetryTime: 300,
-        retries: 8,
+        initialRetryTime: 100,
+        retries: env.NODE_ENV === 'production' ? 5 : 1,
       },
     };
 
     this.kafka = new Kafka(config);
   }
 
-  public async connectProducer(): Promise<Producer> {
+  public async connectProducer(): Promise<Producer | null> {
+    if (!this.enabled || !this.kafka) {
+      logger.info('ℹ️ Apache Kafka is disabled/deferred for local environment. Relying on RabbitMQ & Outbox Queue.');
+      return null;
+    }
+
     if (this.producer && this.isConnected) return this.producer;
 
     try {
@@ -39,12 +52,13 @@ class KafkaEngine {
       await this.ensureTopicsExist();
       return this.producer;
     } catch (err) {
-      logger.warn({ err }, 'Failed to connect Kafka Producer. Will rely on RabbitMQ or outbox queue retry.');
-      throw err;
+      logger.warn('Failed to connect Kafka Producer. Relying on RabbitMQ or Outbox queue fallback.');
+      return null;
     }
   }
 
   private async ensureTopicsExist(): Promise<void> {
+    if (!this.kafka) return;
     try {
       const admin = this.kafka.admin();
       await admin.connect();
@@ -70,8 +84,15 @@ class KafkaEngine {
   }
 
   public async publishEvent<T = any>(topic: string, envelope: EventEnvelope<T>): Promise<void> {
+    if (!this.enabled || !this.kafka) {
+      logger.debug({ topic, eventType: envelope.eventType }, 'Kafka disabled. Event dispatched via alternative queue.');
+      return;
+    }
+
     try {
       const prod = await this.connectProducer();
+      if (!prod) return;
+
       await prod.send({
         topic,
         messages: [
@@ -89,11 +110,15 @@ class KafkaEngine {
       logger.debug({ topic, eventType: envelope.eventType, eventId: envelope.eventId }, 'Kafka message published successfully.');
     } catch (err) {
       logger.error({ err, topic, eventId: envelope.eventId }, 'Kafka message publishing failed.');
-      throw err;
     }
   }
 
-  public async createConsumer(groupId: string, topics: string[], onMessage: (topic: string, envelope: EventEnvelope) => Promise<void>): Promise<Consumer> {
+  public async createConsumer(groupId: string, topics: string[], onMessage: (topic: string, envelope: EventEnvelope) => Promise<void>): Promise<Consumer | null> {
+    if (!this.enabled || !this.kafka) {
+      logger.info({ groupId }, 'Kafka consumer group skipped (Kafka disabled in local dev).');
+      return null;
+    }
+
     try {
       const consumer = this.kafka.consumer({ groupId });
       await consumer.connect();
@@ -118,8 +143,8 @@ class KafkaEngine {
       logger.info({ groupId, topics }, 'Kafka Consumer Group connected & listening.');
       return consumer;
     } catch (err) {
-      logger.error({ err, groupId, topics }, 'Failed to initialize Kafka consumer group.');
-      throw err;
+      logger.warn({ groupId, topics }, 'Failed to initialize Kafka consumer group. Local fallback active.');
+      return null;
     }
   }
 

@@ -1,0 +1,23 @@
+apiVersion: networking.k8s.io/v1
+kind: NetworkPolicy
+metadata:
+  name: medflow-network-policy
+  namespace: medflow
+  labels:
+    app.kubernetes.io/component: security
+spec:
+  podSelector: {}
+  policyTypes:
+  - Ingress
+  ingress:
+  # Allow all traffic within medflow namespace
+  - from:
+    - podSelector: {}
+  # Allow external traffic to Web (port 3000) and API (port 4000)
+  - from:
+    - namespaceSelector: {}
+    ports:
+    - protocol: TCP
+      port: 3000
+    - protocol: TCP
+      port: 4000

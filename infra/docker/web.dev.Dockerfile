@@ -7,5 +7,6 @@ COPY packages/shared/package.json ./packages/shared/
 COPY apps/web/package.json ./apps/web/
 RUN pnpm install --frozen-lockfile || pnpm install
 COPY . .
+RUN pnpm --filter shared build
 EXPOSE 3000
 CMD ["pnpm", "--filter", "web", "dev"]

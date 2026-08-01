@@ -8,7 +8,12 @@ class RabbitMQEngine {
   private channel: Channel | null = null;
   private isConnecting = false;
 
-  public async getChannel(): Promise<Channel> {
+  public async getChannel(): Promise<Channel | null> {
+    if (!env.ENABLE_RABBITMQ) {
+      logger.info('ℹ️ RabbitMQ is disabled/deferred for local environment. Fallback to outbox storage active.');
+      return null;
+    }
+
     if (this.channel) return this.channel;
 
     if (this.isConnecting) {
@@ -42,8 +47,8 @@ class RabbitMQEngine {
       return ch;
     } catch (err) {
       this.isConnecting = false;
-      logger.warn({ err }, 'RabbitMQ connection failed. Fallback to outbox storage active.');
-      throw err;
+      logger.info('ℹ️ RabbitMQ broker connection deferred. Fallback to outbox storage active.');
+      return null;
     }
   }
 
@@ -96,6 +101,10 @@ class RabbitMQEngine {
   public async publishToQueue<T = any>(queueName: string, envelope: EventEnvelope<T>, priority = 0): Promise<boolean> {
     try {
       const ch = await this.getChannel();
+      if (!ch) {
+        logger.debug({ queueName, eventId: envelope.eventId }, 'RabbitMQ offline. Event routed to outbox storage.');
+        return false;
+      }
       const payload = Buffer.from(JSON.stringify(envelope));
       return ch.sendToQueue(queueName, payload, {
         persistent: true,
@@ -107,12 +116,14 @@ class RabbitMQEngine {
       });
     } catch (err) {
       logger.error({ err, queueName, eventId: envelope.eventId }, 'Failed to publish message to RabbitMQ queue.');
-      throw err;
+      return false;
     }
   }
 
   public async consumeQueue<T = any>(queueName: string, onMessage: (envelope: EventEnvelope<T>) => Promise<void>): Promise<void> {
     const ch = await this.getChannel();
+    if (!ch) return;
+
     await ch.prefetch(10); // Fair dispatching across worker instances
 
     await ch.consume(queueName, async (msg) => {

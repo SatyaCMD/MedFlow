@@ -9,12 +9,16 @@ export class RealtimeEventBridge {
   public async start(): Promise<void> {
     try {
       const topics = Object.values(KAFKA_TOPICS);
-      await kafkaEngine.createConsumer(this.groupId, topics, async (_topic, envelope) => {
+      const consumer = await kafkaEngine.createConsumer(this.groupId, topics, async (_topic, envelope) => {
         await this.relayEventToWebSockets(envelope);
       });
-      logger.info('🌉 Real-time Event Bridge Consumer connected & relaying Kafka events to WebSockets.');
+      if (consumer) {
+        logger.info('🌉 Real-time Event Bridge Consumer connected & relaying Kafka events to WebSockets.');
+      } else {
+        logger.info('🌉 Real-time Event Bridge: Local Socket.IO bridge active (Kafka consumer skipped).');
+      }
     } catch (err) {
-      logger.warn({ err }, 'Real-time Event Bridge Consumer failed to start. Local Socket.IO bridge fallback will handle direct broadcasts.');
+      logger.warn({ err }, 'Real-time Event Bridge Consumer fallback activated.');
     }
   }
 

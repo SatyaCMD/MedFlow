@@ -13,3 +13,5 @@ data:
   CORS_ORIGIN: "https://medicore360.com"
   MONGODB_DB_NAME: "medicore_production"
   NEXT_PUBLIC_API_URL: "https://medicore360.com/api/v1"
+  KAFKA_BROKERS: "kafka:9092"
+  RABBITMQ_URL: "amqp://admin:adminpass123@rabbitmq:5672"

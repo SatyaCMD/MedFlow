@@ -43,7 +43,9 @@ const envSchema = z.object({
   SUPER_ADMIN_EMAIL: z.string().email().default('superadmin54@gmail.com'),
   SUPER_ADMIN_PASSWORD: z.string().min(8, 'SUPER_ADMIN_PASSWORD must be at least 8 characters').default('Admin@321'),
   KAFKA_BROKERS: z.string().default('localhost:9092'),
+  ENABLE_KAFKA: z.string().optional().transform((val) => val === 'true').default('false'),
   RABBITMQ_URI: z.string().default('amqp://guest:guest@localhost:5672'),
+  ENABLE_RABBITMQ: z.string().optional().transform((val) => val === 'true').default('false'),
   JAEGER_URL: z.string().default('http://localhost:14268/api/traces'),
 });
 

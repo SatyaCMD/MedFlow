@@ -13,7 +13,13 @@ resources:
 - 06-web-deployment.yaml
 - 07-ingress.yaml
 - 08-hpa.yaml
+- 09-rabbitmq.yaml
+- 10-kafka.yaml
+- 11-networkpolicy.yaml
+- 12-pdb.yaml
 
-commonLabels:
-  app.kubernetes.io/part-of: medicore360
-  app.kubernetes.io/managed-by: kustomize
+labels:
+- includeSelectors: true
+  pairs:
+    app.kubernetes.io/part-of: medicore360
+    app.kubernetes.io/managed-by: kustomize
