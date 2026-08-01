@@ -108,7 +108,7 @@ flowchart LR
     K8sPrimary --> PrimaryRegion
     Route53 -->|Healthy| K8sPrimary
     Route53 -.->|Failover on Primary Outage| K8sDR
-    MongoPrimary -.->|Async Replication (< 1s lag)| MongoDR
+    MongoPrimary -.->|"Async Replication (Sub-Second Lag)"| MongoDR
 ```
 
 ### Reliability Targets:
