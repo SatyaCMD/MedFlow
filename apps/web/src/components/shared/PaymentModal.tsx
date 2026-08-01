@@ -32,6 +32,8 @@ import {
 } from 'lucide-react';
 import { useToast } from '../../context/ToastContext';
 import { printSinglePageReceipt } from '../../lib/singlePageReceiptPdf';
+import { getPatientWallet, debitPatientWallet } from '../../data/patientWalletStore';
+import { useAuth, getResolvedPatientProfile } from '../../hooks/useAuth';
 
 export interface PaymentModalProps {
   isOpen: boolean;
@@ -50,18 +52,26 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   itemTitle,
   itemCategory = 'APPOINTMENT',
   amount,
-  patientName = 'Alex Care',
-  userRole = 'PATIENT',
+  patientName,
+  userRole,
   onPaymentSuccess,
 }) => {
   const router = useRouter();
   const { showToast } = useToast();
+  const { user } = useAuth();
+  const activeProfile = getResolvedPatientProfile(user);
+
+  const resolvedName = patientName || activeProfile.displayName;
+  const resolvedRole = user?.role || userRole || 'PATIENT';
 
   const isStaffRole = userRole === 'NURSE' || userRole === 'LAB_TECH' || userRole === 'DOCTOR' || userRole === 'SUPER_ADMIN';
 
+  // Patient Wallet Balance
+  const patientWallet = getPatientWallet();
+
   // Selected Payment Method Tab
-  const [selectedMethod, setSelectedMethod] = useState<'RAZORPAY_UPI' | 'STRIPE_CARD' | 'RAZORPAY_NETBANKING' | 'STAFF_PO'>(
-    isStaffRole ? 'STAFF_PO' : 'RAZORPAY_UPI'
+  const [selectedMethod, setSelectedMethod] = useState<'PATIENT_WALLET' | 'RAZORPAY_UPI' | 'STRIPE_CARD' | 'RAZORPAY_NETBANKING' | 'STAFF_PO'>(
+    isStaffRole ? 'STAFF_PO' : 'PATIENT_WALLET'
   );
 
   // Form Input States
@@ -69,7 +79,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   const [upiId, setUpiId] = useState('user@okaxis');
   
   // Dynamic User Card Input States
-  const [cardholderName, setCardholderName] = useState(patientName || 'Alex Care');
+  const [cardholderName, setCardholderName] = useState(resolvedName);
   const [cardNumber, setCardNumber] = useState('4532 8819 9021 7712');
   const [cardExpiry, setCardExpiry] = useState('08/29');
   const [cardCvv, setCardCvv] = useState('882');
@@ -107,6 +117,32 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
     e.preventDefault();
     setProcessing(true);
 
+    const numericAmount = parseInt(amount.replace(/[^0-9]/g, ''), 10) || 1500;
+
+    if (selectedMethod === 'PATIENT_WALLET') {
+      const redeemable = Math.min(patientWallet.balance, numericAmount);
+      if (redeemable <= 0) {
+        showToast({
+          title: 'Wallet Balance Insufficient ⚠️',
+          message: 'Your wallet balance is ₹0. Please select another payment method.',
+          type: 'error',
+        });
+        setProcessing(false);
+        return;
+      }
+      try {
+        debitPatientWallet(redeemable, `Consultation / Order Payment — ${itemTitle}`);
+      } catch (err: any) {
+        showToast({
+          title: 'Wallet Redemption Failed',
+          message: err.message || 'Could not redeem wallet balance.',
+          type: 'error',
+        });
+        setProcessing(false);
+        return;
+      }
+    }
+
     const transactionId = `pay_rzp_${Math.random().toString(36).substring(2, 10)}${Math.random().toString(36).substring(2, 6)}`;
     const invoiceId = `ORD-RX-${Math.floor(100000 + Math.random() * 900000)}`;
 
@@ -120,12 +156,12 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
       itemTitle,
       itemCategory,
       amount,
-      customerName: patientName,
+      customerName: resolvedName,
       cardholderName,
       cardLast4,
       cardBrand,
-      role: userRole,
-      paymentMethod: selectedMethod.replace(/_/g, ' '),
+      role: resolvedRole,
+      paymentMethod: selectedMethod === 'PATIENT_WALLET' ? 'PATIENT WALLET REDEMPTION' : selectedMethod.replace(/_/g, ' '),
       timestamp: new Date().toLocaleString(),
       status: 'PAID & VERIFIED',
     };
@@ -140,12 +176,12 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
           itemTitle,
           itemCategory,
           amount,
-          customerName: patientName,
+          customerName: resolvedName,
           cardholderName,
           cardLast4,
           cardBrand,
           paymentMethod: selectedMethod.replace(/_/g, ' '),
-          email: `${patientName.toLowerCase().replace(/\s+/g, '.')}@medflow.com`,
+          email: `${resolvedName.toLowerCase().replace(/\s+/g, '.')}@medflow.com`,
         }),
       });
     } catch {
@@ -252,7 +288,23 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
               <label className="block text-xs font-black uppercase tracking-wider text-slate-700">
                 Select Payment Method
               </label>
-              <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-5 gap-2">
+                <button
+                  type="button"
+                  onClick={() => setSelectedMethod('PATIENT_WALLET')}
+                  className={`p-3 rounded-2xl border text-left flex flex-col justify-between transition-all cursor-pointer ${
+                    selectedMethod === 'PATIENT_WALLET'
+                      ? 'bg-purple-50/90 border-purple-600 text-purple-950 shadow-sm ring-2 ring-purple-300'
+                      : 'bg-white border-slate-200 text-slate-700 hover:bg-slate-50'
+                  }`}
+                >
+                  <Wallet className="w-5 h-5 text-purple-600 mb-2" />
+                  <span className="font-black text-xs block leading-tight">Patient Wallet</span>
+                  <span className="text-[10px] text-purple-700 font-extrabold block">
+                    ₹{patientWallet.balance.toLocaleString('en-IN')} Bal
+                  </span>
+                </button>
+
                 <button
                   type="button"
                   onClick={() => setSelectedMethod('RAZORPAY_UPI')}
@@ -264,7 +316,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                 >
                   <Smartphone className="w-5 h-5 text-blue-600 mb-2" />
                   <span className="font-black text-xs block leading-tight">Razorpay UPI</span>
-                  <span className="text-[10px] text-slate-500 font-semibold block">GPay, PhonePe, QR</span>
+                  <span className="text-[10px] text-slate-500 font-semibold block">GPay, QR</span>
                 </button>
 
                 <button
@@ -278,7 +330,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                 >
                   <CreditCard className="w-5 h-5 text-blue-600 mb-2" />
                   <span className="font-black text-xs block leading-tight">Stripe Cards</span>
-                  <span className="text-[10px] text-slate-500 font-semibold block">Visa, Mastercard</span>
+                  <span className="text-[10px] text-slate-500 font-semibold block">Visa, Amex</span>
                 </button>
 
                 <button
@@ -292,7 +344,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                 >
                   <Landmark className="w-5 h-5 text-blue-600 mb-2" />
                   <span className="font-black text-xs block leading-tight">NetBanking</span>
-                  <span className="text-[10px] text-slate-500 font-semibold block">HDFC, ICICI, SBI</span>
+                  <span className="text-[10px] text-slate-500 font-semibold block">HDFC, SBI</span>
                 </button>
 
                 <button
@@ -305,7 +357,7 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                   }`}
                 >
                   <Building2 className="w-5 h-5 text-purple-600 mb-2" />
-                  <span className="font-black text-xs block leading-tight">Hospital Staff PO</span>
+                  <span className="font-black text-xs block leading-tight">Staff PO</span>
                   <span className="text-[10px] text-slate-500 font-semibold block">Line of Credit</span>
                 </button>
               </div>
@@ -313,6 +365,54 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
 
             {/* Dynamic Payment Method Input Form */}
             <form onSubmit={handleExecutePayment} className="space-y-4 pt-2 border-t border-slate-100">
+              {/* Method 0: Patient Wallet Redemption */}
+              {selectedMethod === 'PATIENT_WALLET' && (
+                <div className="space-y-4 p-5 bg-gradient-to-br from-purple-50 via-slate-50 to-indigo-50/50 border border-purple-200 rounded-3xl">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-2">
+                      <div className="w-9 h-9 rounded-xl bg-purple-600 text-white flex items-center justify-center shadow-md shadow-purple-500/20">
+                        <Wallet className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h4 className="font-black text-xs text-purple-950">Patient Digital Wallet Redemption</h4>
+                        <p className="text-[10px] font-bold text-slate-500">Auto-Refreshed Balance</p>
+                      </div>
+                    </div>
+                    <span className="px-3 py-1 bg-purple-100 text-purple-900 text-xs font-black rounded-full border border-purple-300">
+                      Balance: ₹{patientWallet.balance.toLocaleString('en-IN')}.00
+                    </span>
+                  </div>
+
+                  <div className="p-4 bg-white border border-purple-200/90 rounded-2xl space-y-2 text-xs">
+                    <div className="flex justify-between font-semibold text-slate-600">
+                      <span>Total Checkout Bill Amount:</span>
+                      <span className="font-bold text-slate-900">{amount}</span>
+                    </div>
+                    <div className="flex justify-between font-extrabold text-purple-700">
+                      <span>Redeemable Wallet Credit:</span>
+                      <span>-₹{Math.min(patientWallet.balance, parseInt(amount.replace(/[^0-9]/g, ''), 10) || 1500).toLocaleString('en-IN')}</span>
+                    </div>
+                    <div className="flex justify-between font-black text-slate-900 border-t border-slate-100 pt-2 text-sm">
+                      <span>Net Out-of-Pocket Due:</span>
+                      <span className={patientWallet.balance >= (parseInt(amount.replace(/[^0-9]/g, ''), 10) || 1500) ? 'text-emerald-600' : 'text-blue-600'}>
+                        ₹{Math.max(0, (parseInt(amount.replace(/[^0-9]/g, ''), 10) || 1500) - patientWallet.balance).toLocaleString('en-IN')}
+                      </span>
+                    </div>
+                  </div>
+
+                  {patientWallet.balance >= (parseInt(amount.replace(/[^0-9]/g, ''), 10) || 1500) ? (
+                    <div className="p-3 bg-emerald-50 border border-emerald-200 rounded-xl text-xs text-emerald-900 font-bold flex items-center gap-2">
+                      <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+                      <span>This transaction will be 100% fully paid using your Wallet balance. No external card or UPI required!</span>
+                    </div>
+                  ) : (
+                    <div className="p-3 bg-amber-50 border border-amber-200 rounded-xl text-xs text-amber-900 font-medium flex items-center gap-2">
+                      <ShieldAlert className="w-4 h-4 text-amber-600 shrink-0" />
+                      <span>Wallet balance covers ₹{patientWallet.balance}. The remaining amount can be settled via UPI or Card.</span>
+                    </div>
+                  )}
+                </div>
+              )}
               {/* Method 1: Razorpay UPI */}
               {selectedMethod === 'RAZORPAY_UPI' && (
                 <div className="space-y-4 p-4 bg-blue-50/50 border border-blue-100 rounded-2xl">
@@ -544,7 +644,9 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                 type="submit"
                 disabled={processing}
                 className={`w-full py-4 font-black text-xs rounded-2xl text-white shadow-lg flex items-center justify-center gap-2 cursor-pointer transition-all disabled:opacity-50 ${
-                  selectedMethod === 'STAFF_PO'
+                  selectedMethod === 'PATIENT_WALLET'
+                    ? 'bg-purple-600 hover:bg-purple-700 shadow-purple-600/30'
+                    : selectedMethod === 'STAFF_PO'
                     ? 'bg-purple-600 hover:bg-purple-700 shadow-purple-600/30'
                     : 'bg-blue-600 hover:bg-blue-700 shadow-blue-600/30'
                 }`}
@@ -554,7 +656,9 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                 ) : (
                   <>
                     <span>
-                      {selectedMethod === 'STAFF_PO'
+                      {selectedMethod === 'PATIENT_WALLET'
+                        ? `Redeem Wallet & Confirm Payment of ${amount}`
+                        : selectedMethod === 'STAFF_PO'
                         ? `Authorize Department PO & Clear ${amount}`
                         : `Pay ${amount} via ${selectedMethod === 'STRIPE_CARD' ? 'Stripe Card' : 'Razorpay'}`}
                     </span>

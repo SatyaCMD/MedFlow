@@ -210,7 +210,7 @@ function VerifyPageContent() {
 
           {/* Mobile Brand Header */}
           <div className="flex flex-col items-center mb-4 lg:hidden w-full">
-            <Logo size={48} className="mb-2" />
+            <Logo size={48} textVisible={false} className="mb-2" />
             <h2 className="text-xl font-black text-slate-900 tracking-wider">MediCore 360</h2>
           </div>
 

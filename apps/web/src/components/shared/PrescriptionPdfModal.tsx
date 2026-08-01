@@ -5,14 +5,15 @@ import React from 'react';
 import { motion } from 'framer-motion';
 import { FileText, Download, Printer, X, ShieldCheck, CheckCircle2, HeartPulse, Pill, FileSignature, Activity, UserCheck } from 'lucide-react';
 import { useToast } from '../../context/ToastContext';
+import { useAuth, getResolvedPatientProfile } from '../../hooks/useAuth';
 
 export interface PrescriptionData {
   rxNumber: string;
   patientName: string;
   mrn: string;
-  age?: string;
-  gender?: string;
-  bloodGroup?: string;
+  age: string;
+  gender: string;
+  bloodGroup: string;
   doctorName: string;
   department: string;
   date: string;
@@ -35,11 +36,12 @@ export interface PrescriptionData {
   }>;
   labTests?: Array<{
     name: string;
-    category?: string;
-    specimen?: string;
-    instructions?: string;
+    category: string;
+    specimen: string;
+    instructions: string;
   }>;
-  signatureHash: string;
+  doctorNotes?: string;
+  signatureHash?: string;
 }
 
 interface PrescriptionPdfModalProps {
@@ -54,16 +56,18 @@ export const PrescriptionPdfModal: React.FC<PrescriptionPdfModalProps> = ({
   prescriptionData,
 }) => {
   const { showToast } = useToast();
+  const { user } = useAuth();
+  const activeProfile = getResolvedPatientProfile(user);
 
   if (!isOpen) return null;
 
   const sampleDefaultData: PrescriptionData = {
     rxNumber: 'RX-2026-88912',
-    patientName: 'Jane Patient',
-    mrn: 'MC-1001',
-    age: '42 Yrs',
-    gender: 'Female',
-    bloodGroup: 'O+',
+    patientName: activeProfile.displayName,
+    mrn: activeProfile.mrn,
+    age: activeProfile.age,
+    gender: activeProfile.gender,
+    bloodGroup: activeProfile.bloodGroup,
     doctorName: 'Dr. Gregory House, M.D.',
     department: 'Department of Cardiology & Diagnostic Medicine',
     date: new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' }),

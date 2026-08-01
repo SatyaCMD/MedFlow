@@ -69,9 +69,9 @@ export interface PharmacySaleRecord {
 }
 
 const STORAGE_KEYS = {
-  CLINICAL_RECORDS: 'medicore_clinical_records',
-  LAB_ORDERS: 'medicore_lab_orders',
-  PHARMACY_SALES: 'medicore_pharmacy_sales',
+  CLINICAL_RECORDS: 'medicore_clinical_records_v2',
+  LAB_ORDERS: 'medicore_lab_orders_v2',
+  PHARMACY_SALES: 'medicore_pharmacy_sales_v2',
 };
 
 // Initial Seed Clinical Records (Within 1 Year)
@@ -79,7 +79,7 @@ const INITIAL_CLINICAL_RECORDS: ClinicalRecord[] = [
   {
     id: 'cr-101',
     rxNumber: 'RX-2026-9901',
-    patientName: 'Jane Patient',
+    patientName: 'Sai Satyabrata',
     mrn: 'MC-1001',
     doctorName: 'Dr. Devendra Roy, M.D.',
     department: 'Cardiology & Internal Medicine',
@@ -141,7 +141,7 @@ const INITIAL_LAB_ORDERS: LabOrderRecord[] = [
   {
     id: 'lo-101',
     rxNumber: 'RX-2026-9901',
-    patientName: 'Jane Patient',
+    patientName: 'Sai Satyabrata',
     mrn: 'MC-1001',
     doctorName: 'Dr. Devendra Roy, M.D.',
     department: 'Cardiology',

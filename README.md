@@ -499,3 +499,55 @@ Port `4000` is occupied because `pnpm dev` (the local Express API process) is ru
   ```bash
   docker compose -f docker-compose.dev.yml up -d mongo redis mailpit
   ```
+
+---
+
+## 💳 Patient Portal, Digital Wallet & Ongoing Diagnosis Protocol
+
+<div align="center">
+
+![Patient Portal](https://img.shields.io/badge/Patient%20Portal-Active-0052CC?style=for-the-badge&logo=shield)
+![Digital Wallet](https://img.shields.io/badge/Digital%20Wallet-Auto--Refund-10B981?style=for-the-badge&logo=wallet)
+![Follow Up Discount](https://img.shields.io/badge/Follow--Up-50%25--75%25%20Discount-EF4444?style=for-the-badge&logo=tag)
+
+</div>
+
+### 1. Patient Digital Wallet & Payment Gateway Redemption
+
+> [!TIP]
+> **Green Protection Tier — Instant Wallet Redemption & Guarantee**
+> - **Wallet Redemption at Checkout**: Patients can redeem funds directly from their **Patient Digital Wallet** inside the Checkout Payment Gateway (`PaymentModal`).
+> - **100% Covered Checkout**: If wallet balance covers the total bill, the transaction is processed instantly without needing external cards or UPI.
+> - **Partial Wallet Redemption**: If the bill exceeds the wallet balance, wallet funds are applied as a credit discount, allowing the remaining balance to be paid via Razorpay UPI or Stripe Card.
+
+---
+
+### 2. 3-Day Doctor Approval Expiration & Auto-Refund Guarantee
+
+> [!WARNING]
+> **Red Critical Alert — 3-Day Auto-Refund Rule**
+> - **Automatic Expiry**: When a patient books and pays for a consultation, it is assigned `PENDING DOCTOR APPROVAL`.
+> - **72-Hour Expiration Window**: If the doctor does not approve the appointment request within **3 Days (72 Hours)**, the system automatically marks the appointment as `EXPIRED & REFUNDED`.
+> - **Instant Wallet Credit**: The paid consultation fee (e.g. ₹1,500) is credited back into the patient's **Digital Wallet**, generating an audit log and real-time toast notification.
+
+---
+
+### 3. Dedicated "Ongoing Diagnosis" Tab & Follow-Up Visit Discounts
+
+> [!NOTE]
+> **Blue Information Tier — Dedicated Ongoing Evaluation Workstation**
+> - **Dedicated Ongoing Diagnosis Tab**: Active diagnoses and pending lab tests are displayed in a dedicated tab (`Ongoing Diagnosis`) alongside Medical History.
+> - **Completed Medical Vault**: In the `Medical & Prescription History` tab, all records are archived as completed with dual download buttons:
+>   - **`[Download Prescription PDF 📜]`**: Generates encrypted digital prescription PDF.
+>   - **`[Download Lab Report PDF 🧪]`**: Generates NABL-certified pathology report PDF.
+> - **50% to 75% Follow-Up Visit Discount**: When booking a 2nd/follow-up consultation for the same ongoing diagnosis with test reports, patients receive a **50% to 75% fee discount** (e.g. ₹1,500 initial fee → ₹600 follow-up fee).
+
+---
+
+### 4. Layout Architecture & Fixed Sidebar Guarantee
+
+> [!IMPORTANT]
+> **Blue Architectural Rule — Fixed Workstation Layout**
+> - **Non-Scrolling Sidebar**: Side menu navigation in `AppShell` uses `sticky top-0 h-screen overflow-y-auto` layout architecture.
+> - **Independent Main Scroll**: Page content scrolls independently inside the main workspace container (`main`), preventing sidebar displacement while scrolling.
+

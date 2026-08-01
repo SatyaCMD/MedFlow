@@ -27,14 +27,25 @@ import {
   Filter
 } from 'lucide-react';
 import { useToast } from '../../context/ToastContext';
+import { useAuth, getResolvedPatientProfile } from '../../hooks/useAuth';
 import { REAL_DOCTORS_DATASET, DoctorProfile } from '../../data/medicalCatalog';
 import { saveSharedAppointment } from '../../data/appointmentStore';
 import { api } from '../../lib/axios';
+
+export interface FollowUpContext {
+  isFollowUp: boolean;
+  rxNumber?: string;
+  doctorName?: string;
+  department?: string;
+  diagnosis?: string;
+  discountPercent?: number; // 50 to 75
+}
 
 interface BookDoctorVisitModalProps {
   isOpen: boolean;
   onClose: () => void;
   onProceedToPayment?: (bookingDetails: any) => void;
+  followUpContext?: FollowUpContext | null;
 }
 
 const DEPARTMENTS_METADATA: { [key: string]: { icon: string; doctorsCount: string; description: string } } = {
@@ -60,16 +71,31 @@ export const BookDoctorVisitModal: React.FC<BookDoctorVisitModalProps> = ({
   isOpen,
   onClose,
   onProceedToPayment,
+  followUpContext,
 }) => {
   const { showToast } = useToast();
+  const { user } = useAuth();
+  const activeProfile = getResolvedPatientProfile(user);
 
   // 1. Mandatory Patient Information Fields
-  const [patientName, setPatientName] = useState('');
-  const [patientAge, setPatientAge] = useState('');
-  const [patientGender, setPatientGender] = useState<'Male' | 'Female' | 'Other'>('Male');
-  const [patientPhone, setPatientPhone] = useState('');
-  const [patientEmail, setPatientEmail] = useState('');
+  const [patientName, setPatientName] = useState(activeProfile.displayName);
+  const [patientAge, setPatientAge] = useState(activeProfile.age.replace(/[^0-9]/g, '') || '19');
+  const [patientGender, setPatientGender] = useState<'Male' | 'Female' | 'Other'>(
+    (activeProfile.gender as any) || 'Male'
+  );
+  const [patientPhone, setPatientPhone] = useState(activeProfile.phone);
+  const [patientEmail, setPatientEmail] = useState(activeProfile.email);
   const [visitReason, setVisitReason] = useState('Routine Health Screening');
+
+  useEffect(() => {
+    if (user && !patientName) {
+      setPatientName(activeProfile.displayName);
+      setPatientAge(activeProfile.age.replace(/[^0-9]/g, '') || '19');
+      setPatientGender((activeProfile.gender as any) || 'Male');
+      setPatientPhone(activeProfile.phone);
+      setPatientEmail(activeProfile.email);
+    }
+  }, [user]);
 
   // 2. Department & Doctor Selection
   const [selectedDept, setSelectedDept] = useState('Cardiology');
@@ -258,7 +284,13 @@ export const BookDoctorVisitModal: React.FC<BookDoctorVisitModalProps> = ({
       return;
     }
 
-    const numericFee = parseInt(selectedDoctor.fee.replace(/[^0-9]/g, '')) || 1500;
+    let rawNumericFee = parseInt(selectedDoctor.fee.replace(/[^0-9]/g, '')) || 1500;
+    let discountPercent = 0;
+    if (followUpContext?.isFollowUp) {
+      discountPercent = followUpContext.discountPercent || 60; // 60% discount for same diagnosis follow-up
+      rawNumericFee = Math.round(rawNumericFee * (1 - discountPercent / 100));
+    }
+    const finalFeeFormatted = `₹${rawNumericFee.toLocaleString('en-IN')}`;
 
     const bookingDetails = {
       patientName,
@@ -266,13 +298,18 @@ export const BookDoctorVisitModal: React.FC<BookDoctorVisitModalProps> = ({
       patientGender,
       patientPhone,
       patientEmail,
-      visitReason,
+      visitReason: followUpContext?.isFollowUp
+        ? `Follow-Up Consultation: ${followUpContext.diagnosis || 'Ongoing Diagnosis Workup'}`
+        : visitReason,
       department: selectedDept,
       doctor: selectedDoctor,
       date: selectedDate,
       timeSlot: selectedTimeSlot,
       s3Attachment,
-      consultationFee: numericFee,
+      amount: finalFeeFormatted,
+      consultationFee: rawNumericFee,
+      isFollowUp: followUpContext?.isFollowUp || false,
+      discountPercent,
     };
 
     // Save to shared appointment store so Doctor Dashboard receives it!
@@ -285,10 +322,15 @@ export const BookDoctorVisitModal: React.FC<BookDoctorVisitModalProps> = ({
       date: selectedDate,
       timeSlot: selectedTimeSlot,
       location: selectedDoctor.hospitalUnit || 'Outpatient Suite 101',
-      purpose: visitReason || 'General OPD Consultation',
+      purpose: followUpContext?.isFollowUp
+        ? `Follow-Up Visit: ${followUpContext.diagnosis || 'Ongoing Diagnosis Audit'}`
+        : visitReason || 'General OPD Consultation',
       status: 'PENDING DOCTOR APPROVAL' as const,
       isPaid: false,
-      amount: selectedDoctor.fee || '₹1,500',
+      amount: finalFeeFormatted,
+      createdAt: Date.now(),
+      isFollowUp: followUpContext?.isFollowUp || false,
+      discountPercent,
       patientEmail: patientEmail || `${patientName.toLowerCase().replace(/\s+/g, '.')}@medflow.com`,
       patientPhone,
     };
@@ -355,6 +397,26 @@ export const BookDoctorVisitModal: React.FC<BookDoctorVisitModalProps> = ({
             <X className="w-6 h-6" />
           </button>
         </div>
+
+        {/* 50% - 75% Follow-Up Discount Banner */}
+        {followUpContext?.isFollowUp && (
+          <div className="p-4 bg-gradient-to-r from-emerald-600 to-teal-700 rounded-2xl text-white shadow-lg space-y-1">
+            <div className="flex items-center justify-between">
+              <span className="text-[10px] font-black uppercase tracking-wider bg-white/20 px-2.5 py-0.5 rounded-full">
+                Ongoing Diagnosis Discount Active
+              </span>
+              <span className="font-extrabold text-xs text-emerald-200">
+                {followUpContext.discountPercent || 60}% OFF Original Fee
+              </span>
+            </div>
+            <h4 className="font-black text-sm">
+              Follow-Up Consultation: {followUpContext.diagnosis || 'Ongoing Diagnostic Workup'}
+            </h4>
+            <p className="text-xs text-emerald-100 font-medium">
+              1st Visit: 100% Fee → 2nd Visit for same ongoing diagnosis: <strong>50% to 75% Fee Discount Applied Automatically!</strong>
+            </p>
+          </div>
+        )}
 
         <form onSubmit={handleProceedSubmit} className="space-y-6">
           {/* SECTION 1: MANDATORY PATIENT DETAILS */}

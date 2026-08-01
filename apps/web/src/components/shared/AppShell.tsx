@@ -327,7 +327,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children, userRole = 'DOCTOR
   const navConfig = getNavConfigForRole(currentRole);
 
   return (
-    <div className="min-h-screen bg-slate-50 flex overflow-hidden">
+    <div className="h-screen bg-slate-50 flex overflow-hidden">
       {/* 44 Enterprise Modules Command Center Modal */}
       <EnterpriseCommandCenterModal
         isOpen={is44ModulesOpen}
@@ -496,13 +496,13 @@ export const AppShell: React.FC<AppShellProps> = ({ children, userRole = 'DOCTOR
 
       {/* Sidebar Navigation */}
       <aside
-        className={`fixed lg:static inset-y-0 left-0 z-50 bg-white border-r border-slate-200/80 flex flex-col justify-between overflow-hidden h-screen max-h-screen select-none transition-all duration-300 ${
+        className={`fixed lg:sticky top-0 left-0 z-50 bg-white border-r border-slate-200/80 flex flex-col justify-between overflow-y-auto h-screen shrink-0 select-none transition-all duration-300 ${
           isCollapsed ? 'w-20' : 'w-64'
         } ${isMobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
       >
         <div className="space-y-3 p-3 sm:p-4 flex-1 flex flex-col min-h-0 overflow-hidden">
           <div className="flex items-center justify-between shrink-0">
-            <Logo textVisible={!isCollapsed} />
+            <Logo textVisible={!isCollapsed} showTagline={!isCollapsed} />
             <button
               onClick={() => setIsCollapsed(!isCollapsed)}
               className="hidden lg:flex p-1.5 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"

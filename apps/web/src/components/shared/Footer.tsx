@@ -234,7 +234,7 @@ export const Footer: React.FC = () => {
           {/* Brand Info Column */}
           <div className="lg:col-span-2 space-y-4">
             <div className="flex items-center gap-3">
-              <Logo size={40} />
+              <Logo size={40} textVisible={false} />
               <div className="flex flex-col">
                 <span className="font-black text-xl tracking-wider bg-gradient-to-r from-white via-slate-100 to-blue-400 text-transparent bg-clip-text">
                   MediCore360

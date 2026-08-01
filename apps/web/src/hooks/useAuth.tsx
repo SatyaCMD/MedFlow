@@ -4,13 +4,32 @@ import React, { createContext, useContext, useState, useEffect } from 'react';
 import { api } from '../lib/axios';
 import { Role, Permission, ROLE_PERMISSIONS } from '@medicore360/shared';
 
-interface User {
+export interface User {
   id: string;
   email: string;
   firstName: string;
   lastName: string;
   role: Role;
   hospitalId: string;
+  mrn?: string;
+  age?: string;
+  gender?: string;
+  bloodGroup?: string;
+  phone?: string;
+}
+
+export function getResolvedPatientProfile(user: User | null) {
+  const rawName = user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : user?.email ? user.email.split('@')[0] : 'Sai Satyabrata';
+  const displayName = user?.role === 'DOCTOR' && !rawName.toLowerCase().startsWith('dr') ? `Dr. ${rawName}` : rawName;
+  return {
+    displayName,
+    email: user?.email || 'patient@medflow.com',
+    mrn: user?.mrn || 'MC-1001',
+    age: user?.age || '19 Yrs',
+    gender: user?.gender || 'Male',
+    bloodGroup: user?.bloodGroup || 'O+',
+    phone: user?.phone || '+91 98765 43210',
+  };
 }
 
 interface AuthContextType {

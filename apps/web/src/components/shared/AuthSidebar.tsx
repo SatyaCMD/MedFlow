@@ -71,7 +71,7 @@ export const AuthSidebar: React.FC<AuthSidebarProps> = ({ title, subtitle }) => 
       <div className="relative z-10">
         <div className="inline-flex items-center gap-3.5">
           <div className="bg-white/10 backdrop-blur-xl p-3 rounded-2xl border border-white/20 shadow-xl">
-            <Logo size={38} className="text-white" />
+            <Logo size={38} textVisible={false} className="text-white" />
           </div>
           <div>
             <div className="flex items-center gap-2">

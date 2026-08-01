@@ -400,7 +400,7 @@ export default function LoginPage() {
         >
           {/* Mobile Brand Title */}
           <div className="flex flex-col items-center mb-2 lg:hidden w-full">
-            <Logo size={44} className="mb-1" />
+            <Logo size={44} textVisible={false} className="mb-1" />
             <h2 className="text-xl font-black text-slate-900 tracking-wider">MediCore 360</h2>
           </div>
 
