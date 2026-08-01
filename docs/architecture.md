@@ -6,6 +6,62 @@ This document defines the system topology, C4 models, sequence diagrams, databas
 
 ## 1. C4 Architecture Diagrams
 
+### 1.0 Enterprise Real-Time Communication Architecture Topology
+```
++---------------------------------------------------------------------------------------------------+
+|                                     MedFlow Web App (Next.js 15)                                  |
+|     (Dashboards: Doctor, Nurse, Reception, Emergency, Patient, Blood Bank, Pharmacy, Admin)        |
++------------------------------------+--------------------------------------------------------------+
+                                     | (WebSockets + REST)
+                                     v
++---------------------------------------------------------------------------------------------------+
+|                                NGINX Ingress / Edge Gateway                                       |
++------------------------------------+--------------------------------------------------------------+
+                                     |
+                                     v
++---------------------------------------------------------------------------------------------------+
+|                                 Enterprise API Gateway Layer                                      |
+|    (JWT Auth, Rate Limiting, Correlation ID, Request Validation, Versioning, Circuit Breakers)    |
++--------------------+---------------------------------------------------------+--------------------+
+                     |                                                         |
+                     v                                                         v
+        +------------+--------------+                            +-------------+--------------------+
+        |   REST Domain Services    |                            |  Dedicated WebSocket Gateway       |
+        |  (Modular Monolith Domain |                            |  (Socket.IO Server Layer)          |
+        |   Services + Mongo TX)    |                            |                                    |
+        +------------+--------------+                            +-------------+--------------------+
+                     |                                                         ^
+                     | 1. Transactional Outbox (Mongo Atomic TX)               | 6. Relays Live Events
+                     v                                                         |
+        +------------+--------------+                            +-------------+--------------------+
+        |   Outbox Collection       |                            |   Real-time Event Bridge          |
+        |   & CQRS Read Models      |                            |   (Kafka Consumer Service)        |
+        +------------+--------------+                            +-------------+--------------------+
+                     |                                                         ^
+                     | 2. Outbox Worker (CDC/Poller)                           | 5. Streamed Events
+                     v                                                         |
+        +------------+---------------------------------------------------------+--------------------+
+        |                            Unified Event Bus Abstraction                                  |
+        |                            (EventBus.publish / subscribe)                                 |
+        +--------------------+-------------------------------------------------+--------------------+
+                             |                                                 |
+                             v                                                 v
+        +--------------------+----------------------+      +-------------------+--------------------+
+        |      Apache Kafka Event Engine            |      |      RabbitMQ Async Queue Broker       |
+        |  (Topics: patient, appointment, billing,  |      |  (DLQ, Priority Queues, Email/SMS      |
+        |   doctor, inventory, emergency, etc.)     |      |   Async Worker Queues)             |
+        +--------------------+----------------------+      +-------------------+--------------------+
+                             |                                                 |
+                             +--------------------------+----------------------+
+                                                        v
+                                        +---------------+--------------------+
+                                        | OpenTelemetry + Jaeger Tracing     |
+                                        | (Correlation ID, Trace & Span ID)  |
+                                        +------------------------------------+
+```
+
+See [docs/REALTIME_ARCHITECTURE.md](file:///c:/Users/SATYA/OneDrive/Desktop/MedFlow/docs/REALTIME_ARCHITECTURE.md) for full specification.
+
 ### 1.1 System Context (Level 1)
 Shows how actors interact with MediCore 360:
 
