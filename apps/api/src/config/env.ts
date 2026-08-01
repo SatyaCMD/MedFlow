@@ -42,6 +42,9 @@ const envSchema = z.object({
   AWS_S3_KYC_BUCKET: z.string().default('medflow-kyc-documents-production'),
   SUPER_ADMIN_EMAIL: z.string().email().default('superadmin54@gmail.com'),
   SUPER_ADMIN_PASSWORD: z.string().min(8, 'SUPER_ADMIN_PASSWORD must be at least 8 characters').default('Admin@321'),
+  KAFKA_BROKERS: z.string().default('localhost:9092'),
+  RABBITMQ_URI: z.string().default('amqp://guest:guest@localhost:5672'),
+  JAEGER_URL: z.string().default('http://localhost:14268/api/traces'),
 });
 
 const parseEnv = () => {

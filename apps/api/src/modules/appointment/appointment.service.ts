@@ -1,8 +1,10 @@
-/* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars, @typescript-eslint/no-non-null-assertion */
 import { AppointmentRepository } from './appointment.repository.js';
 import { AppError } from '../../middleware/errorHandler.js';
 import { sendMail } from '../../lib/mailer.js';
 import { getAppointmentConfirmationEmail, getVitalsCheckupNotificationEmail } from '../../lib/emailTemplates.js';
+import { OutboxService } from '../../messaging/outbox/outbox.service.js';
+import { EventBus } from '../../messaging/eventBus.js';
+import { SOCKET_EVENTS, QueueTokenPayload } from '@medicore360/shared';
 
 export class AppointmentService {
   private repository = new AppointmentRepository();
@@ -25,6 +27,25 @@ export class AppointmentService {
       created = { _id: `APP-${Date.now()}`, ...data };
     }
 
+    const doctorId = data.doctorId || (data.doctor && data.doctor._id) || 'DOC-DEFAULT';
+    const queuePayload: QueueTokenPayload = {
+      appointmentId: created._id.toString(),
+      tokenId: `TOKEN-${Math.floor(1000 + Math.random() * 9000)}`,
+      queueNumber: Math.floor(1 + Math.random() * 30),
+      patientId: data.patientId || 'PATIENT-DEFAULT',
+      patientName: data.patientName || 'Patient',
+      doctorId,
+      doctorName: data.doctorName || 'Dr. Anup Singh',
+      department: data.department || 'Cardiology',
+      status: 'WAITING',
+      estimatedWaitMinutes: 15,
+      timestamp: new Date().toISOString(),
+    };
+
+    // Transactional Outbox + EventBus publishing
+    await OutboxService.recordEvent(SOCKET_EVENTS.QUEUE_TOKEN_UPDATED, hospitalId, queuePayload);
+    await EventBus.publish(SOCKET_EVENTS.QUEUE_TOKEN_UPDATED, queuePayload, { hospitalId });
+
     // Dispatch Appointment Confirmation Email
     const targetEmail = data.patientEmail || data.email || 'patient@medflow.com';
     const patientName = data.patientName || 'Patient';
@@ -41,7 +62,7 @@ export class AppointmentService {
         department,
         date,
         timeSlot,
-        tokenNo: `A-${Math.floor(10 + Math.random() * 90)}`,
+        tokenNo: queuePayload.tokenId,
       });
 
       await sendMail({ to: targetEmail, subject: mailTpl.subject, html: mailTpl.html });
@@ -76,11 +97,22 @@ export class AppointmentService {
 
   async updateAppointment(id: string, data: any, hospitalId: string) {
     await this.getAppointmentById(id, hospitalId); // verify exists
-    return this.repository.update(id, data, hospitalId);
+    const updated = await this.repository.update(id, data, hospitalId);
+
+    // Record outbox event for appointment update
+    await OutboxService.recordEvent(SOCKET_EVENTS.QUEUE_TOKEN_UPDATED, hospitalId, { id, ...data });
+    await EventBus.publish(SOCKET_EVENTS.QUEUE_TOKEN_UPDATED, { id, ...data }, { hospitalId });
+
+    return updated;
   }
 
   async deleteAppointment(id: string, hospitalId: string) {
     await this.getAppointmentById(id, hospitalId); // verify exists
-    return this.repository.softDelete(id, hospitalId);
+    const deleted = await this.repository.softDelete(id, hospitalId);
+
+    await OutboxService.recordEvent(SOCKET_EVENTS.QUEUE_TOKEN_UPDATED, hospitalId, { id, status: 'CANCELLED' });
+    await EventBus.publish(SOCKET_EVENTS.QUEUE_TOKEN_UPDATED, { id, status: 'CANCELLED' }, { hospitalId });
+
+    return deleted;
   }
 }

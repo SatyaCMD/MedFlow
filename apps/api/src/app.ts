@@ -27,8 +27,12 @@ import bloodBankRouter from './modules/bloodBank/bloodBank.routes.js';
 import ambulanceRouter from './modules/ambulance/ambulance.routes.js';
 import kycRouter from './modules/kyc/kyc.routes.js';
 import { rateLimit } from './middleware/rateLimit.js';
+import { apiGatewayMiddleware } from './gateway/gatewayRouter.js';
 
 const app = express();
+
+// Enterprise API Gateway Pipeline
+app.use(apiGatewayMiddleware as any);
 
 // Global API rate limiter (prevents server & database overload from request flooding)
 const globalApiRateLimiter = rateLimit({
