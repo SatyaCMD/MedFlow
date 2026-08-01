@@ -45,6 +45,7 @@
 - [⚡ How to Connect a Production Redis Instance](#-how-to-connect-a-production-redis-instance)
 - [☁️ How to Use Terraform for AWS Cloud KYC Storage](#%EF%B8%8F-how-to-use-terraform-for-aws-cloud-kyc-storage-s3_kyc-tf)
 - [🐛 Troubleshooting: Docker Compose Port 4000 Error](#-troubleshooting-docker-compose-port-4000-error)
+- [💳 Patient Portal, Digital Wallet & Ongoing Diagnosis Protocol](#-patient-portal-digital-wallet--ongoing-diagnosis-protocol)
 
 ---
 
@@ -153,6 +154,16 @@ graph TB
 
 ### 🧩 System Component Breakdown
 
+> [!NOTE]
+> **Blue Architecture Logic — Layered Domain Decoupling**
+> - **Frontend Application (`apps/web`)**: Built on Next.js 14 App Router, dynamic `useAuth` hook profile resolution, and Framer Motion micro-interactions.
+> - **Backend API Engine (`apps/api`)**: Modular Express.js service-repository layout enforcing RBAC, rate-limiting, and SHA-256 clinical audit trails.
+
+> [!TIP]
+> **Green Component Best Practice — Shared Monorepo DTOs**
+> - **`packages/shared`**: Centralizes Zod DTO validation schemas, type definitions, and permission matrices so frontend and backend remain strictly synchronized.
+> - **`packages/config`**: Standardizes ESLint, Prettier, and TypeScript compilation targets.
+
 * **Frontend Web Application (`apps/web`)**: Next.js (App Router) with TypeScript, Tailwind CSS, Framer Motion, and Axios. Features role-tailored dashboards for SuperAdmins, HospitalAdmins, AmbulanceAdmins, Doctors, Nurses, Pharmacists, Lab Techs, Blood Bank, and Patients, plus dedicated pages for Appointments, EMR, Billing, Patients, Settings, and Auth flows.
 * **Backend REST API (`apps/api`)**: Built with Express.js and TypeScript, following modular service-repository architecture. Implements domain services for Auth (Argon2id + Salt + Pepper + OTP), Patients, Appointments, EMR, Billing, Pharmacy, Inventory, Lab, Messaging, AI, and Auditing.
 * **Shared Workspace Packages (`packages/`)**:
@@ -192,7 +203,17 @@ MedFlow provides 8 specialized role portals out-of-the-box. Access any portal vi
 
 ## 🛡️ Secure Authentication System
 
-The system implements a robust, industry-standard authentication flow:
+> [!IMPORTANT]
+> **Cryptographic Security Logic — Argon2id + Salt + Pepper**
+> - **Argon2id Key Derivation**: High-memory, time-cost password hashing.
+> - **Dynamic 16-Byte Salt**: Cryptographically generated per user registration to eliminate rainbow table vectors.
+> - **Server-Side Chili Pepper**: High-entropy `APP_PEPPER` secret key prevents password leaks even during database exposure.
+
+> [!WARNING]
+> **Red Security Alert — 5-Minute OTP Verification TTL**
+> - **Redis TTL Invalidation**: 6-digit OTP verification codes expire after **5 minutes (300 seconds)** in Redis.
+> - **Single-Use Verification**: Tokens are deleted from Redis upon single successful use to prevent replay attacks.
+
 1.  **Password Hashing (Argon2 + Dynamic Salt + Chili Pepper)**:
     *   **Argon2id**: Utilizes the secure Argon2 key derivation function.
     *   **Dynamic Salt**: Generates a cryptographically secure random 16-byte salt per user on registration.
@@ -206,7 +227,15 @@ The system implements a robust, industry-standard authentication flow:
 
 ## ⚙️ DevOps & DevSecOps Stack Overview
 
-A complete pipeline is provided to deploy and monitor the application securely:
+> [!NOTE]
+> **Blue DevSecOps Protocol — Continuous Quality & Vulnerability Auditing**
+> - **Static Code Analysis**: SonarQube scans TypeScript code quality, hotspots, and code smells on `http://localhost:9000`.
+> - **CVE Container Auditing**: Trivy scans filesystem dependencies and Docker container layers before pushing to registry.
+
+> [!TIP]
+> **Green Telemetry Protocol — Prometheus & Grafana Observability**
+> - **Metrics Scraper**: Prometheus scrapes API response latencies, memory footprint, and HTTP request counters on port `9090`.
+> - **Visual Telemetry**: Grafana renders real-time color charts and SLA uptime metrics on port `3005`.
 
 *   **Docker**: Multi-stage production container configuration for lightweight images (`api.prod.Dockerfile`, `web.prod.Dockerfile`) and multi-container setups (`docker-compose.yml`, `docker-compose.dev.yml`).
 *   **Redis**: Caches session records and tracks temporary verification states (OTP).
@@ -226,10 +255,10 @@ A complete pipeline is provided to deploy and monitor the application securely:
 ## 🚀 Getting Started
 
 ### 1. Prerequisites
-Ensure you have the following installed on your machine:
-*   [Node.js (v20+)](https://nodejs.org/)
-*   [pnpm (v10+)](https://pnpm.io/)
-*   [Docker Desktop](https://www.docker.com/)
+
+> [!IMPORTANT]
+> **Prerequisites Checklist**
+> - Ensure **Node.js (v20+)**, **pnpm (v10+)**, and **Docker Desktop** are installed and running on host machine.
 
 ### 2. Install Dependencies
 Run this command from the root workspace directory to fetch and link all packages:
@@ -239,12 +268,13 @@ pnpm install
 
 ### 3. Choose How to Run the Application
 
-You can run the entire MedFlow ecosystem using one of the two options below, depending on whether you want to run the application code inside Docker or directly on your host machine.
-
 ---
 
 #### 💡 OPTION A: Full Docker Mode (Zero Configuration)
-Use this option if you want to run all databases (MongoDB, Redis), SMTP mock server (Mailpit), the Express backend, and the Next.js frontend together inside Docker containers.
+
+> [!WARNING]
+> **Red Port Binding Conflict Notice**
+> - Before starting Full Docker Mode, ensure no local Express API or Next.js app is occupying port `4000` or `3000`.
 
 1. **Stop conflicting local services** on your machine (e.g., if you have native MongoDB, Redis, or Mailpit running).
 2. **Start the containers** from the root workspace directory:
@@ -259,7 +289,10 @@ Use this option if you want to run all databases (MongoDB, Redis), SMTP mock ser
 ---
 
 #### 💻 OPTION B: Mixed Mode (Databases in Docker + Code on Host)
-This is the recommended method for active development. Databases and the Mail service run in Docker, while the Express API and Next.js Frontend run directly on your host machine for instant hot-reloading and debug visibility.
+
+> [!TIP]
+> **Recommended Developer Workflow**
+> - Mixed Mode provides hot-reloading for code edits while running backing databases (MongoDB, Redis, Mailpit) isolated in Docker.
 
 1. **Start backing databases and services in Docker**:
    ```bash
@@ -306,7 +339,24 @@ Run these scripts from the monorepo root:
 
 ## 🔗 Jenkins CI/CD Integration (Port 8080)
 
-The repository includes a production-grade `Jenkinsfile` pipeline that automatically automates your build, dependency audits, static code analysis (SonarQube), dependency security scanning (Trivy), Docker containerization, and Helm chart deployment configurations.
+> [!NOTE]
+> **Blue Jenkins Pipeline Architecture & Execution Logic**
+> - **Stage 1 (Checkout)**: Clones latest code from `main` branch.
+> - **Stage 2 (Install & Audit)**: Restores workspace dependencies via `pnpm install` and runs ESLint static code audits.
+> - **Stage 3 (SonarQube Analysis)**: Dispatches code metrics to SonarQube Server (`http://localhost:9000`) and waits for Quality Gate approval.
+> - **Stage 4 (Trivy Security Gate)**: Scans monorepo dependencies for vulnerabilities (`trivy fs`).
+> - **Stage 5 (Container Build)**: Constructs production multi-stage Docker images for API and Web.
+> - **Stage 6 (Container Scan)**: Scans generated Docker image layers for CVEs (`trivy image`).
+> - **Stage 7 (Helm Release)**: Deploys Helm chart releases into Kubernetes EKS cluster.
+
+> [!IMPORTANT]
+> **Important SonarQube Token Setup**
+> - Generate a token string (`sqp_...`) in SonarQube (`http://localhost:9000`).
+> - Add credential in Jenkins (`http://localhost:8080` $\rightarrow$ Manage Jenkins $\rightarrow$ System $\rightarrow$ SonarQube servers) as Secret Text.
+
+> [!TIP]
+> **Trivy Vulnerability Threshold Tip**
+> - Trivy automatically halts pipeline deployment if any `HIGH` or `CRITICAL` vulnerability severity is detected in container layers.
 
 To connect your project to a Jenkins server running on **port 8080**:
 
@@ -430,6 +480,15 @@ git push origin main
 
 ## ⚡ How to Connect a Production Redis Instance
 
+> [!TIP]
+> **Green Upstash Cloud Redis Protocol**
+> - **TLS Double-S Protocol**: When connecting to Upstash, use `rediss://` (with double `s`) to enable TLS encryption.
+> - **Connection String**: `REDIS_URI=rediss://default:PASSWORD@your-db.upstash.io:6379`.
+
+> [!IMPORTANT]
+> **Production Driver Capabilities (`ioredis`)**
+> - MedFlow's backend driver in `apps/api/src/lib/redis.ts` uses `ioredis`, which automatically handles SSL/TLS authentication, retry strategies, 5-min OTP TTL, and session management.
+
 To switch from local Redis (`redis://localhost:6380`) to **Production Redis**, update line 10 in your `.env` file with your production Redis connection URI.
 
 Here are the 3 standard options depending on your cloud provider:
@@ -499,6 +558,12 @@ Port `4000` is occupied because `pnpm dev` (the local Express API process) is ru
   ```bash
   docker compose -f docker-compose.dev.yml up -d mongo redis mailpit
   ```
+> [!WARNING]
+> **Host Socket Error Diagnosis**
+> - Port `4000` is occupied because `pnpm dev` is running on host machine. Start databases in Docker without duplicate API containers:
+>   ```bash
+>   docker compose -f docker-compose.dev.yml up -d mongo redis mailpit
+>   ```
 
 ---
 
@@ -550,4 +615,3 @@ Port `4000` is occupied because `pnpm dev` (the local Express API process) is ru
 > **Blue Architectural Rule — Fixed Workstation Layout**
 > - **Non-Scrolling Sidebar**: Side menu navigation in `AppShell` uses `sticky top-0 h-screen overflow-y-auto` layout architecture.
 > - **Independent Main Scroll**: Page content scrolls independently inside the main workspace container (`main`), preventing sidebar displacement while scrolling.
-
