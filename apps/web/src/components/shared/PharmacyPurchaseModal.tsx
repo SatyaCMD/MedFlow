@@ -55,7 +55,7 @@ export const PharmacyPurchaseModal: React.FC<PharmacyPurchaseModalProps> = ({
   const [purchaserName, setPurchaserName] = useState<string>(patientName || 'Authorized Purchaser');
   const [patientNameInput, setPatientNameInput] = useState<string>(patientName || 'Jane Patient');
   const [customerEmail, setCustomerEmail] = useState<string>(patientEmail || 'patient@medflow.com');
-  const [customerPhone, setCustomerPhone] = useState<string>('+91 98765 43210');
+  const [customerPhone, setCustomerPhone] = useState<string>('+91 98765 xxxxx');
 
   // Cart Items in ₹ (INR)
   const [cart, setCart] = useState([

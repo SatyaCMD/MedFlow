@@ -45,12 +45,12 @@ export interface HospitalStaffMember {
 }
 
 const INITIAL_STAFF: HospitalStaffMember[] = [
-  { id: 'EMP-1001', name: 'Dr. Gregory House, M.D.', department: 'Diagnostic Medicine & Cardiology', role: 'Department Head', phone: '+91 98765 11001', shift: 'Morning (08:00 - 16:00)', status: 'ON_DUTY', patientsAssigned: 18 },
-  { id: 'EMP-1002', name: 'Dr. Anup Singh', department: 'Cardiology', role: 'Senior Consultant Doctor', phone: '+91 98765 11002', shift: 'Morning (08:00 - 16:00)', status: 'ON_DUTY', patientsAssigned: 14 },
-  { id: 'EMP-1003', name: 'Nurse Clara, R.N.', department: 'ICU & Critical Care', role: 'Chief ICU Nurse', phone: '+91 98765 11003', shift: 'Night (00:00 - 08:00)', status: 'ON_DUTY', patientsAssigned: 8 },
-  { id: 'EMP-1004', name: 'Dr. Devendra Roy', department: 'Cardiology', role: 'Senior Consultant Doctor', phone: '+91 98765 11004', shift: '24/7 On-Call', status: 'ON_CALL', patientsAssigned: 12 },
-  { id: 'EMP-1005', name: 'Dr. Priya Sharma', department: 'Pediatrics & NICU', role: 'Department Head', phone: '+91 98765 11005', shift: 'Evening (16:00 - 00:00)', status: 'ON_DUTY', patientsAssigned: 15 },
-  { id: 'EMP-1006', name: 'Nurse Anita Sharma', department: 'Emergency & Triage', role: 'Chief ICU Nurse', phone: '+91 98765 11006', shift: 'Morning (08:00 - 16:00)', status: 'ON_DUTY', patientsAssigned: 22 },
+  { id: 'EMP-1001', name: 'Dr. Gregory House, M.D.', department: 'Diagnostic Medicine & Cardiology', role: 'Department Head', phone: '+91 98765 xxxxx', shift: 'Morning (08:00 - 16:00)', status: 'ON_DUTY', patientsAssigned: 18 },
+  { id: 'EMP-1002', name: 'Dr. Anup Singh', department: 'Cardiology', role: 'Senior Consultant Doctor', phone: '+91 98123 xxxxx', shift: 'Morning (08:00 - 16:00)', status: 'ON_DUTY', patientsAssigned: 14 },
+  { id: 'EMP-1003', name: 'Nurse Clara, R.N.', department: 'ICU & Critical Care', role: 'Chief ICU Nurse', phone: '+91 99401 xxxxx', shift: 'Night (00:00 - 08:00)', status: 'ON_DUTY', patientsAssigned: 8 },
+  { id: 'EMP-1004', name: 'Dr. Devendra Roy', department: 'Cardiology', role: 'Senior Consultant Doctor', phone: '+91 97321 xxxxx', shift: '24/7 On-Call', status: 'ON_CALL', patientsAssigned: 12 },
+  { id: 'EMP-1005', name: 'Dr. Priya Sharma', department: 'Pediatrics & NICU', role: 'Department Head', phone: '+91 98992 xxxxx', shift: 'Evening (16:00 - 00:00)', status: 'ON_DUTY', patientsAssigned: 15 },
+  { id: 'EMP-1006', name: 'Nurse Anita Sharma', department: 'Emergency & Triage', role: 'Chief ICU Nurse', phone: '+91 94370 xxxxx', shift: 'Morning (08:00 - 16:00)', status: 'ON_DUTY', patientsAssigned: 22 },
 ];
 
 export const HospitalAdminDashboard: React.FC = () => {
@@ -83,7 +83,7 @@ export const HospitalAdminDashboard: React.FC = () => {
     e.preventDefault();
     const newEmpId = staffId.trim().toUpperCase() || `EMP-${Math.floor(1000 + Math.random() * 9000)}`;
     const newEmpName = staffName.trim() || 'Dr. Medical Officer';
-    const newEmpPhone = staffPhone.trim() || '+91 98765 00000';
+    const newEmpPhone = staffPhone.trim() || '+91 98765 xxxxx';
 
     const newMember: HospitalStaffMember = {
       id: newEmpId,
@@ -318,7 +318,7 @@ export const HospitalAdminDashboard: React.FC = () => {
                       required
                       value={staffPhone}
                       onChange={(e) => setStaffPhone(e.target.value)}
-                      placeholder="e.g. +91 98765 44321"
+                      placeholder="e.g. +91 98765 xxxxx"
                       className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-900 outline-none focus:ring-2 focus:ring-blue-500"
                     />
                   </div>

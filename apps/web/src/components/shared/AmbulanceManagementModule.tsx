@@ -56,7 +56,7 @@ const INITIAL_FLEET: AmbulanceVehicle[] = [
     model: 'Force Traveler ALS ICU',
     status: 'On Route to Patient',
     driverName: 'Rajesh Kumar',
-    driverPhone: '+91 98765 43210',
+    driverPhone: '+91 98765 xxxxx',
     currentSpeed: 48,
     lastLocation: '2.1 km from Green Park Avenue',
     odometerKm: 42150,
@@ -68,7 +68,7 @@ const INITIAL_FLEET: AmbulanceVehicle[] = [
     model: 'Tata Winger Critical Care',
     status: 'Available',
     driverName: 'Amit Sharma',
-    driverPhone: '+91 98123 77410',
+    driverPhone: '+91 98123 xxxxx',
     currentSpeed: 0,
     lastLocation: 'MediCore Main ER Base Station',
     odometerKm: 31800,
@@ -80,7 +80,7 @@ const INITIAL_FLEET: AmbulanceVehicle[] = [
     model: 'Force Traveler Advanced ICU',
     status: 'On Route to Hospital',
     driverName: 'Suresh Patil',
-    driverPhone: '+91 99401 22849',
+    driverPhone: '+91 99401 xxxxx',
     currentSpeed: 56,
     lastLocation: '1.8 km from MediCore ER Ward',
     odometerKm: 18900,
@@ -92,7 +92,7 @@ const INITIAL_FLEET: AmbulanceVehicle[] = [
     model: 'Mahindra Supro Neonatal ICU',
     status: 'Available',
     driverName: 'Dharmendra Roy',
-    driverPhone: '+91 97321 00582',
+    driverPhone: '+91 97321 xxxxx',
     currentSpeed: 0,
     lastLocation: 'MediCore Sector 5 Outpost',
     odometerKm: 24200,
@@ -104,7 +104,7 @@ const INITIAL_FLEET: AmbulanceVehicle[] = [
     model: 'Force Traveler BLS Unit',
     status: 'Available',
     driverName: 'Vikram Malhotra',
-    driverPhone: '+91 98992 34110',
+    driverPhone: '+91 98992 xxxxx',
     currentSpeed: 0,
     lastLocation: 'MediCore Sector 4 Outpost',
     odometerKm: 27400,
@@ -116,7 +116,7 @@ const INITIAL_FLEET: AmbulanceVehicle[] = [
     model: 'Tata Winger ALS Unit',
     status: 'Maintenance',
     driverName: 'Sunita Rao',
-    driverPhone: '+91 94370 88291',
+    driverPhone: '+91 94370 xxxxx',
     currentSpeed: 0,
     lastLocation: 'MediCore Workshop Bay 2',
     odometerKm: 58900,
@@ -219,7 +219,7 @@ export const AmbulanceManagementModule: React.FC = () => {
       model: newModel,
       status: 'Available',
       driverName: newDriverName,
-      driverPhone: newDriverPhone || '+91 98000 11223',
+      driverPhone: newDriverPhone || '+91 98000 xxxxx',
       currentSpeed: 0,
       lastLocation: 'MediCore Main ER Base',
       odometerKm: 1200,
@@ -453,7 +453,7 @@ export const AmbulanceManagementModule: React.FC = () => {
                   <input
                     id="newDriverPhone"
                     type="tel"
-                    placeholder="+91 98765 00112"
+                    placeholder="+91 98765 xxxxx"
                     value={newDriverPhone}
                     onChange={(e) => setNewDriverPhone(e.target.value)}
                     className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900"

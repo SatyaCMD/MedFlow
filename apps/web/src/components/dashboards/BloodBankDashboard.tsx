@@ -56,10 +56,10 @@ export const BloodBankDashboard: React.FC = () => {
   ]);
 
   const donors = [
-    { id: 'DN-301', name: 'Amitabh Sen', group: 'O+', contact: '+91 98765-43210', lastDonated: '2026-07-20', status: 'ELIGIBLE' },
-    { id: 'DN-302', name: 'Kavita Reddy', group: 'A-', contact: '+91 91234-56789', lastDonated: '2026-06-15', status: 'ELIGIBLE' },
-    { id: 'DN-303', name: 'Suresh Menon', group: 'B+', contact: '+91 99887-76655', lastDonated: '2026-07-26', status: 'DONATED_TODAY' },
-    { id: 'DN-304', name: 'Pooja Hegde', group: 'O-', contact: '+91 94433-22110', lastDonated: '2026-05-10', status: 'ELIGIBLE' },
+    { id: 'DN-301', name: 'Amitabh Sen', group: 'O+', contact: '+91 98765 xxxxx', lastDonated: '2026-07-20', status: 'ELIGIBLE' },
+    { id: 'DN-302', name: 'Kavita Reddy', group: 'A-', contact: '+91 91234 xxxxx', lastDonated: '2026-06-15', status: 'ELIGIBLE' },
+    { id: 'DN-303', name: 'Suresh Menon', group: 'B+', contact: '+91 99887 xxxxx', lastDonated: '2026-07-26', status: 'DONATED_TODAY' },
+    { id: 'DN-304', name: 'Pooja Hegde', group: 'O-', contact: '+91 94433 xxxxx', lastDonated: '2026-05-10', status: 'ELIGIBLE' },
   ];
 
   const loadRequests = () => {

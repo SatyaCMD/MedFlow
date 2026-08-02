@@ -657,7 +657,7 @@ export const BookDoctorVisitModal: React.FC<BookDoctorVisitModalProps> = ({
                   <input
                     type="tel"
                     required
-                    placeholder="+91 98765xxxxx"
+                    placeholder="+91 98765 xxxxx"
                     value={patientPhone}
                     onChange={(e) => setPatientPhone(e.target.value)}
                     className="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"

@@ -283,7 +283,7 @@ export async function generatePharmacyInvoicePdf(data: PharmacyInvoicePdfData): 
   doc.fillColor('#065f46').fontSize(8).font('Helvetica-Bold').text('PATIENT / RECIPIENT INFORMATION', 45, y + 8);
   doc.fillColor('#0f172a').fontSize(10).font('Helvetica-Bold').text(data.customerName, 45, y + 22);
   doc.fillColor('#334155').fontSize(8.5).font('Helvetica').text(`Email: ${data.customerEmail || 'patient@medflow.com'}`, 45, y + 36);
-  doc.text(`Phone: ${data.customerPhone || '+91 98765 43210'}  |  Dispensary Station #4`, 45, y + 49);
+  doc.text(`Phone: ${data.customerPhone || '+91 98765 xxxxx'}  |  Dispensary Station #4`, 45, y + 49);
 
   // Grid Box 2: Purchaser Metadata & Role Badge
   doc.roundedRect(305, y, 255, 68, 8).fillAndStroke('#eff6ff', '#bfdbfe');

@@ -28,7 +28,7 @@ export function getResolvedPatientProfile(user: User | null) {
     age: user?.age || '19 Yrs',
     gender: user?.gender || 'Male',
     bloodGroup: user?.bloodGroup || 'O+',
-    phone: user?.phone || '+91 98765 43210',
+    phone: user?.phone || '+91 98765 xxxxx',
   };
 }
 

@@ -100,7 +100,7 @@ export class PharmacyService {
         invoiceId,
         customerName,
         customerEmail,
-        customerPhone: data.phone || data.customerPhone || '+91 98765 43210',
+        customerPhone: data.phone || data.customerPhone || '+91 98765 xxxxx',
         purchaserName,
         purchaserRole,
         paymentMethod,

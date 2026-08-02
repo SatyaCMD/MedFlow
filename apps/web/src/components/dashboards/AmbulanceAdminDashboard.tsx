@@ -51,7 +51,7 @@ const INITIAL_ADMIN_FLEET: AmbulanceVehicle[] = [
     plate: 'MH-02-ER-8812',
     type: 'ALS Advanced Life Support',
     driver: 'Ramesh Kumar',
-    phone: '+91 98765 12345',
+    phone: '+91 98765 xxxxx',
     station: 'Central Hospital ER Bay #1',
     status: 'DISPATCHED',
     oxygen: 98,
@@ -63,7 +63,7 @@ const INITIAL_ADMIN_FLEET: AmbulanceVehicle[] = [
     plate: 'MH-02-ER-8813',
     type: 'Trauma & ICU Mobile',
     driver: 'Suresh Patil',
-    phone: '+91 98765 67890',
+    phone: '+91 98123 xxxxx',
     station: 'North Wing Emergency Bay',
     status: 'AVAILABLE',
     oxygen: 100,
@@ -75,7 +75,7 @@ const INITIAL_ADMIN_FLEET: AmbulanceVehicle[] = [
     plate: 'MH-02-ER-8814',
     type: 'BLS Basic Life Support',
     driver: 'Anil Deshmukh',
-    phone: '+91 98765 43210',
+    phone: '+91 99401 xxxxx',
     station: 'South Substation Outpost',
     status: 'AVAILABLE',
     oxygen: 95,
@@ -87,7 +87,7 @@ const INITIAL_ADMIN_FLEET: AmbulanceVehicle[] = [
     plate: 'MH-02-ER-8815',
     type: 'Neonatal Transport',
     driver: 'Vikas Shinde',
-    phone: '+91 98765 99887',
+    phone: '+91 97321 xxxxx',
     station: 'Pediatric ICU Bay #3',
     status: 'MAINTENANCE',
     oxygen: 80,
@@ -129,7 +129,7 @@ export const AmbulanceAdminDashboard: React.FC = () => {
     const newId = regVehicleId.trim().toUpperCase() || `AMB-${Math.floor(900 + Math.random() * 99)}`;
     const newPlate = regPlate.trim().toUpperCase() || `MH-02-ER-${Math.floor(1000 + Math.random() * 9000)}`;
     const newDriver = regDriver.trim() || 'Unassigned Duty Driver';
-    const newPhone = regPhone.trim() || '+91 98765 00000';
+    const newPhone = regPhone.trim() || '+91 98765 xxxxx';
 
     const newVehicle: AmbulanceVehicle = {
       id: newId,
@@ -415,7 +415,7 @@ export const AmbulanceAdminDashboard: React.FC = () => {
                       required
                       value={regPhone}
                       onChange={(e) => setRegPhone(e.target.value)}
-                      placeholder="e.g. +91 98765 12345"
+                      placeholder="e.g. +91 98765 xxxxx"
                       className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-900 outline-none focus:ring-2 focus:ring-rose-500"
                     />
                   </div>

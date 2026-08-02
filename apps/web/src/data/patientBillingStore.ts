@@ -84,7 +84,7 @@ const INITIAL_PATIENT_INVOICES: PatientInvoice[] = [
     patientName: 'Sarah Connor',
     mrn: 'MC-1001',
     email: 'sarah.connor@example.com',
-    phone: '+91 98765 43210',
+    phone: '+91 98765 xxxxx',
     department: 'IPD Cardiology Ward',
     attendingDoctor: 'Dr. Anup Singh',
     lineItems: [
@@ -113,7 +113,7 @@ const INITIAL_PATIENT_INVOICES: PatientInvoice[] = [
     patientName: 'John Doe',
     mrn: 'MC-1002',
     email: 'john.doe@example.com',
-    phone: '+91 98123 45678',
+    phone: '+91 98123 xxxxx',
     department: 'OPD Neurology',
     attendingDoctor: 'Dr. Siddharth Joshi',
     lineItems: [
@@ -139,7 +139,7 @@ const INITIAL_PATIENT_INVOICES: PatientInvoice[] = [
     patientName: 'Bruce Wayne',
     mrn: 'MC-1003',
     email: 'bruce.wayne@example.com',
-    phone: '+91 99887 76655',
+    phone: '+91 99887 xxxxx',
     department: 'Emergency & Orthopedics',
     attendingDoctor: 'Dr. Rajesh Patel',
     lineItems: [
@@ -166,7 +166,7 @@ const INITIAL_PATIENT_INVOICES: PatientInvoice[] = [
     patientName: 'Jane Patient',
     mrn: 'MC-1004',
     email: 'patient@medicore360.com',
-    phone: '+91 97766 55443',
+    phone: '+91 97766 xxxxx',
     department: 'General OPD Care',
     attendingDoctor: 'Dr. Priya Sharma',
     lineItems: [

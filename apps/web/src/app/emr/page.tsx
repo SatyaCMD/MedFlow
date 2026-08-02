@@ -68,7 +68,7 @@ const CLINICAL_ROSTER_DATABASE: PatientEmrProfile[] = [
     ageGender: '28 Yrs / Male',
     bloodGroup: 'O+',
     allergies: ['No Known Drug Allergies (NKDA)'],
-    emergencyContact: '+91 98765 12345 (Family)',
+    emergencyContact: '+91 98765 xxxxx (Family)',
     records: [
       {
         id: 'rec-5',
@@ -117,7 +117,7 @@ const CLINICAL_ROSTER_DATABASE: PatientEmrProfile[] = [
     ageGender: '32 Yrs / Female',
     bloodGroup: 'O+',
     allergies: ['No Known Drug Allergies (NKDA)'],
-    emergencyContact: '+91 98765 43210 (Spouse)',
+    emergencyContact: '+91 98123 xxxxx (Spouse)',
     records: [
       {
         id: 'rec-1',
@@ -147,7 +147,7 @@ const CLINICAL_ROSTER_DATABASE: PatientEmrProfile[] = [
     ageGender: '45 Yrs / Male',
     bloodGroup: 'A+',
     allergies: ['Penicillin G', 'Amoxicillin'],
-    emergencyContact: '+91 98123 45678 (Brother)',
+    emergencyContact: '+91 99401 xxxxx (Brother)',
     records: [
       {
         id: 'rec-2',
@@ -176,7 +176,7 @@ const CLINICAL_ROSTER_DATABASE: PatientEmrProfile[] = [
     ageGender: '29 Yrs / Female',
     bloodGroup: 'B+',
     allergies: ['Sulfa Drugs'],
-    emergencyContact: '+91 99887 76655 (Guardian)',
+    emergencyContact: '+91 97321 xxxxx (Guardian)',
     records: [
       {
         id: 'rec-3',
@@ -206,7 +206,7 @@ const CLINICAL_ROSTER_DATABASE: PatientEmrProfile[] = [
     ageGender: '38 Yrs / Male',
     bloodGroup: 'O-',
     allergies: ['Latex Rubber'],
-    emergencyContact: '+91 97766 55443 (Alfred)',
+    emergencyContact: '+91 98992 xxxxx (Alfred)',
     records: [
       {
         id: 'rec-4',

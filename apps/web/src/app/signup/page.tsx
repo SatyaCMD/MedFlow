@@ -149,7 +149,7 @@ export default function SignupPage() {
       setEmail(`patient_${randomNum}@medflow.com`);
       setPassword('Patient@123');
       setBloodGroup('O+');
-      setEmergencyPhone('+91 9876543210');
+      setEmergencyPhone('+91 98765 xxxxx');
     } else if (role === 'NURSE') {
       setFirstName('Florence');
       setLastName('Nightingale');
@@ -583,7 +583,7 @@ export default function SignupPage() {
                     type="tel"
                     value={emergencyPhone}
                     onChange={(e) => setEmergencyPhone(e.target.value)}
-                    placeholder="+91 98765xxxxx"
+                    placeholder="+91 98765 xxxxx"
                     className="w-full px-3.5 py-2 bg-white border border-emerald-200 rounded-xl text-xs font-bold text-slate-900 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-600 shadow-xs"
                   />
                 </div>

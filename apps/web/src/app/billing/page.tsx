@@ -107,7 +107,7 @@ export default function BillingPage() {
         patientName: fullName || 'Patient Account',
         mrn: 'MC-1005',
         email: user?.email || 'patient@medflow.com',
-        phone: user?.phone || '+91 98765 43210',
+        phone: user?.phone || '+91 98765 xxxxx',
         department: 'Cardiology, Pathology & Dispensary',
         attendingDoctor: 'Dr. Anup Singh',
         lineItems: [
