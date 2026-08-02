@@ -50,7 +50,7 @@ export const AuthSidebar: React.FC<AuthSidebarProps> = ({ title, subtitle }) => 
   ];
 
   return (
-    <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-slate-950 via-blue-950 to-indigo-950 relative flex-col justify-start p-6 xl:p-8 text-white overflow-y-auto border-r border-blue-900/30 min-h-screen space-y-4">
+    <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-slate-950 via-blue-950 to-indigo-950 relative flex-col justify-between p-8 xl:p-10 text-white overflow-y-auto border-r border-blue-900/30 min-h-screen">
       
       {/* Ambient Glowing Background Orbs */}
       <motion.div
@@ -69,13 +69,13 @@ export const AuthSidebar: React.FC<AuthSidebarProps> = ({ title, subtitle }) => 
 
       {/* TOP HEADER: Brand Identity */}
       <div className="relative z-10">
-        <div className="inline-flex items-center gap-3">
-          <div className="bg-white/10 backdrop-blur-xl p-2.5 rounded-2xl border border-white/20 shadow-xl">
-            <Logo size={32} textVisible={false} className="text-white" />
+        <div className="inline-flex items-center gap-3.5">
+          <div className="bg-white/10 backdrop-blur-xl p-3 rounded-2xl border border-white/20 shadow-xl">
+            <Logo size={36} textVisible={false} className="text-white" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-lg font-black tracking-tight text-white">MEDICORE 360</h1>
+              <h1 className="text-xl font-black tracking-tight text-white">MEDICORE 360</h1>
               <span className="px-2 py-0.5 rounded-full bg-blue-500/20 border border-blue-400/30 text-[9px] font-extrabold tracking-wider text-blue-300">
                 v1.0 ENTERPRISE
               </span>
@@ -88,24 +88,24 @@ export const AuthSidebar: React.FC<AuthSidebarProps> = ({ title, subtitle }) => 
       </div>
 
       {/* MIDDLE SECTION: Hero Copy & Interactive Telemetry Dashboard */}
-      <div className="relative z-10 space-y-3.5 max-w-lg flex-1 py-1">
+      <div className="relative z-10 my-auto py-4 space-y-5 max-w-lg">
         
         {/* Main Title Banner */}
-        <div className="space-y-1.5">
-          <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-blue-500/10 border border-blue-400/20 text-[11px] font-bold text-blue-300">
-            <Radio className="w-3 h-3 text-emerald-400 animate-pulse" />
+        <div className="space-y-2.5">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-400/20 text-xs font-bold text-blue-300">
+            <Radio className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
             <span>Secure Medical Gateway</span>
           </div>
-          <h2 className="text-2xl xl:text-3xl font-black tracking-tight leading-snug">
+          <h2 className="text-3xl xl:text-4xl font-black tracking-tight leading-[1.15]">
             {title}
           </h2>
-          <p className="text-xs font-medium text-slate-300/90 leading-relaxed">
+          <p className="text-sm font-medium text-slate-300/90 leading-relaxed">
             {subtitle}
           </p>
         </div>
 
         {/* Interactive Tab Controller */}
-        <div className="space-y-2.5">
+        <div className="space-y-3.5">
           <div className="flex items-center p-1 bg-white/5 backdrop-blur-md rounded-xl border border-white/10 text-xs font-bold">
             <button
               onClick={() => setActiveTab('security')}
@@ -151,22 +151,22 @@ export const AuthSidebar: React.FC<AuthSidebarProps> = ({ title, subtitle }) => 
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.2 }}
-                className="grid grid-cols-1 gap-2"
+                className="grid grid-cols-1 gap-2.5"
               >
                 {securityFeatures.map((item, idx) => (
                   <div
                     key={idx}
-                    className="p-2.5 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-blue-400/40 rounded-xl transition-all flex items-center gap-3 group"
+                    className="p-3.5 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-blue-400/40 rounded-xl transition-all flex items-start gap-3 group"
                   >
                     <div className="p-2 bg-blue-500/20 text-blue-300 rounded-lg group-hover:bg-blue-600 group-hover:text-white transition-colors shrink-0">
-                      <item.icon className="w-3.5 h-3.5" />
+                      <item.icon className="w-4 h-4" />
                     </div>
                     <div>
                       <h4 className="text-xs font-bold text-white group-hover:text-blue-200 transition-colors flex items-center gap-1.5">
                         {item.title}
                         <CheckCircle2 className="w-3 h-3 text-emerald-400" />
                       </h4>
-                      <p className="text-[11px] text-slate-400 font-medium mt-0.5 leading-tight">{item.desc}</p>
+                      <p className="text-[11px] text-slate-400 font-medium mt-0.5 leading-relaxed">{item.desc}</p>
                     </div>
                   </div>
                 ))}
@@ -180,12 +180,12 @@ export const AuthSidebar: React.FC<AuthSidebarProps> = ({ title, subtitle }) => 
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.2 }}
-                className="grid grid-cols-2 gap-2.5"
+                className="grid grid-cols-2 gap-3"
               >
                 {telemetryMetrics.map((m, idx) => (
-                  <div key={idx} className="p-3 bg-white/5 border border-white/10 rounded-2xl space-y-0.5">
+                  <div key={idx} className="p-3.5 bg-white/5 border border-white/10 rounded-2xl space-y-1">
                     <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{m.label}</span>
-                    <div className={`text-xl font-black ${m.color} tracking-tight tabular-nums`}>{m.value}</div>
+                    <div className={`text-2xl font-black ${m.color} tracking-tight tabular-nums`}>{m.value}</div>
                     <span className="text-[10px] font-semibold text-slate-400 block">{m.sub}</span>
                   </div>
                 ))}
@@ -199,16 +199,16 @@ export const AuthSidebar: React.FC<AuthSidebarProps> = ({ title, subtitle }) => 
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.2 }}
-                className="grid grid-cols-1 gap-2"
+                className="grid grid-cols-1 gap-2.5"
               >
                 {complianceBadges.map((b, idx) => (
-                  <div key={idx} className="p-2.5 bg-white/5 border border-white/10 rounded-xl flex items-center gap-3">
+                  <div key={idx} className="p-3.5 bg-white/5 border border-white/10 rounded-xl flex items-center gap-3">
                     <div className="p-2 bg-emerald-500/20 text-emerald-300 rounded-lg shrink-0">
-                      <b.icon className="w-3.5 h-3.5" />
+                      <b.icon className="w-4 h-4" />
                     </div>
                     <div>
                       <h4 className="text-xs font-bold text-white">{b.name}</h4>
-                      <p className="text-[11px] text-slate-400 font-medium leading-tight">{b.desc}</p>
+                      <p className="text-[11px] text-slate-400 font-medium leading-relaxed">{b.desc}</p>
                     </div>
                   </div>
                 ))}
@@ -220,7 +220,7 @@ export const AuthSidebar: React.FC<AuthSidebarProps> = ({ title, subtitle }) => 
       </div>
 
       {/* FOOTER: Live Infrastructure Telemetry Node */}
-      <div className="relative z-10 pt-3 border-t border-white/10 flex items-center justify-between text-xs font-semibold text-slate-400 mt-auto">
+      <div className="relative z-10 pt-4 border-t border-white/10 flex items-center justify-between text-xs font-semibold text-slate-400">
         <div className="flex items-center gap-2">
           <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shadow-xs shadow-emerald-400" />
           <span className="text-slate-300 text-[11px]">System Status: <strong className="text-emerald-400">Operational</strong></span>
