@@ -363,11 +363,11 @@ export default function LoginPage() {
       />
 
       {/* RIGHT COLUMN: Role-Dedicated Interactive Portal */}
-      <div className="w-full lg:w-1/2 flex flex-col items-center justify-center p-6 sm:p-8 relative bg-slate-50 min-h-screen overflow-y-auto">
+      <div className="w-full lg:w-1/2 flex flex-col items-center justify-start p-4 sm:p-6 relative bg-slate-50 min-h-screen overflow-y-auto">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-blue-500/5 via-transparent to-transparent pointer-events-none" />
 
         {/* TOP BAR: Sleek Back to Landing Page / Main Site Navigation */}
-        <div className="w-full max-w-lg flex items-center justify-between mb-3 z-20 shrink-0">
+        <div className="w-full max-w-lg flex items-center justify-between mb-2 z-20 shrink-0">
           <motion.button
             type="button"
             whileHover={{ x: -4, scale: 1.02 }}
@@ -396,7 +396,7 @@ export default function LoginPage() {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="w-full max-w-lg bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-8 shadow-xl relative z-10 space-y-5 my-auto"
+          className="w-full max-w-lg bg-white border border-slate-200/90 rounded-3xl p-5 sm:p-6 shadow-xl relative z-10 space-y-4 my-2"
         >
           {/* Mobile Brand Title */}
           <div className="flex flex-col items-center mb-2 lg:hidden w-full">

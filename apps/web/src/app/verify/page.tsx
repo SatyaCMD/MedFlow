@@ -191,14 +191,14 @@ function VerifyPageContent() {
       />
 
       {/* RIGHT COLUMN: Interactive Pin Verification Form */}
-      <div className="w-full lg:w-1/2 flex flex-col items-center justify-center p-6 sm:p-8 relative bg-slate-50 min-h-screen overflow-y-auto">
+      <div className="w-full lg:w-1/2 flex flex-col items-center justify-start p-4 sm:p-6 relative bg-slate-50 min-h-screen overflow-y-auto">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-blue-500/5 via-transparent to-transparent pointer-events-none" />
 
         <motion.div
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="w-full max-w-md bg-white border border-slate-200/90 rounded-3xl p-8 sm:p-10 shadow-xl relative z-10 space-y-6 my-auto"
+          className="w-full max-w-md bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-7 shadow-xl relative z-10 space-y-4 my-2"
         >
           <button
             onClick={() => router.push('/login')}
