@@ -50,7 +50,7 @@ export const AuthSidebar: React.FC<AuthSidebarProps> = ({ title, subtitle }) => 
   ];
 
   return (
-    <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-slate-950 via-blue-950 to-indigo-950 relative flex-col justify-between p-8 xl:p-10 text-white overflow-y-auto border-r border-blue-900/30 min-h-screen">
+    <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-slate-950 via-blue-950 to-indigo-950 relative flex-col justify-start p-6 xl:p-8 text-white overflow-y-auto border-r border-blue-900/30 min-h-screen">
       
       {/* Ambient Glowing Background Orbs */}
       <motion.div
@@ -88,7 +88,7 @@ export const AuthSidebar: React.FC<AuthSidebarProps> = ({ title, subtitle }) => 
       </div>
 
       {/* MIDDLE SECTION: Hero Copy & Interactive Telemetry Dashboard */}
-      <div className="relative z-10 my-auto py-4 space-y-5 max-w-lg">
+      <div className="relative z-10 mt-8 mb-6 space-y-5 max-w-lg flex-1">
         
         {/* Main Title Banner */}
         <div className="space-y-2.5">
@@ -220,7 +220,7 @@ export const AuthSidebar: React.FC<AuthSidebarProps> = ({ title, subtitle }) => 
       </div>
 
       {/* FOOTER: Live Infrastructure Telemetry Node */}
-      <div className="relative z-10 pt-4 border-t border-white/10 flex items-center justify-between text-xs font-semibold text-slate-400">
+      <div className="relative z-10 pt-4 border-t border-white/10 flex items-center justify-between text-xs font-semibold text-slate-400 mt-auto">
         <div className="flex items-center gap-2">
           <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shadow-xs shadow-emerald-400" />
           <span className="text-slate-300 text-[11px]">System Status: <strong className="text-emerald-400">Operational</strong></span>
