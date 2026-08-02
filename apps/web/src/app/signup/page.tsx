@@ -217,7 +217,7 @@ export default function SignupPage() {
       />
 
       {/* RIGHT COLUMN: Interactive Dedicated Signup Form */}
-      <div className="w-full lg:w-1/2 flex flex-col items-center justify-center p-4 sm:p-8 relative bg-slate-50 overflow-y-auto">
+      <div className="w-full lg:w-1/2 flex flex-col items-center justify-start py-6 px-4 sm:px-8 relative bg-slate-50 overflow-y-auto">
         <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-blue-500/5 via-transparent to-transparent pointer-events-none" />
 
         {/* TOP BAR: Sleek Back to Landing Page / Main Site Navigation */}
@@ -250,7 +250,7 @@ export default function SignupPage() {
           initial={{ opacity: 0, y: 30 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="w-full max-w-lg bg-white border border-slate-200/90 rounded-3xl p-6 sm:p-8 shadow-xl relative z-10 space-y-5 my-auto"
+          className="w-full max-w-lg bg-white border border-slate-200/90 rounded-3xl p-5 sm:p-7 shadow-xl relative z-10 space-y-4 my-2"
         >
           {/* Mobile Brand Header */}
           <div className="flex flex-col items-center mb-3 lg:hidden w-full">

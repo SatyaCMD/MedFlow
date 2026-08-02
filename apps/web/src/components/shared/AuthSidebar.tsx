@@ -50,7 +50,7 @@ export const AuthSidebar: React.FC<AuthSidebarProps> = ({ title, subtitle }) => 
   ];
 
   return (
-    <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-slate-950 via-blue-950 to-indigo-950 relative flex-col justify-between p-12 text-white overflow-hidden border-r border-blue-900/30">
+    <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-slate-950 via-blue-950 to-indigo-950 relative flex-col justify-between p-6 xl:p-8 text-white overflow-y-auto border-r border-blue-900/30">
       
       {/* Ambient Glowing Background Orbs */}
       <motion.div
@@ -69,13 +69,13 @@ export const AuthSidebar: React.FC<AuthSidebarProps> = ({ title, subtitle }) => 
 
       {/* TOP HEADER: Brand Identity */}
       <div className="relative z-10">
-        <div className="inline-flex items-center gap-3.5">
-          <div className="bg-white/10 backdrop-blur-xl p-3 rounded-2xl border border-white/20 shadow-xl">
-            <Logo size={38} textVisible={false} className="text-white" />
+        <div className="inline-flex items-center gap-3">
+          <div className="bg-white/10 backdrop-blur-xl p-2.5 rounded-2xl border border-white/20 shadow-xl">
+            <Logo size={34} textVisible={false} className="text-white" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-xl font-black tracking-tight text-white">MEDICORE 360</h1>
+              <h1 className="text-lg font-black tracking-tight text-white">MEDICORE 360</h1>
               <span className="px-2 py-0.5 rounded-full bg-blue-500/20 border border-blue-400/30 text-[9px] font-extrabold tracking-wider text-blue-300">
                 v1.0 ENTERPRISE
               </span>
@@ -88,24 +88,24 @@ export const AuthSidebar: React.FC<AuthSidebarProps> = ({ title, subtitle }) => 
       </div>
 
       {/* MIDDLE SECTION: Hero Copy & Interactive Telemetry Dashboard */}
-      <div className="relative z-10 my-auto py-8 space-y-8 max-w-lg">
+      <div className="relative z-10 my-4 py-2 space-y-5 max-w-lg">
         
         {/* Main Title Banner */}
-        <div className="space-y-3">
-          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-400/20 text-xs font-bold text-blue-300">
-            <Radio className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
+        <div className="space-y-2">
+          <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-blue-500/10 border border-blue-400/20 text-[11px] font-bold text-blue-300">
+            <Radio className="w-3 h-3 text-emerald-400 animate-pulse" />
             <span>Secure Medical Gateway</span>
           </div>
-          <h2 className="text-3xl sm:text-4xl font-black tracking-tight leading-[1.15]">
+          <h2 className="text-2xl xl:text-3xl font-black tracking-tight leading-snug">
             {title}
           </h2>
-          <p className="text-sm font-medium text-slate-300/90 leading-relaxed">
+          <p className="text-xs font-medium text-slate-300/90 leading-relaxed">
             {subtitle}
           </p>
         </div>
 
         {/* Interactive Tab Controller */}
-        <div className="space-y-4">
+        <div className="space-y-3">
           <div className="flex items-center p-1 bg-white/5 backdrop-blur-md rounded-xl border border-white/10 text-xs font-bold">
             <button
               onClick={() => setActiveTab('security')}
