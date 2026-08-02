@@ -60,6 +60,55 @@ export interface PatientEmrProfile {
 
 const PATIENT_EMR_DATABASE: PatientEmrProfile[] = [
   {
+    id: 'pemr-105',
+    patientName: 'Sai Satyabrata',
+    mrn: 'MC-1005',
+    abhaId: '91-55-9900-1122',
+    ageGender: '28 Yrs / Male',
+    bloodGroup: 'O+',
+    allergies: ['No Known Drug Allergies (NKDA)'],
+    emergencyContact: '+91 98765 12345 (Family)',
+    records: [
+      {
+        id: 'rec-5',
+        visitDate: 'Jul 30, 2026',
+        attendingDoctor: 'Dr. Anup Singh, M.D.',
+        department: 'Cardiology & Respiratory Medicine',
+        diagnosis: 'Acute Bronchitis & Respiratory Tract Infection (ICD-10 J20.9)',
+        vitals: { bp: '120/78 mmHg', hr: '72 bpm', temp: '99.1 °F', spo2: '98%' },
+        medications: [
+          { name: 'Azithromycin 500mg', dosage: '1 Tablet Daily', frequency: 'After breakfast for 5 days' },
+          { name: 'Levosalbutamol Inhaler 100mcg', dosage: '2 Puffs PRN', frequency: 'Every 6 hours when coughing' },
+          { name: 'Paracetamol 650mg', dosage: '1 Tablet PRN', frequency: 'Every 8 hours if temp > 99°F' },
+        ],
+        labOrders: [
+          { testName: 'Chest X-Ray Digital PA View', status: 'REPORT_SUBMITTED', findings: 'Clear lung fields. Normal broncho-vascular markings. No active parenchymal infiltrates.' },
+          { testName: 'CBC & Inflammatory Markers (CRP & ESR)', status: 'REPORT_SUBMITTED', findings: 'WBC: 8,400 /uL, CRP: 4.2 mg/L (Normal Baseline), ESR: 12 mm/hr' },
+        ],
+        cdssAlert: 'NO DRUG ALLERGIES DETECTED • RESPIRATORY PROFILE CLEAR',
+        sha256Hash: 'SHA256: 7f81c90a11de99f220ab40192cc33',
+      },
+      {
+        id: 'rec-5-2',
+        visitDate: 'May 14, 2026',
+        attendingDoctor: 'Dr. Devendra Roy, M.D.',
+        department: 'General Internal Medicine',
+        diagnosis: 'Annual Comprehensive Health Audit & Lipid Assessment (ICD-10 Z00.00)',
+        vitals: { bp: '118/76 mmHg', hr: '70 bpm', temp: '98.4 °F', spo2: '99%' },
+        medications: [
+          { name: 'Multivitamin & Mineral Complex', dosage: '1 Tablet Daily', frequency: 'Morning after food' },
+          { name: 'Omega-3 Fish Oil 1000mg', dosage: '1 Softgel Daily', frequency: 'Evening after dinner' },
+        ],
+        labOrders: [
+          { testName: 'Comprehensive Metabolic Panel (CMP)', status: 'REPORT_SUBMITTED', findings: 'Fasting Glucose: 92 mg/dL, HbA1c: 5.4% (Normal), Creatinine: 0.9 mg/dL' },
+          { testName: 'Serum Lipid Profile', status: 'REPORT_SUBMITTED', findings: 'Total Cholesterol: 175 mg/dL, HDL: 52 mg/dL, Triglycerides: 110 mg/dL' },
+        ],
+        cdssAlert: 'COMPREHENSIVE HEALTH CHECK VERIFIED',
+        sha256Hash: 'SHA256: 2b91c10d77ae33b44109fe294aa11',
+      },
+    ],
+  },
+  {
     id: 'pemr-101',
     patientName: 'Jane Patient',
     mrn: 'MC-1001',
@@ -190,15 +239,66 @@ export default function EmrPage() {
   const [isRecordModalOpen, setIsRecordModalOpen] = useState(false);
   const [isVideoConsultOpen, setIsVideoConsultOpen] = useState(false);
 
+  const currentRole = user?.role || 'DOCTOR';
+  const fullName = user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : 'Sai Satyabrata';
+
   useEffect(() => {
     if (!loading && !user) {
       router.push('/explore/emr');
+      return;
     }
-  }, [loading, user, router]);
+
+    if (user) {
+      const normUser = fullName.toLowerCase();
+      const matched = PATIENT_EMR_DATABASE.find(
+        (p) =>
+          p.patientName.toLowerCase() === normUser ||
+          normUser.includes(p.patientName.toLowerCase()) ||
+          p.patientName.toLowerCase().includes(user.firstName?.toLowerCase() || '')
+      );
+
+      if (matched) {
+        setSelectedPatient(matched);
+      } else if (user.role === 'PATIENT') {
+        const customPatient: PatientEmrProfile = {
+          id: `pemr-${user.id || 'usr'}`,
+          patientName: fullName || 'Patient Account',
+          mrn: `MC-${Math.floor(1000 + Math.random() * 9000)}`,
+          abhaId: '91-55-9900-1122',
+          ageGender: '28 Yrs / Male',
+          bloodGroup: 'O+',
+          allergies: ['No Known Drug Allergies (NKDA)'],
+          emergencyContact: user.email || '+91 98765 12345',
+          records: [
+            {
+              id: 'rec-custom-1',
+              visitDate: 'Jul 30, 2026',
+              attendingDoctor: 'Dr. Anup Singh, M.D.',
+              department: 'Cardiology & Respiratory Medicine',
+              diagnosis: 'Acute Bronchitis & Respiratory Infection (ICD-10 J20.9)',
+              vitals: { bp: '120/78 mmHg', hr: '72 bpm', temp: '99.1 °F', spo2: '98%' },
+              medications: [
+                { name: 'Azithromycin 500mg', dosage: '1 Tablet Daily', frequency: 'After breakfast for 5 days' },
+                { name: 'Levosalbutamol Inhaler 100mcg', dosage: '2 Puffs PRN', frequency: 'Every 6 hours when coughing' },
+                { name: 'Paracetamol 650mg', dosage: '1 Tablet PRN', frequency: 'Every 8 hours if temp > 99°F' },
+              ],
+              labOrders: [
+                { testName: 'Chest X-Ray Digital PA View', status: 'REPORT_SUBMITTED', findings: 'Clear lung fields. Normal broncho-vascular markings.' },
+                { testName: 'CBC & Inflammatory Markers (CRP)', status: 'REPORT_SUBMITTED', findings: 'WBC: 8,400 /uL, CRP: 4.2 mg/L (Normal)' },
+              ],
+              cdssAlert: 'NO DRUG ALLERGIES DETECTED',
+              sha256Hash: 'SHA256: 7f81c90a11de99f220ab40192cc33',
+            },
+          ],
+        };
+        setSelectedPatient(customPatient);
+      }
+    }
+  }, [loading, user, router, fullName]);
 
   if (loading || !user) {
     return (
-      <AppShell userRole="DOCTOR">
+      <AppShell userRole={currentRole}>
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
         </div>
@@ -242,7 +342,7 @@ export default function EmrPage() {
   };
 
   return (
-    <AppShell userRole="DOCTOR">
+    <AppShell userRole={currentRole}>
       <div className="space-y-8 max-w-6xl mx-auto">
         {/* Telemedicine Video Modal */}
         <TelemedicineConsultationModal
@@ -253,15 +353,28 @@ export default function EmrPage() {
           doctorName="Dr. Anup Singh"
         />
 
-        {/* Header */}
+        {/* Dynamic Role-Based Header Banner */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-200 pb-6">
           <div>
-            <h1 className="text-2xl font-black text-slate-900 flex items-center gap-2">
-              <FileText className="w-6 h-6 text-blue-600" />
-              Individual Patient EMR & Lifetime EHR Vault
-            </h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-black text-slate-900 flex items-center gap-2">
+                <FileText className="w-6 h-6 text-blue-600" />
+                {currentRole === 'PATIENT'
+                  ? `Personal Lifetime EHR Vault — ${fullName}`
+                  : currentRole === 'NURSE'
+                  ? 'Nursing Station Ward EMR & Vitals Telemetry'
+                  : currentRole === 'LAB_TECHNICIAN'
+                  ? 'Pathology & Diagnostic Laboratory EMR Vault'
+                  : 'Individual Patient EMR & Lifetime EHR Vault'}
+              </h1>
+              <span className="px-2.5 py-0.5 rounded-full bg-blue-100 border border-blue-200 text-blue-800 text-[10px] font-black uppercase">
+                {currentRole.replace(/_/g, ' ')} VIEW
+              </span>
+            </div>
             <p className="text-xs font-semibold text-slate-600 mt-1">
-              Select or search any patient to view their individual longitudinal medical history, CDSS safety alerts, vitals telemetry, digital prescriptions, and signed EMR files.
+              {currentRole === 'PATIENT'
+                ? `Welcome ${fullName}. Access your encrypted electronic medical records, digital prescriptions, lab test reports, and CDSS safety badges.`
+                : 'Select or search any patient in your clinical roster to access their longitudinal medical history, CDSS safety alerts, digital prescriptions, and signed EMR files.'}
             </p>
           </div>
 
@@ -286,10 +399,13 @@ export default function EmrPage() {
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
             <div>
               <h2 className="text-base font-black text-slate-900 flex items-center gap-2">
-                <User className="w-5 h-5 text-blue-600" /> Select Patient for Individual EMR History
+                <User className="w-5 h-5 text-blue-600" />
+                {currentRole === 'PATIENT' ? 'My Medical Record Profile & Switch Demo Patient' : 'Select Patient for Individual EMR History'}
               </h2>
               <p className="text-xs text-slate-500 font-semibold mt-0.5">
-                Search individual patients by Name, MRN, or ABHA ID to access their lifetime medical file.
+                {currentRole === 'PATIENT'
+                  ? 'Showing your official patient medical history. Click any patient badge below to switch records.'
+                  : 'Search individual patients by Name, MRN, or ABHA ID to access their lifetime medical file.'}
               </p>
             </div>
 
@@ -362,7 +478,7 @@ export default function EmrPage() {
             {/* Individual Patient Consultation Records */}
             <div className="space-y-4">
               <h4 className="text-xs font-black uppercase tracking-wider text-slate-600 flex items-center gap-2">
-                <Clock className="w-4 h-4 text-blue-600" /> Individual Longitudinal Consultation History & E-Prescriptions
+                <Clock className="w-4 h-4 text-blue-600" /> Individual Longitudinal Consultation History & E-Prescriptions ({selectedPatient.records.length} Visit File{selectedPatient.records.length > 1 ? 's' : ''})
               </h4>
 
               {selectedPatient.records.map((rec) => (
