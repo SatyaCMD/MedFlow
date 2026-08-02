@@ -5,6 +5,8 @@ import { generateLabReportPdf } from '../../lib/pdfGenerator.js';
 import { getLabReportEmail } from '../../lib/emailTemplates.js';
 import { sendMail } from '../../lib/mailer.js';
 
+import { uploadTestReportToS3 } from '../../lib/s3Client.js';
+
 export class LabService {
   private repository = new LabRepository();
 
@@ -21,10 +23,11 @@ export class LabService {
   async createLab(data: any, hospitalId: string) {
     const created = await this.repository.create(data, hospitalId);
 
-    // Generate PDF Lab Report & Dispatch Email to Patient with Attachment
+    // Generate PDF Lab Report & Dispatch Email to Patient with Attachment & S3 Upload
     try {
-      const reportId = created._id?.toString() || `LAB-${Date.now().toString().slice(-6)}`;
+      const reportId = created._id?.toString() || created.id || `LAB-${Date.now().toString().slice(-6)}`;
       const patientName = data.patientName || 'Patient';
+      const primaryAccountName = data.primaryPatientName || data.accountHolderName || data.primaryUser || patientName;
       const testName = data.testName || 'Complete Blood Count (CBC)';
       const patientEmail = data.patientEmail || data.email || 'patient@medflow.com';
 
@@ -41,6 +44,25 @@ export class LabService {
         ],
       });
 
+      // Automatically Upload Test Report PDF to AWS S3 Medical Records Bucket (NOT KYC Vault)
+      // S3 Key: test-reports/{Primary Account Name}/{Patient Name}_test_report_{timestamp}.pdf
+      const s3Result = await uploadTestReportToS3({
+        primaryAccountName,
+        patientName,
+        isRelative: Boolean(data.isRelative),
+        relation: data.relation,
+        department: data.department,
+        buffer: pdfBuffer,
+      });
+
+      if (created) {
+        await this.repository.update(created._id?.toString() || created.id, {
+          s3Key: s3Result.s3Key,
+          s3Url: s3Result.s3Url,
+          s3Bucket: s3Result.bucket,
+        }, hospitalId).catch(() => {});
+      }
+
       const emailTpl = getLabReportEmail({ patientName, reportId, testName });
 
       sendMail({
@@ -49,7 +71,7 @@ export class LabService {
         html: emailTpl.html,
         attachments: [
           {
-            filename: `Lab_Report_${reportId}.pdf`,
+            filename: s3Result.fileName || `Lab_Report_${reportId}.pdf`,
             content: pdfBuffer,
             contentType: 'application/pdf',
           },

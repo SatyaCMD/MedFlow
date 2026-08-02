@@ -20,11 +20,35 @@ export class AppointmentService {
   }
 
   async createAppointment(data: any, hospitalId: string) {
+    // Relative Booking Validation Logic
+    const isRelative = Boolean(data.isRelative || data.bookingFor === 'RELATIVE');
+    if (isRelative) {
+      const allowedRelations = [
+        'father', 'mother', 'son', 'daughter', 'son in law',
+        'daughter in law', 'father in law', 'mother in law', 'uncle', 'aunty'
+      ];
+      const rel = (data.relation || '').trim().toLowerCase();
+      if (!allowedRelations.includes(rel)) {
+        throw new AppError(
+          'Invalid relative relationship. Allowed options: father, mother, son, daughter, son in law, daughter in law, father in law, mother in law, uncle, aunty.',
+          400,
+          'INVALID_RELATIVE_RELATION'
+        );
+      }
+      if (!data.govtIdType || !data.govtIdType.trim() || !data.govtIdNumber || !data.govtIdNumber.trim()) {
+        throw new AppError(
+          'Government ID type and Government ID number are mandatory when booking an appointment for a relative.',
+          400,
+          'GOVT_ID_REQUIRED_FOR_RELATIVE'
+        );
+      }
+    }
+
     let created;
     try {
-      created = await this.repository.create(data, hospitalId);
+      created = await this.repository.create({ ...data, isRelative, relation: data.relation?.trim().toLowerCase() }, hospitalId);
     } catch {
-      created = { _id: `APP-${Date.now()}`, ...data };
+      created = { _id: `APP-${Date.now()}`, ...data, isRelative, relation: data.relation?.trim().toLowerCase() };
     }
 
     const doctorId = data.doctorId || (data.doctor && data.doctor._id) || 'DOC-DEFAULT';

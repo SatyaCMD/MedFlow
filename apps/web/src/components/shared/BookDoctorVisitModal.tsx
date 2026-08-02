@@ -77,7 +77,13 @@ export const BookDoctorVisitModal: React.FC<BookDoctorVisitModalProps> = ({
   const { user } = useAuth();
   const activeProfile = getResolvedPatientProfile(user);
 
-  // 1. Mandatory Patient Information Fields
+  // 1. Mandatory Patient Information & Booking Context Fields
+  const primaryAccountName = activeProfile.displayName || 'Account_Holder';
+  const [bookingFor, setBookingFor] = useState<'SELF' | 'RELATIVE'>('SELF');
+  const [relativeRelation, setRelativeRelation] = useState<string>('father');
+  const [govtIdType, setGovtIdType] = useState<string>('Aadhaar Card');
+  const [govtIdNumber, setGovtIdNumber] = useState<string>('');
+
   const [patientName, setPatientName] = useState(activeProfile.displayName);
   const [patientAge, setPatientAge] = useState(activeProfile.age.replace(/[^0-9]/g, '') || '19');
   const [patientGender, setPatientGender] = useState<'Male' | 'Female' | 'Other'>(
@@ -263,6 +269,27 @@ export const BookDoctorVisitModal: React.FC<BookDoctorVisitModalProps> = ({
   const handleProceedSubmit = (e: React.FormEvent) => {
     e.preventDefault();
 
+    const isRel = bookingFor === 'RELATIVE';
+
+    if (isRel) {
+      const allowedRelations = [
+        'father', 'mother', 'son', 'daughter', 'son in law',
+        'daughter in law', 'father in law', 'mother in law', 'uncle', 'aunty'
+      ];
+      if (!relativeRelation || !allowedRelations.includes(relativeRelation.toLowerCase())) {
+        showToast({ title: 'Invalid Relationship', message: 'Allowed relative options: father, mother, son, daughter, son in law, daughter in law, father in law, mother in law, uncle, aunty.', type: 'warning' });
+        return;
+      }
+      if (!govtIdType || !govtIdType.trim()) {
+        showToast({ title: 'Missing Government ID Type', message: 'Please select Government ID type (Aadhaar, PAN Card, etc.).', type: 'warning' });
+        return;
+      }
+      if (!govtIdNumber || !govtIdNumber.trim()) {
+        showToast({ title: 'Missing Government ID Number', message: 'Government ID number is mandatory when booking for a relative.', type: 'warning' });
+        return;
+      }
+    }
+
     if (!patientName.trim()) {
       showToast({ title: 'Missing Patient Name', message: 'Please enter patient name.', type: 'warning' });
       return;
@@ -293,11 +320,17 @@ export const BookDoctorVisitModal: React.FC<BookDoctorVisitModalProps> = ({
     const finalFeeFormatted = `₹${rawNumericFee.toLocaleString('en-IN')}`;
 
     const bookingDetails = {
+      primaryPatientName: primaryAccountName,
       patientName,
       patientAge,
       patientGender,
       patientPhone,
       patientEmail,
+      bookingFor,
+      isRelative: isRel,
+      relation: isRel ? relativeRelation : 'self',
+      govtIdType: isRel ? govtIdType : undefined,
+      govtIdNumber: isRel ? govtIdNumber : undefined,
       visitReason: followUpContext?.isFollowUp
         ? `Follow-Up Consultation: ${followUpContext.diagnosis || 'Ongoing Diagnosis Workup'}`
         : visitReason,
@@ -419,17 +452,148 @@ export const BookDoctorVisitModal: React.FC<BookDoctorVisitModalProps> = ({
         )}
 
         <form onSubmit={handleProceedSubmit} className="space-y-6">
-          {/* SECTION 1: MANDATORY PATIENT DETAILS */}
-          <div className="space-y-3 bg-slate-50 border border-slate-200/90 p-4 sm:p-5 rounded-2xl">
-            <div className="flex items-center justify-between">
+          {/* SECTION 1: MANDATORY PATIENT DETAILS & RELATIVE BOOKING TOGGLE */}
+          <div className="space-y-4 bg-slate-50 border border-slate-200/90 p-4 sm:p-5 rounded-2xl">
+            <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-slate-200/70 pb-3">
               <h4 className="font-black text-xs uppercase tracking-wider text-slate-900 flex items-center gap-2">
                 <User className="w-4 h-4 text-blue-600" />
-                <span>1. Patient Information (Mandatory *)</span>
+                <span>1. Patient Information & Booking Context</span>
               </h4>
-              <span className="text-[10px] font-bold text-rose-600 bg-rose-50 border border-rose-200 px-2 py-0.5 rounded-full">
-                * All 5 Fields Required
+              <span className="text-[10px] font-bold text-blue-700 bg-blue-50 border border-blue-200 px-2.5 py-0.5 rounded-full">
+                Primary Account: {primaryAccountName}
               </span>
             </div>
+
+            {/* BOOKING FOR TOGGLE: SELF VS RELATIVE */}
+            <div className="space-y-2">
+              <label className="block text-[11px] font-extrabold text-slate-700 uppercase tracking-wider">
+                Who is this consultation for? <span className="text-rose-500">*</span>
+              </label>
+              <div className="grid grid-cols-2 gap-3 max-w-md">
+                <button
+                  type="button"
+                  onClick={() => {
+                    setBookingFor('SELF');
+                    setPatientName(activeProfile.displayName);
+                  }}
+                  className={`py-2.5 px-4 rounded-xl border text-xs font-black transition-all cursor-pointer flex items-center justify-center gap-2 ${
+                    bookingFor === 'SELF'
+                      ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-600/20 scale-[1.02]'
+                      : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
+                  }`}
+                >
+                  <User className="w-4 h-4" />
+                  <span>Myself ({primaryAccountName})</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    setBookingFor('RELATIVE');
+                    if (patientName === activeProfile.displayName) {
+                      setPatientName('');
+                    }
+                  }}
+                  className={`py-2.5 px-4 rounded-xl border text-xs font-black transition-all cursor-pointer flex items-center justify-center gap-2 ${
+                    bookingFor === 'RELATIVE'
+                      ? 'bg-purple-600 text-white border-purple-600 shadow-md shadow-purple-600/20 scale-[1.02]'
+                      : 'bg-white text-slate-700 border-slate-200 hover:bg-slate-100'
+                  }`}
+                >
+                  <ShieldCheck className="w-4 h-4" />
+                  <span>Relative (Family Member)</span>
+                </button>
+              </div>
+            </div>
+
+            {/* CONDITIONAL RELATIVE DETAILS & MANDATORY GOVT ID SECTION */}
+            {bookingFor === 'RELATIVE' && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: 'auto' }}
+                exit={{ opacity: 0, height: 0 }}
+                className="p-4 bg-purple-50/80 border border-purple-200 rounded-2xl space-y-3"
+              >
+                <div className="flex items-center justify-between">
+                  <h5 className="font-extrabold text-xs text-purple-900 flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-purple-600" />
+                    <span>Relative Details & Mandatory Government Verification</span>
+                  </h5>
+                  <span className="text-[10px] font-black text-rose-700 bg-rose-100 border border-rose-200 px-2 py-0.5 rounded-full">
+                    * Govt ID Mandatory For Relative
+                  </span>
+                </div>
+
+                <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+                  {/* Allowed Relation Selection */}
+                  <div>
+                    <label className="block text-[11px] font-extrabold text-purple-900 mb-1">
+                      Relationship <span className="text-rose-600">*</span>
+                    </label>
+                    <select
+                      value={relativeRelation}
+                      onChange={(e) => setRelativeRelation(e.target.value)}
+                      className="w-full px-3 py-2 bg-white border border-purple-200 rounded-xl text-xs font-bold text-slate-900 outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 cursor-pointer"
+                    >
+                      <option value="father">Father</option>
+                      <option value="mother">Mother</option>
+                      <option value="son">Son</option>
+                      <option value="daughter">Daughter</option>
+                      <option value="son in law">Son in Law</option>
+                      <option value="daughter in law">Daughter in Law</option>
+                      <option value="father in law">Father in Law</option>
+                      <option value="mother in law">Mother in Law</option>
+                      <option value="uncle">Uncle</option>
+                      <option value="aunty">Aunty</option>
+                    </select>
+                  </div>
+
+                  {/* Govt ID Type */}
+                  <div>
+                    <label className="block text-[11px] font-extrabold text-purple-900 mb-1">
+                      Government ID Type <span className="text-rose-600">*</span>
+                    </label>
+                    <select
+                      value={govtIdType}
+                      onChange={(e) => setGovtIdType(e.target.value)}
+                      className="w-full px-3 py-2 bg-white border border-purple-200 rounded-xl text-xs font-bold text-slate-900 outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 cursor-pointer"
+                    >
+                      <option value="Aadhaar Card">Aadhaar Card</option>
+                      <option value="PAN Card">PAN Card</option>
+                      <option value="Passport">Passport</option>
+                      <option value="Voter ID">Voter ID</option>
+                      <option value="Driving License">Driving License</option>
+                    </select>
+                  </div>
+
+                  {/* Govt ID Number */}
+                  <div>
+                    <label className="block text-[11px] font-extrabold text-purple-900 mb-1">
+                      Govt ID Number <span className="text-rose-600">*</span>
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      placeholder="e.g. 5412-8921-9043 / ABCDE1234F"
+                      value={govtIdNumber}
+                      onChange={(e) => setGovtIdNumber(e.target.value)}
+                      className="w-full px-3 py-2 bg-white border border-purple-200 rounded-xl text-xs font-bold text-slate-900 outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20"
+                    />
+                  </div>
+                </div>
+
+                {/* S3 Medical Records Folder Preview Badge */}
+                <div className="p-2.5 bg-purple-100/70 border border-purple-200 rounded-xl text-[11px] font-bold text-purple-950 flex items-center justify-between">
+                  <div className="flex items-center gap-2">
+                    <span className="text-base">🗂️</span>
+                    <span>S3 Medical Storage Path for {relativeRelation || 'Relative'}:</span>
+                  </div>
+                  <code className="text-[10px] bg-white border border-purple-300 px-2 py-0.5 rounded text-purple-800 font-mono font-bold">
+                    s3://medflow-medical-records/prescriptions/{primaryAccountName}/
+                  </code>
+                </div>
+              </motion.div>
+            )}
 
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               {/* Patient Name */}
@@ -442,7 +606,7 @@ export const BookDoctorVisitModal: React.FC<BookDoctorVisitModalProps> = ({
                   <input
                     type="text"
                     required
-                    placeholder="e.g. Alexander Smith"
+                    placeholder={bookingFor === 'RELATIVE' ? "Relative's Full Name" : 'Your Full Name'}
                     value={patientName}
                     onChange={(e) => setPatientName(e.target.value)}
                     className="w-full pl-9 pr-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all"

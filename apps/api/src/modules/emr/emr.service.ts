@@ -5,6 +5,8 @@ import { generatePrescriptionPdf } from '../../lib/pdfGenerator.js';
 import { getPrescriptionEmail } from '../../lib/emailTemplates.js';
 import { sendMail } from '../../lib/mailer.js';
 
+import { uploadPrescriptionToS3 } from '../../lib/s3Client.js';
+
 export class EmrService {
   private repository = new EmrRepository();
 
@@ -21,11 +23,18 @@ export class EmrService {
   async createEmr(data: any, hospitalId: string) {
     const created = await this.repository.create(data, hospitalId);
 
-    // Generate PDF Prescription & Dispatch Email to Patient with Attachment
+    // Generate PDF Prescription & Dispatch Email to Patient with Attachment & S3 Upload
     try {
-      await this.dispatchPrescription(data, hospitalId);
+      const dispatchRes = await this.dispatchPrescription(data, hospitalId);
+      if (created && dispatchRes.s3Key) {
+        await this.repository.update(created._id?.toString() || created.id, {
+          s3Key: dispatchRes.s3Key,
+          s3Url: dispatchRes.s3Url,
+          s3Bucket: dispatchRes.s3Bucket,
+        }, hospitalId).catch(() => {});
+      }
     } catch {
-      // Non-blocking email error log
+      // Non-blocking email / S3 error log
     }
 
     return created;
@@ -34,6 +43,7 @@ export class EmrService {
   async dispatchPrescription(data: any, _hospitalId: string = 'HOSP-001') {
     const rxId = data.rxNumber || `RX-2026-${Math.floor(10000 + Math.random() * 90000)}`;
     const patientName = data.patientName || 'Jane Patient';
+    const primaryAccountName = data.primaryPatientName || data.accountHolderName || data.primaryUser || patientName;
     const mrn = data.mrn || 'MC-1001';
     const doctorName = data.doctorName || 'Dr. Gregory House, M.D.';
     const diagnosis = data.diagnosis || 'Essential Hypertension & Cardiac Risk Profiling';
@@ -71,6 +81,18 @@ export class EmrService {
       signatureHash: data.signatureHash || 'SHA256: 8f92a40b192c78d011fe928410294ab12',
     });
 
+    // Automatically Upload Prescription PDF to AWS S3 Medical Records Bucket (NOT KYC Vault)
+    // S3 Key: prescriptions/{Primary Account Name}/{Patient Name}_prescription_{timestamp}.pdf
+    const s3Result = await uploadPrescriptionToS3({
+      primaryAccountName,
+      patientName,
+      isRelative: Boolean(data.isRelative),
+      relation: data.relation,
+      doctorName,
+      department: data.department,
+      buffer: pdfBuffer,
+    });
+
     const emailTpl = getPrescriptionEmail({ patientName, doctorName, diagnosis, rxId });
 
     await sendMail({
@@ -79,14 +101,22 @@ export class EmrService {
       html: emailTpl.html,
       attachments: [
         {
-          filename: `Prescription_${rxId}.pdf`,
+          filename: s3Result.fileName || `Prescription_${rxId}.pdf`,
           content: pdfBuffer,
           contentType: 'application/pdf',
         },
       ],
     });
 
-    return { rxId, status: 'DISPATCHED_TO_PATIENT_EMAIL', attachment: `Prescription_${rxId}.pdf` };
+    return {
+      rxId,
+      status: 'DISPATCHED_AND_STORED_IN_S3',
+      s3Key: s3Result.s3Key,
+      s3Url: s3Result.s3Url,
+      s3Bucket: s3Result.bucket,
+      primaryFolder: s3Result.primaryFolder,
+      attachment: s3Result.fileName,
+    };
   }
 
   async updateEmr(id: string, data: any, hospitalId: string) {
