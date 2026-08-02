@@ -501,12 +501,12 @@ export const AppShell: React.FC<AppShellProps> = ({ children, userRole = 'DOCTOR
         } ${isMobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
       >
         <div className="space-y-3 p-3 sm:p-4 flex-1 flex flex-col min-h-0 overflow-hidden">
-          <div className="flex items-center justify-between gap-1.5 shrink-0 pb-2 border-b border-slate-100/80">
-            <Logo textVisible={!isCollapsed} showTagline={!isCollapsed} />
+          <div className="flex items-center justify-between shrink-0 pb-2 border-b border-slate-100/80 min-w-0">
+            <Logo size={28} textVisible={!isCollapsed} showTagline={false} />
             <button
               onClick={() => setIsCollapsed(!isCollapsed)}
               title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
-              className="hidden lg:flex items-center justify-center p-1.5 rounded-xl bg-slate-100/80 hover:bg-blue-600 text-slate-500 hover:text-white border border-slate-200/90 shadow-2xs transition-all duration-200 cursor-pointer shrink-0 z-30 group"
+              className="hidden lg:flex items-center justify-center p-1.5 rounded-xl bg-slate-100 hover:bg-blue-600 text-slate-500 hover:text-white border border-slate-200/90 shadow-2xs transition-all duration-200 cursor-pointer shrink-0 ml-1 group"
             >
               <ChevronLeft className={`w-4 h-4 transition-transform duration-300 ${isCollapsed ? 'rotate-180 text-blue-600 group-hover:text-white' : ''}`} />
             </button>
@@ -616,8 +616,12 @@ export const AppShell: React.FC<AppShellProps> = ({ children, userRole = 'DOCTOR
             )}
           </div>
 
-          {/* INTERACTIVE WELCOME BACK USER BANNER IN NAVBAR (CENTERED & HIGH INDUSTRY STANDARD) */}
-          <div className="flex-1 flex items-center justify-center px-2">
+          {/* INTERACTIVE ANIMATED SCROLLABLE TICKER IN NAVBAR (RIGHT TO LEFT MARQUEE) */}
+          <div className="flex-1 overflow-hidden relative mx-2 sm:mx-4 h-9 flex items-center bg-slate-50 border border-slate-200/80 rounded-full px-3 shadow-2xs max-w-2xl">
+            {/* Left & Right Fade Gradients */}
+            <div className="absolute left-0 top-0 bottom-0 w-6 bg-gradient-to-r from-slate-50 to-transparent z-10 pointer-events-none" />
+            <div className="absolute right-0 top-0 bottom-0 w-6 bg-gradient-to-l from-slate-50 to-transparent z-10 pointer-events-none" />
+
             {(() => {
               const rawName = user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : user?.email?.split('@')[0] || 'User';
               const displayName = currentRole === 'DOCTOR' && !rawName.toLowerCase().startsWith('dr') ? `Dr. ${rawName}` : rawName;
@@ -627,51 +631,48 @@ export const AppShell: React.FC<AppShellProps> = ({ children, userRole = 'DOCTOR
 
               return (
                 <motion.div
-                  initial={{ opacity: 0, y: -6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  className="hidden md:flex items-center gap-3 px-3.5 py-1.5 rounded-2xl bg-gradient-to-r from-blue-50/90 via-slate-50 to-indigo-50/90 border border-slate-200/90 shadow-2xs hover:shadow-xs transition-all"
+                  animate={{ x: ['100%', '-100%'] }}
+                  transition={{
+                    duration: 18,
+                    repeat: Infinity,
+                    ease: 'linear',
+                  }}
+                  className="whitespace-nowrap flex items-center gap-6 text-xs font-bold text-slate-700 select-none"
                 >
-                  <div className="flex items-center gap-2">
-                    <span className="text-sm animate-bounce inline-block">👋</span>
-                    <div className="text-left">
-                      <span className="text-[10px] font-extrabold text-slate-500 block leading-tight">
-                        {greeting},
-                      </span>
-                      <span className="text-xs font-black text-slate-900 block leading-tight tracking-tight">
-                        {displayName}
-                      </span>
-                    </div>
-                  </div>
-
-                  <div className="h-4 w-px bg-slate-200/80 mx-0.5" />
-
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-2xs shadow-emerald-500" />
-                    <span className="text-[9.5px] font-black uppercase tracking-wider text-slate-600">
-                      {roleLabel} Active
-                    </span>
-                  </div>
+                  <span className="flex items-center gap-2">
+                    <span className="text-sm">👋</span>
+                    <span>{greeting}, <strong className="text-blue-600 font-black">{displayName}</strong>! Welcome to your workstation.</span>
+                  </span>
+                  <span className="text-slate-300">•</span>
+                  <span className="flex items-center gap-1.5 text-emerald-700 bg-emerald-50 border border-emerald-200/90 px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase tracking-wider">
+                    <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
+                    {roleLabel} SESSION ACTIVE
+                  </span>
+                  <span className="text-slate-300">•</span>
+                  <span className="text-slate-500 font-semibold">MediCore 360 Enterprise Healthcare System</span>
+                  <span className="text-slate-300">•</span>
+                  <span className="text-indigo-600 font-extrabold text-[11px]">256-bit HIPAA EMR Vault Secured</span>
                 </motion.div>
               );
             })()}
           </div>
 
           <div className="flex items-center gap-3 shrink-0">
-            {/* User Profile Badge */}
+            {/* User Profile Info (No S Logo Avatar Icon) */}
             {(() => {
               const rawName = user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : user?.email?.split('@')[0] || 'User';
               const displayName = currentRole === 'DOCTOR' && !rawName.toLowerCase().startsWith('dr') ? `Dr. ${rawName}` : rawName;
               const roleLabel = currentRole.replace(/_/g, ' ');
 
               return (
-                <div className="flex items-center gap-2.5 pl-3 border-l border-slate-200">
-                  <div className="w-8.5 h-8.5 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 border border-blue-400/30 flex items-center justify-center text-white font-black text-xs shadow-sm">
-                    {user?.firstName ? user.firstName[0] : 'U'}
-                  </div>
-                  <div className="hidden sm:block text-left" title={user?.email || ''}>
-                    <span className="font-black text-xs text-slate-900 block leading-tight">
-                      {displayName}
-                    </span>
+                <div className="flex items-center gap-2 pl-3 border-l border-slate-200" title={user?.email || ''}>
+                  <div className="text-left">
+                    <div className="flex items-center gap-1.5">
+                      <span className="font-black text-xs sm:text-sm text-slate-900 leading-tight">
+                        {displayName}
+                      </span>
+                      <span className="w-1.5 h-1.5 rounded-full bg-emerald-500" title="Session Active" />
+                    </div>
                     <span className="text-[9.5px] font-extrabold uppercase text-blue-600 block leading-tight tracking-wider mt-0.5">
                       {roleLabel}
                     </span>
