@@ -387,7 +387,16 @@ export const getPatientInvoices = (): PatientInvoice[] => {
     return INITIAL_PATIENT_INVOICES;
   }
   try {
-    return JSON.parse(stored);
+    const parsed: PatientInvoice[] = JSON.parse(stored);
+    const missing = INITIAL_PATIENT_INVOICES.filter(
+      (initInv) => !parsed.some((p) => p.id === initInv.id || p.invoiceCode === initInv.invoiceCode)
+    );
+    if (missing.length > 0) {
+      const merged = [...parsed, ...missing];
+      localStorage.setItem(STORAGE_KEYS.PATIENT_INVOICES, JSON.stringify(merged));
+      return merged;
+    }
+    return parsed;
   } catch {
     return INITIAL_PATIENT_INVOICES;
   }
