@@ -231,7 +231,7 @@ const CLINICAL_ROSTER_DATABASE: PatientEmrProfile[] = [
 
 // Helper to construct account-specific dynamic EMR profile
 function generateAccountEmr(user: any): PatientEmrProfile {
-  const name = user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : 'Sai Satyabrata';
+  const name = user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : 'Patient Account';
   const email = user?.email || 'patient@medflow.com';
 
   // Check if matches preset roster
@@ -293,7 +293,7 @@ export default function EmrPage() {
 
   const isPatientRole = user?.role === 'PATIENT';
   const currentRole = user?.role || 'DOCTOR';
-  const fullName = user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : 'Sai Satyabrata';
+  const fullName = user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : 'Patient Account';
 
   useEffect(() => {
     if (!loading && !user) {

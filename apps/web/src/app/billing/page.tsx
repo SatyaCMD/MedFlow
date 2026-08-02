@@ -50,7 +50,7 @@ export default function BillingPage() {
   const currentRole = user?.role || 'SUPER_ADMIN';
   const isAdminRole = currentRole === 'SUPER_ADMIN' || currentRole === 'HOSPITAL_ADMIN';
   const isPatientRole = currentRole === 'PATIENT';
-  const fullName = user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : 'Sai Satyabrata';
+  const fullName = user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : 'Patient Account';
 
   // Invoices & Search State
   const [patientInvoices, setPatientInvoices] = useState<PatientInvoice[]>([]);
@@ -83,7 +83,7 @@ export default function BillingPage() {
     if (isPatientRole || fullName) {
       const normName = fullName.toLowerCase();
       const normEmail = (user?.email || '').toLowerCase();
-      const firstNameLower = (user?.firstName || 'sai').toLowerCase();
+      const firstNameLower = (user?.firstName || 'patient').toLowerCase();
 
       const matched = patientInvoices.filter((inv) => {
         const invName = inv.patientName.toLowerCase();
@@ -98,16 +98,16 @@ export default function BillingPage() {
 
       if (matched.length > 0) return matched;
 
-      // Fallback: If no invoice matches, generate comprehensive itemized invoice for the patient
+      // Fallback: If no invoice matches, generate comprehensive itemized invoice for the patient account
       const fallbackInvoice: PatientInvoice = {
-        id: `inv-dyn-${user?.id || 'sai'}`,
+        id: `inv-dyn-${user?.id || 'patient'}`,
         invoiceCode: 'INV-2026-9905',
         date: '2026-07-30',
         timestamp: Date.now(),
-        patientName: fullName || 'Sai Satyabrata',
+        patientName: fullName || 'Patient Account',
         mrn: 'MC-1005',
-        email: user?.email || 'saisatyabrata952@gmail.com',
-        phone: '+91 98765 12345',
+        email: user?.email || 'patient@medflow.com',
+        phone: user?.phone || '+91 98765 43210',
         department: 'Cardiology, Pathology & Dispensary',
         attendingDoctor: 'Dr. Anup Singh',
         lineItems: [
@@ -237,13 +237,12 @@ export default function BillingPage() {
       accessor: (row: PatientInvoice) => (
         <button
           onClick={() => handleOpenTpaModal(row)}
-          className={`px-3 py-1 rounded-full text-[10px] font-black uppercase flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 shadow-2xs hover:shadow-md ${
-            row.tpaStatus.includes('Approved') || row.tpaStatus.includes('Settled')
+          className={`px-3 py-1 rounded-full text-[10px] font-black uppercase flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 shadow-2xs hover:shadow-md ${row.tpaStatus.includes('Approved') || row.tpaStatus.includes('Settled')
               ? 'bg-emerald-100 text-emerald-900 border border-emerald-300 hover:bg-emerald-200'
               : row.tpaStatus.includes('Direct')
-              ? 'bg-blue-100 text-blue-900 border border-blue-300 hover:bg-blue-200'
-              : 'bg-amber-100 text-amber-900 border border-amber-300 hover:bg-amber-200'
-          }`}
+                ? 'bg-blue-100 text-blue-900 border border-blue-300 hover:bg-blue-200'
+                : 'bg-amber-100 text-amber-900 border border-amber-300 hover:bg-amber-200'
+            }`}
           title="Click to track interactive TPA Insurance claim status & authorization letter"
         >
           <ShieldCheck className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
@@ -277,7 +276,7 @@ export default function BillingPage() {
           amount={paymentTarget.amount}
           patientName={fullName}
           userRole={currentRole}
-          onPaymentSuccess={() => {}}
+          onPaymentSuccess={() => { }}
         />
 
         {/* Header */}
