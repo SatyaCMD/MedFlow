@@ -349,24 +349,69 @@ export function getAppointmentConfirmationEmail(params: {
  */
 export function getPharmacyInvoiceEmail(params: {
   customerName: string;
+  purchaserName?: string;
+  purchaserRole?: string;
   invoiceId: string;
   grandTotal: number;
+  paymentMethod?: string;
+  items?: Array<{ name: string; quantity: number; unitPrice: number; total: number }>;
 }) {
   const invCode = params.invoiceId.startsWith('INV-') ? params.invoiceId : `INV-${params.invoiceId}`;
+  const purchaserName = params.purchaserName || params.customerName;
+  const purchaserRole = params.purchaserRole || 'PATIENT';
+
+  const itemsTableRows = (params.items || [])
+    .map(
+      (item) => `
+    <tr>
+      <td style="padding: 6px 8px; border-bottom: 1px solid #e2e8f0; font-size: 12px; color: #1e293b;">${item.name}</td>
+      <td style="padding: 6px 8px; border-bottom: 1px solid #e2e8f0; font-size: 12px; color: #475569; text-align: center;">${item.quantity}</td>
+      <td style="padding: 6px 8px; border-bottom: 1px solid #e2e8f0; font-size: 12px; color: #059669; font-weight: 700; text-align: right;">₹${item.total.toFixed(2)}</td>
+    </tr>
+  `
+    )
+    .join('');
 
   const bodyContent = `
     <h2 style="margin-top: 0; color: #065f46; font-size: 17px; font-weight: 800;">Dear ${params.customerName},</h2>
     <p style="color: #334155; margin-bottom: 20px;">
-      Thank you for your medicine purchase at the MediCore 360 Pharmacy & Dispensary. Below is your transaction summary:
+      Thank you for your medicine & medical supplies purchase at the MediCore 360 Pharmacy & Dispensary. Below is your transaction breakdown:
     </p>
 
+    <!-- Purchase Details Card -->
     <div style="background-color: #f0fdf4; border: 1px solid #bbf7d0; border-left: 5px solid #16a34a; padding: 20px; border-radius: 12px; margin-bottom: 24px;">
       <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0">
-        <tr><td style="padding: 4px 0; font-size: 13px;"><strong>Tax Invoice ID:</strong> #${invCode}</td></tr>
+        <tr><td style="padding: 4px 0; font-size: 13px;"><strong>Tax Invoice Reference:</strong> #${invCode}</td></tr>
+        <tr><td style="padding: 4px 0; font-size: 13px;"><strong>Purchaser:</strong> ${purchaserName} (<span style="color: #0284c7; font-weight: 700;">Role: ${purchaserRole}</span>)</td></tr>
+        <tr><td style="padding: 4px 0; font-size: 13px;"><strong>Patient Name:</strong> ${params.customerName}</td></tr>
+        <tr><td style="padding: 4px 0; font-size: 13px;"><strong>Payment Method:</strong> ${params.paymentMethod || 'UPI / Online Card'}</td></tr>
         <tr><td style="padding: 4px 0; font-size: 13px;"><strong>Grand Total Paid:</strong> <span style="color: #15803d; font-size: 16px; font-weight: 900;">₹${params.grandTotal.toFixed(2)}</span></td></tr>
-        <tr><td style="padding: 4px 0; font-size: 13px;"><strong>Status:</strong> <span style="color: #166534; font-weight: 800;">✓ Completed & Dispensed</span></td></tr>
+        <tr><td style="padding: 4px 0; font-size: 13px;"><strong>Dispensary Status:</strong> <span style="color: #166534; font-weight: 800;">✓ Completed & Dispensed</span></td></tr>
       </table>
     </div>
+
+    ${
+      params.items && params.items.length > 0
+        ? `
+    <!-- Itemized Preview Table -->
+    <div style="margin-bottom: 24px;">
+      <div style="font-size: 12px; font-weight: 800; color: #0f172a; text-transform: uppercase; margin-bottom: 8px;">Order Summary Items</div>
+      <table role="presentation" width="100%" border="0" cellspacing="0" cellpadding="0" style="border-collapse: collapse; background-color: #ffffff; border: 1px solid #e2e8f0; border-radius: 8px; overflow: hidden;">
+        <thead>
+          <tr style="background-color: #f8fafc;">
+            <th style="padding: 8px; font-size: 11px; text-align: left; color: #475569;">Item</th>
+            <th style="padding: 8px; font-size: 11px; text-align: center; color: #475569;">Qty</th>
+            <th style="padding: 8px; font-size: 11px; text-align: right; color: #475569;">Total</th>
+          </tr>
+        </thead>
+        <tbody>
+          ${itemsTableRows}
+        </tbody>
+      </table>
+    </div>
+    `
+        : ''
+    }
 
     <!-- PDF Callout -->
     <div style="background-color: #f8fafc; border: 1px dashed #cbd5e1; padding: 18px 20px; border-radius: 12px; margin-bottom: 20px;">
@@ -378,9 +423,12 @@ export function getPharmacyInvoiceEmail(params: {
             </div>
           </td>
           <td style="padding-left: 12px;">
-            <div style="font-weight: 800; font-size: 13px; color: #0f172a;">Official Itemized Tax Invoice Attached</div>
+            <div style="font-weight: 800; font-size: 13px; color: #0f172a;">Official Interactive Tax Invoice PDF Attached</div>
             <div style="font-size: 12px; color: #64748b; margin-top: 2px;">
               File: <strong style="color: #15803d;">Pharmacy_Invoice_${invCode}.pdf</strong>
+            </div>
+            <div style="font-size: 11px; color: #94a3b8; margin-top: 2px;">
+              Includes itemized medicine breakdown, GST tax calculations, circular blue ink seal, and official pharmacist digital signature.
             </div>
           </td>
         </tr>
@@ -389,13 +437,13 @@ export function getPharmacyInvoiceEmail(params: {
   `;
 
   return {
-    subject: `💊 Pharmacy Purchase Receipt #${invCode} — ${params.customerName}`,
+    subject: `💊 Pharmacy Purchase Tax Receipt #${invCode} — ${params.customerName}`,
     html: BASE_WRAPPER(
       'linear-gradient(135deg, #15803d 0%, #16a34a 100%)',
       'Pharmacy Dispensary Tax Invoice',
-      'Itemized Medicine Purchase Receipt',
+      'Official Medicine Purchase Receipt & Invoice',
       bodyContent,
-      `Invoice #${invCode}`
+      `Invoice #${invCode} • Purchased by ${purchaserName}`
     ),
   };
 }

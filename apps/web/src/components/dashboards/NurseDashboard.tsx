@@ -332,6 +332,13 @@ export const NurseDashboard: React.FC = () => {
           </div>
         )}
       </div>
+
+      <PharmacyPurchaseModal
+        isOpen={isBuySuppliesOpen}
+        onClose={() => setIsBuySuppliesOpen(false)}
+        patientName="Inpatient Ward Station 4"
+        userRole="NURSE"
+      />
     </div>
   );
 };

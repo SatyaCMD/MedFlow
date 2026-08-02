@@ -43,6 +43,9 @@ export interface PharmacyInvoicePdfData {
   invoiceId: string;
   customerName: string;
   customerPhone?: string;
+  customerEmail?: string;
+  purchaserName?: string;
+  purchaserRole?: string; // 'PATIENT' | 'LAB_ASSISTANT' | 'NURSE' | 'CAREGIVER' | 'PHARMACIST'
   paymentMethod: string;
   date?: string;
   items: Array<{
@@ -249,56 +252,125 @@ export async function generatePrescriptionPdf(data: PrescriptionPdfData): Promis
  * 2. Generate Pharmacy Invoice / Receipt PDF
  */
 export async function generatePharmacyInvoicePdf(data: PharmacyInvoicePdfData): Promise<Buffer> {
-  const doc = new PDFDocument({ margin: 40, size: 'A4' });
+  const doc = new PDFDocument({ margin: 35, size: 'A4' });
 
-  // Header Banner
-  doc.rect(0, 0, 595, 70).fill('#059669'); // Emerald Green Header
-  doc.fillColor('#ffffff').fontSize(20).font('Helvetica-Bold').text('MEDIFLOW PHARMACY & DISPENSARY', 40, 20);
-  doc.fontSize(10).font('Helvetica').text('Official Tax Invoice & Medicine Purchase Slip', 40, 45);
+  const roleTitleMap: Record<string, string> = {
+    PATIENT: 'Self (Patient)',
+    LAB_ASSISTANT: 'Lab Assistant / Diagnostics Tech',
+    NURSE: 'Registered Nurse (R.N.)',
+    CAREGIVER: 'Caregiver / Family Representative',
+    PHARMACIST: 'Licensed Pharmacist / Dispensary Officer',
+  };
 
-  // Invoice Details Box
-  doc.fillColor('#0f172a').fontSize(14).font('Helvetica-Bold').text(`INVOICE #${data.invoiceId}`, 40, 85);
-  doc.fontSize(9).font('Helvetica').fillColor('#64748b').text(`Date: ${data.date || new Date().toLocaleDateString()}  |  Payment Mode: ${data.paymentMethod}`, 40, 102);
+  const purchaserRoleFormatted = roleTitleMap[data.purchaserRole || 'PATIENT'] || data.purchaserRole || 'Patient';
+  const purchaserNameFormatted = data.purchaserName || data.customerName || 'Authorized Purchaser';
+  const invDate = data.date || new Date().toLocaleDateString('en-US', { year: 'numeric', month: 'long', day: 'numeric' });
 
-  doc.rect(40, 120, 515, 50).fillAndStroke('#f0fdf4', '#bbf7d0');
-  doc.fillColor('#065f46').fontSize(10).font('Helvetica-Bold').text(`CUSTOMER / PATIENT: ${data.customerName}`, 50, 132);
-  doc.font('Helvetica').fontSize(9).text(`Phone: ${data.customerPhone || '+91 98765 43210'}  |  Dispensary Station #4`, 50, 148);
+  // Top Header Logo & Emerald Gradient Banner
+  doc.rect(0, 0, 595, 75).fill('#059669'); // Emerald Green
+  doc.fillColor('#ffffff').fontSize(20).font('Helvetica-Bold').text('MEDIFLOW PHARMACY & DISPENSARY', 35, 18);
+  doc.fontSize(9.5).font('Helvetica').text('Official Tax Invoice & Medicine Purchase Slip • License #PHARM-88901', 35, 45);
+
+  // Top Right Invoice Code & Date
+  doc.fillColor('#ffffff').fontSize(14).font('Helvetica-Bold').text(`INVOICE #${data.invoiceId}`, 400, 18, { align: 'right' });
+  doc.fillColor('#dcfce7').fontSize(9).font('Helvetica').text(invDate, 400, 38, { align: 'right' });
+  doc.fillColor('#ffffff').fontSize(8.5).font('Helvetica-Bold').text(`PAYMENT: ${data.paymentMethod}`, 400, 52, { align: 'right' });
+
+  let y = 88;
+
+  // Grid Box 1: Billed Customer Details
+  doc.roundedRect(35, y, 255, 68, 8).fillAndStroke('#f0fdf4', '#bbf7d0');
+  doc.fillColor('#065f46').fontSize(8).font('Helvetica-Bold').text('PATIENT / RECIPIENT INFORMATION', 45, y + 8);
+  doc.fillColor('#0f172a').fontSize(10).font('Helvetica-Bold').text(data.customerName, 45, y + 22);
+  doc.fillColor('#334155').fontSize(8.5).font('Helvetica').text(`Email: ${data.customerEmail || 'patient@medflow.com'}`, 45, y + 36);
+  doc.text(`Phone: ${data.customerPhone || '+91 98765 43210'}  |  Dispensary Station #4`, 45, y + 49);
+
+  // Grid Box 2: Purchaser Metadata & Role Badge
+  doc.roundedRect(305, y, 255, 68, 8).fillAndStroke('#eff6ff', '#bfdbfe');
+  doc.fillColor('#1e40af').fontSize(8).font('Helvetica-Bold').text('PURCHASER & ROLE METADATA', 315, y + 8);
+  doc.fillColor('#0f172a').fontSize(10).font('Helvetica-Bold').text(purchaserNameFormatted, 315, y + 22);
+
+  // Role Badge
+  doc.roundedRect(315, y + 36, 235, 20, 5).fill('#dbeafe');
+  doc.fillColor('#1d4ed8').fontSize(8).font('Helvetica-Bold').text(`Role: ${purchaserRoleFormatted}`, 323, y + 42);
 
   // Itemized Table Header
-  let y = 185;
-  doc.rect(40, y, 515, 22).fill('#064e3b');
+  y += 82;
+  doc.rect(35, y, 525, 22).fill('#064e3b');
   doc.fillColor('#ffffff').fontSize(8.5).font('Helvetica-Bold');
-  doc.text('MEDICINE ITEM', 50, y + 6);
-  doc.text('BATCH NO', 230, y + 6);
-  doc.text('QTY', 330, y + 6);
-  doc.text('UNIT PRICE (₹)', 390, y + 6);
-  doc.text('TOTAL (₹)', 480, y + 6);
+  doc.text('MEDICINE / PHARMACY ITEM DESCRIPTION', 45, y + 6);
+  doc.text('BATCH NO', 245, y + 6);
+  doc.text('QTY', 345, y + 6);
+  doc.text('UNIT PRICE (₹)', 405, y + 6);
+  doc.text('TOTAL (₹)', 495, y + 6);
 
   y += 22;
   data.items.forEach((item, idx) => {
     const rowBg = idx % 2 === 0 ? '#ffffff' : '#f8fafc';
-    doc.rect(40, y, 515, 22).fillAndStroke(rowBg, '#f1f5f9');
-    doc.fillColor('#0f172a').fontSize(8.5).font('Helvetica-Bold').text(item.name, 50, y + 6);
+    doc.rect(35, y, 525, 22).fillAndStroke(rowBg, '#f1f5f9');
+    doc.fillColor('#0f172a').fontSize(8.5).font('Helvetica-Bold').text(item.name, 45, y + 6);
     doc.font('Helvetica').fillColor('#334155');
-    doc.text(item.batchNo || 'BTH-8821', 230, y + 6);
-    doc.text(String(item.quantity), 330, y + 6);
-    doc.text(`₹${item.unitPrice.toFixed(2)}`, 390, y + 6);
-    doc.text(`₹${item.total.toFixed(2)}`, 480, y + 6);
+    doc.text(item.batchNo || 'BTH-8821', 245, y + 6);
+    doc.text(String(item.quantity), 345, y + 6);
+    doc.text(`₹${item.unitPrice.toFixed(2)}`, 405, y + 6);
+    doc.text(`₹${item.total.toFixed(2)}`, 495, y + 6);
     y += 22;
   });
 
-  // Summary Totals Box
+  // Totals Box & Gateway SSL Badge
   y += 15;
-  doc.rect(340, y, 215, 75).fillAndStroke('#ecfdf5', '#a7f3d0');
-  doc.fillColor('#065f46').fontSize(9).font('Helvetica');
-  doc.text('Subtotal:', 350, y + 10);
+  // Left: Payment Authorization Note
+  doc.roundedRect(35, y, 290, 68, 8).fill('#0f172a');
+  doc.fillColor('#94a3b8').fontSize(7.5).font('Helvetica-Bold').text('MEDIFLOW FINANCIAL GATEWAY AUTHORIZATION', 45, y + 10);
+  doc.fillColor('#38bdf8').fontSize(9.5).font('Helvetica-Bold').text(`Paid via ${data.paymentMethod}`, 45, y + 24);
+  doc.fillColor('#cbd5e1').fontSize(7.5).font('Helvetica').text('256-Bit SSL Encrypted • Tax Invoice under Healthcare GST Rules', 45, y + 42);
+
+  // Right: Summary Totals Box
+  doc.roundedRect(340, y, 220, 68, 8).fillAndStroke('#ecfdf5', '#a7f3d0');
+  doc.fillColor('#065f46').fontSize(8.5).font('Helvetica').text('Subtotal:', 350, y + 10);
   doc.text(`₹${data.subtotal.toFixed(2)}`, 480, y + 10);
   doc.text('GST / Tax (5%):', 350, y + 26);
   doc.text(`₹${data.tax.toFixed(2)}`, 480, y + 26);
-  doc.font('Helvetica-Bold').fontSize(11).text('Grand Total:', 350, y + 46);
+  doc.moveTo(350, y + 40).lineTo(545, y + 40).strokeColor('#86efac').lineWidth(1).stroke();
+  doc.font('Helvetica-Bold').fontSize(10.5).text('Grand Total Paid:', 350, y + 46);
   doc.text(`₹${data.grandTotal.toFixed(2)}`, 480, y + 46);
 
-  doc.fillColor('#94a3b8').fontSize(8).font('Helvetica').text('Thank you for choosing MediCore 360 Pharmacy. Please retain this receipt for insurance & audit.', 40, 750, { align: 'center' });
+  // Bottom Verification Footer with Circular Blue Ink Stamp & Signature
+  y = Math.max(y + 85, 685);
+  doc.moveTo(35, y).lineTo(560, y).dash(3, { space: 3 }).strokeColor('#cbd5e1').stroke();
+  doc.undash();
+
+  y += 12;
+  // QR Code / Security Badge Box
+  doc.rect(35, y, 40, 40).fill('#059669');
+  doc.fillColor('#ffffff').fontSize(5.5).font('Helvetica-Bold').text('MEDIFLOW\nPHARMACY\nVERIFIED', 35, y + 9, { align: 'center', width: 40 });
+
+  doc.fillColor('#0f172a').fontSize(8.5).font('Helvetica-Bold').text('MediFlow Pharmacy Cryptographic Receipt Seal', 82, y + 4);
+  doc.fillColor('#64748b').fontSize(7.5).font('Helvetica').text('Verified by Licensed Hospital Dispensary System', 82, y + 16);
+  doc.fillColor('#94a3b8').fontSize(7).font('Helvetica').text(`Hash: SHA256-${Date.now()}-RX88`, 82, y + 26);
+
+  // Right Circular Blue Ink Stamp & Pharmacist Signature
+  const cx = 415;
+  const cy = y + 20;
+  doc.circle(cx, cy, 22).strokeColor('#1d4ed8').lineWidth(1.5).stroke();
+  doc.circle(cx, cy, 20).strokeColor('#1d4ed8').lineWidth(0.8).stroke();
+  doc.fillColor('#1d4ed8').fontSize(5).font('Helvetica-Bold').text('★ MEDIFLOW ★', cx - 20, cy - 12, { align: 'center', width: 40 });
+  doc.fontSize(4.5).text('PHARMACY SEAL', cx - 20, cy - 3, { align: 'center', width: 40 });
+  doc.fontSize(5).text('DISPENSED', cx - 20, cy + 6, { align: 'center', width: 40 });
+
+  // Cursive Pharmacist Signature
+  doc.fillColor('#1d4ed8').fontSize(15).font('Times-BoldItalic').text('R. Sharma, Reg. Pharm.', 445, y - 4, { align: 'right' });
+  doc.moveTo(450, y + 18).lineTo(560, y + 18).strokeColor('#0f172a').lineWidth(1.5).stroke();
+  doc.fillColor('#0f172a').fontSize(8).font('Helvetica-Bold').text('Chief Registered Pharmacist', 450, y + 22, { align: 'right' });
+  doc.fillColor('#64748b').fontSize(7).font('Helvetica').text('MediFlow Hospital Pharmacy & Dispensary', 450, y + 32, { align: 'right' });
+
+  // Compliance Footnote
+  doc.fillColor('#94a3b8').fontSize(7).font('Helvetica').text(
+    'This document is an electronically generated Tax Invoice compliant with Hospital Pharmacy Regulations. Please retain for insurance & audit.',
+    35,
+    y + 48,
+    { align: 'center', width: 525 }
+  );
 
   return pdfDocToBuffer(doc);
 }

@@ -645,6 +645,15 @@ export const AppShell: React.FC<AppShellProps> = ({ children, userRole = 'DOCTOR
         <main className="flex-1 overflow-y-auto p-4 sm:p-6 lg:p-8">
           {children}
         </main>
+
+        {/* Pharmacy Purchase Modal */}
+        <PharmacyPurchaseModal
+          isOpen={isPharmacyOpen}
+          onClose={() => setIsPharmacyOpen(false)}
+          patientName={user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : 'Patient'}
+          userRole={currentRole}
+          patientEmail={user?.email || 'patient@medflow.com'}
+        />
       </div>
     </div>
   );

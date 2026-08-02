@@ -77,4 +77,33 @@ export class PharmacyController {
       next(err);
     }
   };
+
+  checkout = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const hospitalId = req.user?.hospitalId || 'HOSP-001';
+      const checkoutData = req.body;
+      const result = await this.service.processPurchaseCheckout(checkoutData, hospitalId);
+      res.status(200).json({ success: true, data: result });
+    } catch (err) {
+      next(err);
+    }
+  };
+
+  downloadInvoicePdf = async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    try {
+      const invoiceId = req.params.invoiceId;
+      const pdfBuffer = await this.service.getInvoicePdfBuffer(invoiceId);
+
+      if (!pdfBuffer) {
+        res.status(404).json({ success: false, error: { code: 'NOT_FOUND', message: 'Invoice PDF not found' } });
+        return;
+      }
+
+      res.setHeader('Content-Type', 'application/pdf');
+      res.setHeader('Content-Disposition', `attachment; filename="Pharmacy_Invoice_${invoiceId}.pdf"`);
+      res.send(pdfBuffer);
+    } catch (err) {
+      next(err);
+    }
+  };
 }

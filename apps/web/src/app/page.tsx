@@ -337,7 +337,7 @@ export default function Home() {
             </div>
           </motion.div>
 
-          {/* Quick Metrics Ribbon */}
+          {/* Quick Metrics Ribbon (Commented out as requested)
           <motion.div
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
@@ -361,9 +361,10 @@ export default function Home() {
               <span className="text-[11px] font-semibold text-slate-500 uppercase tracking-wider">Argon2 + Salt</span>
             </div>
           </motion.div>
+          */}
         </div>
 
-        {/* Interactive Workspace Previewer Component */}
+        {/* Interactive Workspace Previewer Component (Commented out as requested)
         <section id="preview" className="mt-16 w-full max-w-5xl">
           <div className="bg-white border border-slate-200 rounded-3xl p-6 md:p-8 shadow-xl relative overflow-hidden">
             <div className="flex flex-col md:flex-row md:items-center justify-between gap-4 border-b border-slate-100 pb-6 mb-6">
@@ -372,7 +373,6 @@ export default function Home() {
                 <h3 className="text-xl font-black text-slate-900 mt-0.5">Explore Platform Workspaces</h3>
               </div>
 
-              {/* Interactive Tabs */}
               <div className="flex flex-wrap gap-2 p-1 bg-slate-100 rounded-xl">
                 {[
                   { id: 'emr', label: 'EHR/EMR Records', icon: FileText },
@@ -396,7 +396,6 @@ export default function Home() {
               </div>
             </div>
 
-            {/* Dynamic Content Display per Active Tab */}
             <AnimatePresence mode="wait">
               {activeTab === 'emr' && (
                 <motion.div
@@ -513,6 +512,7 @@ export default function Home() {
             </AnimatePresence>
           </div>
         </section>
+        */}
 
         {/* Feature Cards Grid */}
         <section id="features" className="mt-20 w-full">

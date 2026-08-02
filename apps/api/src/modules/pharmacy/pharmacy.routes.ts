@@ -12,5 +12,7 @@ router.delete('/:id', controller.delete);
 
 router.post('/sync', controller.syncCatalog);
 router.post('/update-stock', controller.updateStock);
+router.post('/checkout', controller.checkout);
+router.get('/invoices/:invoiceId/pdf', controller.downloadInvoicePdf);
 
 export default router;
