@@ -501,13 +501,14 @@ export const AppShell: React.FC<AppShellProps> = ({ children, userRole = 'DOCTOR
         } ${isMobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
       >
         <div className="space-y-3 p-3 sm:p-4 flex-1 flex flex-col min-h-0 overflow-hidden">
-          <div className="flex items-center justify-between shrink-0">
+          <div className="flex items-center justify-between gap-1.5 shrink-0 pb-2 border-b border-slate-100/80">
             <Logo textVisible={!isCollapsed} showTagline={!isCollapsed} />
             <button
               onClick={() => setIsCollapsed(!isCollapsed)}
-              className="hidden lg:flex p-1.5 rounded-xl hover:bg-slate-100 text-slate-400 hover:text-slate-600 transition-colors"
+              title={isCollapsed ? "Expand Sidebar" : "Collapse Sidebar"}
+              className="hidden lg:flex items-center justify-center p-1.5 rounded-xl bg-slate-100/80 hover:bg-blue-600 text-slate-500 hover:text-white border border-slate-200/90 shadow-2xs transition-all duration-200 cursor-pointer shrink-0 z-30 group"
             >
-              <ChevronLeft className={`w-5 h-5 transition-transform ${isCollapsed ? 'rotate-180' : ''}`} />
+              <ChevronLeft className={`w-4 h-4 transition-transform duration-300 ${isCollapsed ? 'rotate-180 text-blue-600 group-hover:text-white' : ''}`} />
             </button>
           </div>
 
@@ -595,7 +596,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children, userRole = 'DOCTOR
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden">
         {/* Top Navbar */}
         <header className="h-16 bg-white border-b border-slate-200/80 px-4 sm:px-6 flex items-center justify-between gap-4 shrink-0">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-3 shrink-0">
             <button
               onClick={() => setIsMobileOpen(true)}
               className="lg:hidden p-2 rounded-xl text-slate-600 hover:bg-slate-100"
@@ -610,12 +611,52 @@ export const AppShell: React.FC<AppShellProps> = ({ children, userRole = 'DOCTOR
                 className="px-3 py-1.5 bg-slate-900 hover:bg-slate-800 text-white rounded-xl text-xs font-black flex items-center gap-1.5 shadow-sm transition-all cursor-pointer"
               >
                 <LayoutGrid className="w-3.5 h-3.5 text-blue-400" />
-                <span className="hidden sm:inline">44 Enterprise Modules</span>
+                <span className="hidden lg:inline">44 Modules</span>
               </button>
             )}
           </div>
 
-          <div className="flex items-center gap-3">
+          {/* INTERACTIVE WELCOME BACK USER BANNER IN NAVBAR (CENTERED & HIGH INDUSTRY STANDARD) */}
+          <div className="flex-1 flex items-center justify-center px-2">
+            {(() => {
+              const rawName = user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : user?.email?.split('@')[0] || 'User';
+              const displayName = currentRole === 'DOCTOR' && !rawName.toLowerCase().startsWith('dr') ? `Dr. ${rawName}` : rawName;
+              const roleLabel = currentRole.replace(/_/g, ' ');
+              const hour = new Date().getHours();
+              const greeting = hour < 12 ? 'Good morning' : hour < 17 ? 'Good afternoon' : 'Good evening';
+
+              return (
+                <motion.div
+                  initial={{ opacity: 0, y: -6 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  className="hidden md:flex items-center gap-3 px-3.5 py-1.5 rounded-2xl bg-gradient-to-r from-blue-50/90 via-slate-50 to-indigo-50/90 border border-slate-200/90 shadow-2xs hover:shadow-xs transition-all"
+                >
+                  <div className="flex items-center gap-2">
+                    <span className="text-sm animate-bounce inline-block">👋</span>
+                    <div className="text-left">
+                      <span className="text-[10px] font-extrabold text-slate-500 block leading-tight">
+                        {greeting},
+                      </span>
+                      <span className="text-xs font-black text-slate-900 block leading-tight tracking-tight">
+                        {displayName}
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="h-4 w-px bg-slate-200/80 mx-0.5" />
+
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse shadow-2xs shadow-emerald-500" />
+                    <span className="text-[9.5px] font-black uppercase tracking-wider text-slate-600">
+                      {roleLabel} Active
+                    </span>
+                  </div>
+                </motion.div>
+              );
+            })()}
+          </div>
+
+          <div className="flex items-center gap-3 shrink-0">
             {/* User Profile Badge */}
             {(() => {
               const rawName = user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : user?.email?.split('@')[0] || 'User';
@@ -624,14 +665,14 @@ export const AppShell: React.FC<AppShellProps> = ({ children, userRole = 'DOCTOR
 
               return (
                 <div className="flex items-center gap-2.5 pl-3 border-l border-slate-200">
-                  <div className="w-8 h-8 rounded-xl bg-blue-50 border border-blue-200 flex items-center justify-center text-blue-600 font-black text-xs shadow-xs">
+                  <div className="w-8.5 h-8.5 rounded-2xl bg-gradient-to-br from-blue-500 to-indigo-600 border border-blue-400/30 flex items-center justify-center text-white font-black text-xs shadow-sm">
                     {user?.firstName ? user.firstName[0] : 'U'}
                   </div>
                   <div className="hidden sm:block text-left" title={user?.email || ''}>
                     <span className="font-black text-xs text-slate-900 block leading-tight">
                       {displayName}
                     </span>
-                    <span className="text-[10px] font-bold uppercase text-slate-500 block leading-tight tracking-wide mt-0.5">
+                    <span className="text-[9.5px] font-extrabold uppercase text-blue-600 block leading-tight tracking-wider mt-0.5">
                       {roleLabel}
                     </span>
                   </div>
