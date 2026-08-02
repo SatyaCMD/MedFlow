@@ -58,7 +58,8 @@ export interface PatientEmrProfile {
   }>;
 }
 
-const PATIENT_EMR_DATABASE: PatientEmrProfile[] = [
+// Roster database for Clinical Staff (Doctors, Nurses, Lab Techs, Admins)
+const CLINICAL_ROSTER_DATABASE: PatientEmrProfile[] = [
   {
     id: 'pemr-105',
     patientName: 'Sai Satyabrata',
@@ -228,17 +229,69 @@ const PATIENT_EMR_DATABASE: PatientEmrProfile[] = [
   },
 ];
 
+// Helper to construct account-specific dynamic EMR profile
+function generateAccountEmr(user: any): PatientEmrProfile {
+  const name = user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : 'Sai Satyabrata';
+  const email = user?.email || 'patient@medflow.com';
+
+  // Check if matches preset roster
+  const preset = CLINICAL_ROSTER_DATABASE.find(
+    (p) => p.patientName.toLowerCase() === name.toLowerCase() || name.toLowerCase().includes(p.patientName.toLowerCase())
+  );
+  if (preset) return preset;
+
+  // Generate dynamic profile for logged in user account
+  const hashVal = Math.abs(
+    email.split('').reduce((acc: number, char: string) => acc + char.charCodeAt(0), 0)
+  );
+  const mrnCode = `MC-${1000 + (hashVal % 8999)}`;
+  const abha = `91-${20 + (hashVal % 70)}-${1000 + (hashVal % 8999)}-${3000 + (hashVal % 6999)}`;
+
+  return {
+    id: `pemr-${user?.id || hashVal}`,
+    patientName: name,
+    mrn: mrnCode,
+    abhaId: abha,
+    ageGender: '28 Yrs / Patient',
+    bloodGroup: 'O+',
+    allergies: ['No Known Drug Allergies (NKDA)'],
+    emergencyContact: email,
+    records: [
+      {
+        id: `rec-${hashVal}-1`,
+        visitDate: 'Jul 30, 2026',
+        attendingDoctor: 'Dr. Anup Singh, M.D.',
+        department: 'Internal Medicine & Pulmonology',
+        diagnosis: 'Acute Respiratory Tract Evaluation & Vital Signs Telemetry (ICD-10 J06.9)',
+        vitals: { bp: '120/78 mmHg', hr: '72 bpm', temp: '98.6 °F', spo2: '99%' },
+        medications: [
+          { name: 'Azithromycin 500mg', dosage: '1 Tablet Daily', frequency: 'After breakfast for 5 days' },
+          { name: 'Levosalbutamol Inhaler 100mcg', dosage: '2 Puffs PRN', frequency: 'Every 6 hours when coughing' },
+          { name: 'Paracetamol 650mg', dosage: '1 Tablet PRN', frequency: 'Every 8 hours if temp > 99°F' },
+        ],
+        labOrders: [
+          { testName: 'Chest X-Ray Digital PA View', status: 'REPORT_SUBMITTED', findings: 'Clear lung fields. Normal broncho-vascular markings.' },
+          { testName: 'CBC & Inflammatory Markers (CRP & ESR)', status: 'REPORT_SUBMITTED', findings: 'WBC: 8,400 /uL, CRP: 4.2 mg/L (Normal Baseline)' },
+        ],
+        cdssAlert: 'NO DRUG ALLERGIES DETECTED • CLINICAL RECORD VERIFIED',
+        sha256Hash: `SHA256: ${hashVal}a88b10c44fd99a221ce30194bc00`,
+      },
+    ],
+  };
+}
+
 export default function EmrPage() {
   const { user, loading } = useAuth();
   const router = useRouter();
   const { showToast } = useToast();
 
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedPatient, setSelectedPatient] = useState<PatientEmrProfile>(PATIENT_EMR_DATABASE[0]);
+  const [selectedPatient, setSelectedPatient] = useState<PatientEmrProfile | null>(null);
   const [selectedRecord, setSelectedRecord] = useState<PatientEmrProfile['records'][0] | null>(null);
   const [isRecordModalOpen, setIsRecordModalOpen] = useState(false);
   const [isVideoConsultOpen, setIsVideoConsultOpen] = useState(false);
 
+  const isPatientRole = user?.role === 'PATIENT';
   const currentRole = user?.role || 'DOCTOR';
   const fullName = user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : 'Sai Satyabrata';
 
@@ -249,54 +302,20 @@ export default function EmrPage() {
     }
 
     if (user) {
-      const normUser = fullName.toLowerCase();
-      const matched = PATIENT_EMR_DATABASE.find(
-        (p) =>
-          p.patientName.toLowerCase() === normUser ||
-          normUser.includes(p.patientName.toLowerCase()) ||
-          p.patientName.toLowerCase().includes(user.firstName?.toLowerCase() || '')
-      );
-
-      if (matched) {
-        setSelectedPatient(matched);
-      } else if (user.role === 'PATIENT') {
-        const customPatient: PatientEmrProfile = {
-          id: `pemr-${user.id || 'usr'}`,
-          patientName: fullName || 'Patient Account',
-          mrn: `MC-${Math.floor(1000 + Math.random() * 9000)}`,
-          abhaId: '91-55-9900-1122',
-          ageGender: '28 Yrs / Male',
-          bloodGroup: 'O+',
-          allergies: ['No Known Drug Allergies (NKDA)'],
-          emergencyContact: user.email || '+91 98765 12345',
-          records: [
-            {
-              id: 'rec-custom-1',
-              visitDate: 'Jul 30, 2026',
-              attendingDoctor: 'Dr. Anup Singh, M.D.',
-              department: 'Cardiology & Respiratory Medicine',
-              diagnosis: 'Acute Bronchitis & Respiratory Infection (ICD-10 J20.9)',
-              vitals: { bp: '120/78 mmHg', hr: '72 bpm', temp: '99.1 °F', spo2: '98%' },
-              medications: [
-                { name: 'Azithromycin 500mg', dosage: '1 Tablet Daily', frequency: 'After breakfast for 5 days' },
-                { name: 'Levosalbutamol Inhaler 100mcg', dosage: '2 Puffs PRN', frequency: 'Every 6 hours when coughing' },
-                { name: 'Paracetamol 650mg', dosage: '1 Tablet PRN', frequency: 'Every 8 hours if temp > 99°F' },
-              ],
-              labOrders: [
-                { testName: 'Chest X-Ray Digital PA View', status: 'REPORT_SUBMITTED', findings: 'Clear lung fields. Normal broncho-vascular markings.' },
-                { testName: 'CBC & Inflammatory Markers (CRP)', status: 'REPORT_SUBMITTED', findings: 'WBC: 8,400 /uL, CRP: 4.2 mg/L (Normal)' },
-              ],
-              cdssAlert: 'NO DRUG ALLERGIES DETECTED',
-              sha256Hash: 'SHA256: 7f81c90a11de99f220ab40192cc33',
-            },
-          ],
-        };
-        setSelectedPatient(customPatient);
+      if (isPatientRole) {
+        // Patient role gets ONLY their own dynamic account EMR
+        setSelectedPatient(generateAccountEmr(user));
+      } else {
+        // Staff/Doctor default to first patient or matched patient in roster
+        const matched = CLINICAL_ROSTER_DATABASE.find((p) =>
+          p.patientName.toLowerCase().includes(fullName.toLowerCase())
+        );
+        setSelectedPatient(matched || CLINICAL_ROSTER_DATABASE[0]);
       }
     }
-  }, [loading, user, router, fullName]);
+  }, [loading, user, router, fullName, isPatientRole]);
 
-  if (loading || !user) {
+  if (loading || !user || !selectedPatient) {
     return (
       <AppShell userRole={currentRole}>
         <div className="flex items-center justify-center min-h-[400px]">
@@ -306,7 +325,7 @@ export default function EmrPage() {
     );
   }
 
-  const filteredPatients = PATIENT_EMR_DATABASE.filter((p) => {
+  const filteredPatients = CLINICAL_ROSTER_DATABASE.filter((p) => {
     const q = searchQuery.toLowerCase().trim();
     if (!q) return true;
     return (
@@ -336,7 +355,7 @@ export default function EmrPage() {
     setIsVideoConsultOpen(true);
     showToast({
       title: 'Telemedicine Video Room Connected',
-      message: `Secure 256-bit WebRTC video consult active with ${selectedPatient.patientName}.`,
+      message: `Secure 256-bit WebRTC video consult active for ${selectedPatient.patientName}.`,
       type: 'success',
     });
   };
@@ -359,8 +378,8 @@ export default function EmrPage() {
             <div className="flex items-center gap-2">
               <h1 className="text-2xl font-black text-slate-900 flex items-center gap-2">
                 <FileText className="w-6 h-6 text-blue-600" />
-                {currentRole === 'PATIENT'
-                  ? `Personal Lifetime EHR Vault — ${fullName}`
+                {isPatientRole
+                  ? `My Personal Lifetime EHR Vault — ${fullName}`
                   : currentRole === 'NURSE'
                   ? 'Nursing Station Ward EMR & Vitals Telemetry'
                   : currentRole === 'LAB_TECHNICIAN'
@@ -372,8 +391,8 @@ export default function EmrPage() {
               </span>
             </div>
             <p className="text-xs font-semibold text-slate-600 mt-1">
-              {currentRole === 'PATIENT'
-                ? `Welcome ${fullName}. Access your encrypted electronic medical records, digital prescriptions, lab test reports, and CDSS safety badges.`
+              {isPatientRole
+                ? `Official encrypted electronic health record profile for ${fullName}. All diagnoses, prescriptions, and lab test reports are securely stored here.`
                 : 'Select or search any patient in your clinical roster to access their longitudinal medical history, CDSS safety alerts, digital prescriptions, and signed EMR files.'}
             </p>
           </div>
@@ -394,57 +413,79 @@ export default function EmrPage() {
           <StatCard title="Telemedicine Consults" value="48 Today" change={14.0} changeLabel="HD Video WebRTC" icon={Video} />
         </div>
 
-        {/* Individual Patient EMR Selector & Vault Directory */}
+        {/* EMR Profile Directory */}
         <div className="space-y-6 bg-white p-6 sm:p-8 rounded-3xl border border-slate-200/90 shadow-sm">
-          <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
-            <div>
-              <h2 className="text-base font-black text-slate-900 flex items-center gap-2">
-                <User className="w-5 h-5 text-blue-600" />
-                {currentRole === 'PATIENT' ? 'My Medical Record Profile & Switch Demo Patient' : 'Select Patient for Individual EMR History'}
-              </h2>
-              <p className="text-xs text-slate-500 font-semibold mt-0.5">
-                {currentRole === 'PATIENT'
-                  ? 'Showing your official patient medical history. Click any patient badge below to switch records.'
-                  : 'Search individual patients by Name, MRN, or ABHA ID to access their lifetime medical file.'}
-              </p>
-            </div>
+          {/* STAFF ONLY: Roster Selection Header & Search Bar */}
+          {!isPatientRole && (
+            <>
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+                <div>
+                  <h2 className="text-base font-black text-slate-900 flex items-center gap-2">
+                    <User className="w-5 h-5 text-blue-600" /> Clinical Roster — Select Patient EMR History
+                  </h2>
+                  <p className="text-xs text-slate-500 font-semibold mt-0.5">
+                    Search individual patients by Name, MRN, or ABHA ID to access their lifetime medical file.
+                  </p>
+                </div>
 
-            {/* Patient Search Input */}
-            <div className="relative w-full sm:w-80">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                placeholder="Search patient name, MRN, ABHA ID..."
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
-              />
-            </div>
-          </div>
+                {/* Patient Search Input */}
+                <div className="relative w-full sm:w-80">
+                  <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                  <input
+                    type="text"
+                    placeholder="Search patient name, MRN, ABHA ID..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500/20 focus:border-blue-600"
+                  />
+                </div>
+              </div>
 
-          {/* Patient Selection Tabs */}
-          <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
-            {filteredPatients.map((p) => {
-              const isSelected = selectedPatient.id === p.id;
-              return (
-                <button
-                  key={p.id}
-                  onClick={() => setSelectedPatient(p)}
-                  className={`px-4 py-2.5 rounded-2xl border text-xs font-bold transition-all shrink-0 cursor-pointer flex items-center gap-2 ${
-                    isSelected
-                      ? 'bg-blue-600 text-white border-blue-600 shadow-md scale-[1.02]'
-                      : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border-slate-200'
-                  }`}
-                >
-                  <User className={`w-3.5 h-3.5 ${isSelected ? 'text-white' : 'text-blue-600'}`} />
-                  <span>{p.patientName}</span>
-                  <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${isSelected ? 'bg-blue-700 text-blue-100' : 'bg-slate-200 text-slate-600'}`}>
-                    {p.mrn}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
+              {/* Patient Selection Tabs */}
+              <div className="flex items-center gap-2 overflow-x-auto pb-2 scrollbar-none">
+                {filteredPatients.map((p) => {
+                  const isSelected = selectedPatient.id === p.id;
+                  return (
+                    <button
+                      key={p.id}
+                      onClick={() => setSelectedPatient(p)}
+                      className={`px-4 py-2.5 rounded-2xl border text-xs font-bold transition-all shrink-0 cursor-pointer flex items-center gap-2 ${
+                        isSelected
+                          ? 'bg-blue-600 text-white border-blue-600 shadow-md scale-[1.02]'
+                          : 'bg-slate-50 text-slate-700 hover:bg-slate-100 border-slate-200'
+                      }`}
+                    >
+                      <User className={`w-3.5 h-3.5 ${isSelected ? 'text-white' : 'text-blue-600'}`} />
+                      <span>{p.patientName}</span>
+                      <span className={`text-[10px] font-mono px-1.5 py-0.5 rounded ${isSelected ? 'bg-blue-700 text-blue-100' : 'bg-slate-200 text-slate-600'}`}>
+                        {p.mrn}
+                      </span>
+                    </button>
+                  );
+                })}
+              </div>
+            </>
+          )}
+
+          {/* PATIENT ONLY: Secure Vault Indicator Banner */}
+          {isPatientRole && (
+            <div className="p-4 bg-linear-to-r from-blue-50 to-indigo-50 border border-blue-200/90 rounded-2xl flex items-center justify-between">
+              <div className="flex items-center gap-3">
+                <div className="p-2.5 bg-blue-600 text-white rounded-xl shadow-md">
+                  <ShieldCheck className="w-5 h-5" />
+                </div>
+                <div>
+                  <h3 className="text-sm font-black text-slate-900">Personal Longitudinal EHR Vault — {selectedPatient.patientName}</h3>
+                  <p className="text-xs text-slate-600 font-semibold mt-0.5">
+                    Your personal electronic medical history, e-prescriptions, and lab diagnostic reports.
+                  </p>
+                </div>
+              </div>
+              <span className="px-3 py-1 bg-emerald-100 text-emerald-800 border border-emerald-300 text-[10px] font-black rounded-full uppercase tracking-wider hidden sm:inline-block">
+                🔒 PRIVATE ACCESS ONLY
+              </span>
+            </div>
+          )}
 
           {/* ACTIVE INDIVIDUAL PATIENT EMR PROFILE FILE */}
           <div className="p-6 bg-slate-50 border border-slate-200/90 rounded-3xl space-y-6">
@@ -478,7 +519,7 @@ export default function EmrPage() {
             {/* Individual Patient Consultation Records */}
             <div className="space-y-4">
               <h4 className="text-xs font-black uppercase tracking-wider text-slate-600 flex items-center gap-2">
-                <Clock className="w-4 h-4 text-blue-600" /> Individual Longitudinal Consultation History & E-Prescriptions ({selectedPatient.records.length} Visit File{selectedPatient.records.length > 1 ? 's' : ''})
+                <Clock className="w-4 h-4 text-blue-600" /> Longitudinal Medical History & Digital Prescriptions ({selectedPatient.records.length} Visit File{selectedPatient.records.length > 1 ? 's' : ''})
               </h4>
 
               {selectedPatient.records.map((rec) => (
