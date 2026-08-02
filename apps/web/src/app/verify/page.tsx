@@ -54,9 +54,12 @@ function VerifyPageContent() {
     useRef<HTMLInputElement>(null),
   ];
 
+  const hasFetchedOtpRef = useRef<string | null>(null);
+
   // Fetch active debug OTP code from backend API
   const fetchBackendDebugOtp = async (token: string) => {
-    if (!token) return;
+    if (!token || hasFetchedOtpRef.current === token) return;
+    hasFetchedOtpRef.current = token;
     setFetchingDebug(true);
     try {
       const res = await api.get(`/auth/debug-otp?tempToken=${token}`);
