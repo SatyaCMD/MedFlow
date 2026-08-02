@@ -46,11 +46,21 @@ export default function BillingPage() {
   const { showToast } = useToast();
   const [currentPage, setCurrentPage] = useState(1);
 
+  // Role Checks
+  const currentRole = user?.role || 'SUPER_ADMIN';
+  const isAdminRole = currentRole === 'SUPER_ADMIN' || currentRole === 'HOSPITAL_ADMIN';
+  const isPatientRole = currentRole === 'PATIENT';
+  const fullName = user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : 'Sai Satyabrata';
+
   // Invoices & Search State
   const [patientInvoices, setPatientInvoices] = useState<PatientInvoice[]>([]);
   const [patientSearch, setPatientSearch] = useState('');
   const [selectedInvoice, setSelectedInvoice] = useState<PatientInvoice | null>(null);
   const [isInvoiceModalOpen, setIsInvoiceModalOpen] = useState(false);
+
+  // TPA Interactive Modal State
+  const [selectedTpaInvoice, setSelectedTpaInvoice] = useState<PatientInvoice | null>(null);
+  const [isTpaModalOpen, setIsTpaModalOpen] = useState(false);
 
   // Payment Modal State
   const [isPaymentOpen, setIsPaymentOpen] = useState(false);
@@ -68,7 +78,7 @@ export default function BillingPage() {
 
   if (loading || !user) {
     return (
-      <AppShell userRole="SUPER_ADMIN">
+      <AppShell userRole={currentRole}>
         <div className="flex items-center justify-center min-h-[400px]">
           <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-emerald-600" />
         </div>
@@ -76,7 +86,21 @@ export default function BillingPage() {
     );
   }
 
-  const filteredInvoices = patientInvoices.filter((inv) => {
+  // Filter invoices: Patients see ONLY their own account invoices!
+  const displayInvoices = patientInvoices.filter((inv) => {
+    if (isPatientRole) {
+      const normName = fullName.toLowerCase();
+      const normEmail = (user?.email || '').toLowerCase();
+      return (
+        inv.patientName.toLowerCase().includes(normName) ||
+        normName.includes(inv.patientName.toLowerCase()) ||
+        (inv.email && inv.email.toLowerCase() === normEmail)
+      );
+    }
+    return true;
+  });
+
+  const filteredInvoices = displayInvoices.filter((inv) => {
     const term = patientSearch.toLowerCase().trim();
     if (!term) return true;
     return (
@@ -91,6 +115,11 @@ export default function BillingPage() {
   const handleOpenInvoiceModal = (inv: PatientInvoice) => {
     setSelectedInvoice(inv);
     setIsInvoiceModalOpen(true);
+  };
+
+  const handleOpenTpaModal = (inv: PatientInvoice) => {
+    setSelectedTpaInvoice(inv);
+    setIsTpaModalOpen(true);
   };
 
   const handlePrintInvoice = () => {
@@ -164,17 +193,21 @@ export default function BillingPage() {
     {
       header: 'Insurance TPA Status',
       accessor: (row: PatientInvoice) => (
-        <span
-          className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase ${
+        <button
+          onClick={() => handleOpenTpaModal(row)}
+          className={`px-3 py-1 rounded-full text-[10px] font-black uppercase flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 shadow-2xs hover:shadow-md ${
             row.tpaStatus.includes('Approved') || row.tpaStatus.includes('Settled')
-              ? 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+              ? 'bg-emerald-100 text-emerald-900 border border-emerald-300 hover:bg-emerald-200'
               : row.tpaStatus.includes('Direct')
-              ? 'bg-blue-100 text-blue-800 border border-blue-300'
-              : 'bg-amber-100 text-amber-900 border border-amber-300'
+              ? 'bg-blue-100 text-blue-900 border border-blue-300 hover:bg-blue-200'
+              : 'bg-amber-100 text-amber-900 border border-amber-300 hover:bg-amber-200'
           }`}
+          title="Click to track interactive TPA Insurance claim status & authorization letter"
         >
-          {row.tpaStatus}
-        </span>
+          <ShieldCheck className="w-3.5 h-3.5 text-emerald-700 shrink-0" />
+          <span>{row.tpaStatus}</span>
+          <span className="text-[9px] underline ml-0.5 opacity-80 font-bold">Track →</span>
+        </button>
       ),
     },
     {
@@ -192,7 +225,7 @@ export default function BillingPage() {
   ];
 
   return (
-    <AppShell userRole="SUPER_ADMIN">
+    <AppShell userRole={currentRole}>
       <div className="space-y-8 max-w-6xl mx-auto">
         <PaymentModal
           isOpen={isPaymentOpen}
@@ -200,55 +233,81 @@ export default function BillingPage() {
           itemTitle={paymentTarget.title}
           itemCategory="APPOINTMENT"
           amount={paymentTarget.amount}
-          patientName="Staff / Patient"
-          userRole="SUPER_ADMIN"
+          patientName={fullName}
+          userRole={currentRole}
           onPaymentSuccess={() => {}}
         />
 
         {/* Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-200 pb-6">
           <div>
-            <h1 className="text-2xl font-black text-slate-900 flex items-center gap-2">
-              <CreditCard className="w-6 h-6 text-emerald-600" />
-              Hospital Billing, Finance & Individual Patient Invoices (₹ INR)
-            </h1>
+            <div className="flex items-center gap-2">
+              <h1 className="text-2xl font-black text-slate-900 flex items-center gap-2">
+                <CreditCard className="w-6 h-6 text-emerald-600" />
+                {isPatientRole
+                  ? `My Personal Billing Ledger & GST Tax Invoices — ${fullName}`
+                  : 'Hospital Billing, Finance & Individual Patient Invoices (₹ INR)'}
+              </h1>
+              <span className="px-2.5 py-0.5 rounded-full bg-emerald-100 border border-emerald-200 text-emerald-800 text-[10px] font-black uppercase">
+                {currentRole.replace(/_/g, ' ')} VIEW
+              </span>
+            </div>
             <p className="text-xs font-semibold text-slate-600 mt-1">
-              Itemized patient OPD/IPD invoices, Pharmacy & Lab line items, Cashless TPA insurance claims, 5% GST tax breakdown, and financial ledgers.
+              {isPatientRole
+                ? `Official tax invoices, itemized OPD/IPD charges, 5% GST tax breakdown, and cashless TPA insurance claim settlements for ${fullName}.`
+                : 'Itemized patient OPD/IPD invoices, Pharmacy & Lab line items, Cashless TPA insurance claims, 5% GST tax breakdown, and financial ledgers.'}
             </p>
           </div>
         </div>
 
-        {/* KPI Cards in ₹ */}
-        <div className="grid grid-cols-1 sm:grid-cols-4 gap-6">
-          <StatCard title="Total Monthly Revenue" value="₹1,24,50,000" change={14.2} changeLabel="all branches" icon={Receipt} />
-          <StatCard title="Cashless TPA Claims" value="₹42,80,000" change={8.5} changeLabel="approved claims" icon={ShieldCheck} />
-          <StatCard title="GST Taxes Collected" value="₹6,22,500" change={0.0} changeLabel="5% medical GST" icon={PieChart} />
-          <StatCard title="Pending Receivables" value="₹12,40,000" change={-3.0} changeLabel="due collections" icon={CheckCircle2} />
-        </div>
+        {/* KPI Cards: ONLY visible to Hospital Admin & Super Admin! */}
+        {isAdminRole ? (
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-6">
+            <StatCard title="Total Monthly Revenue" value="₹1,24,50,000" change={14.2} changeLabel="all branches" icon={Receipt} />
+            <StatCard title="Cashless TPA Claims" value="₹42,80,000" change={8.5} changeLabel="approved claims" icon={ShieldCheck} />
+            <StatCard title="GST Taxes Collected" value="₹6,22,500" change={0.0} changeLabel="5% medical GST" icon={PieChart} />
+            <StatCard title="Pending Receivables" value="₹12,40,000" change={-3.0} changeLabel="due collections" icon={CheckCircle2} />
+          </div>
+        ) : (
+          /* Patient Personal Financial Summary KPI Cards */
+          <div className="grid grid-cols-1 sm:grid-cols-4 gap-6">
+            <StatCard title="My Total Invoices" value={`${filteredInvoices.length} Invoices`} change={100.0} changeLabel="100% Verified" icon={Receipt} />
+            <StatCard title="TPA Cashless Coverage" value="₹4,450" change={100.0} changeLabel="Pre-Approved" icon={ShieldCheck} />
+            <StatCard title="GST Tax Paid (5%)" value="₹467.50" change={0.0} changeLabel="Medical GST" icon={PieChart} />
+            <StatCard title="Account Balance" value="₹0.00 Due" change={0.0} changeLabel="Fully Settled" icon={CheckCircle2} />
+          </div>
+        )}
 
         {/* Individual Patient Invoices Directory */}
         <div className="space-y-4 bg-white p-6 rounded-2xl border border-slate-200/90 shadow-sm">
           <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
             <div>
               <h2 className="text-base font-black text-slate-900 flex items-center gap-2">
-                <Receipt className="w-5 h-5 text-emerald-600" /> Individual Patient Invoices & Itemized Ledger
+                <Receipt className="w-5 h-5 text-emerald-600" />
+                {isPatientRole
+                  ? `Personal Tax Invoices & Itemized Ledger — ${fullName}`
+                  : 'Individual Patient Invoices & Itemized Ledger'}
               </h2>
               <p className="text-xs text-slate-500 font-semibold mt-0.5">
-                Search individual patients by Name or MRN to inspect complete itemized charges, GST tax details, and TPA settlements.
+                {isPatientRole
+                  ? `Showing official billing records for ${fullName}. Click any invoice code or Insurance TPA badge to inspect line items.`
+                  : 'Search individual patients by Name or MRN to inspect complete itemized charges, GST tax details, and TPA settlements.'}
               </p>
             </div>
 
-            {/* Patient Search Input */}
-            <div className="relative w-full sm:w-80">
-              <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
-              <input
-                type="text"
-                placeholder="Search patient name, MRN, invoice code..."
-                value={patientSearch}
-                onChange={(e) => setPatientSearch(e.target.value)}
-                className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
-              />
-            </div>
+            {/* Patient Search Input (Only shown when not restricted or for staff/admin) */}
+            {!isPatientRole && (
+              <div className="relative w-full sm:w-80">
+                <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  placeholder="Search patient name, MRN, invoice code..."
+                  value={patientSearch}
+                  onChange={(e) => setPatientSearch(e.target.value)}
+                  className="w-full pl-9 pr-4 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold text-slate-800 placeholder-slate-400 focus:outline-none focus:ring-2 focus:ring-emerald-500/20 focus:border-emerald-500"
+                />
+              </div>
+            )}
           </div>
 
           <DataTable
@@ -260,6 +319,112 @@ export default function BillingPage() {
           />
         </div>
       </div>
+
+      {/* Interactive Insurance TPA Claim Settlement Tracker Modal */}
+      <AnimatePresence>
+        {isTpaModalOpen && selectedTpaInvoice && (
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-xs">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.95 }}
+              className="bg-white rounded-3xl border border-slate-200 shadow-2xl max-w-2xl w-full overflow-hidden flex flex-col max-h-[90vh]"
+            >
+              {/* Modal Header */}
+              <div className="p-6 bg-linear-to-r from-emerald-900 via-teal-900 to-slate-900 text-white flex items-center justify-between shrink-0">
+                <div>
+                  <div className="flex items-center gap-2">
+                    <ShieldCheck className="w-5 h-5 text-emerald-400" />
+                    <span className="text-xs font-black uppercase tracking-wider text-emerald-400">Insurance TPA Pre-Authorization Telemetry</span>
+                  </div>
+                  <h3 className="text-xl font-black mt-1">{selectedTpaInvoice.tpaInsuranceName || selectedTpaInvoice.tpaStatus}</h3>
+                </div>
+                <button
+                  onClick={() => setIsTpaModalOpen(false)}
+                  className="p-2 bg-white/10 hover:bg-white/20 rounded-full transition-colors cursor-pointer"
+                >
+                  <X className="w-5 h-5 text-white" />
+                </button>
+              </div>
+
+              {/* TPA Body */}
+              <div className="p-6 sm:p-8 space-y-6 overflow-y-auto font-sans">
+                {/* Patient Summary */}
+                <div className="flex flex-col sm:flex-row justify-between gap-4 border-b border-slate-200 pb-5">
+                  <div>
+                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">INSURED PATIENT</span>
+                    <h4 className="text-lg font-black text-slate-900 mt-0.5">{selectedTpaInvoice.patientName}</h4>
+                    <p className="text-xs font-bold text-blue-600">MRN: {selectedTpaInvoice.mrn} • Invoice: #{selectedTpaInvoice.invoiceCode}</p>
+                  </div>
+                  <div className="sm:text-right">
+                    <span className="text-[10px] font-black uppercase tracking-wider text-slate-400">CLAIM STATUS</span>
+                    <div className="mt-1">
+                      <span className="px-3 py-1 bg-emerald-100 border border-emerald-300 text-emerald-900 font-black text-xs rounded-full uppercase inline-flex items-center gap-1.5">
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                        {selectedTpaInvoice.tpaStatus}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* 4-Stage Interactive Claim Progress Tracker */}
+                <div className="space-y-3 p-4 bg-slate-50 border border-slate-200/90 rounded-2xl">
+                  <h4 className="text-xs font-black uppercase tracking-wider text-slate-600 flex items-center gap-2">
+                    <Sparkles className="w-4 h-4 text-emerald-600" /> Cashless TPA Adjudication Progress
+                  </h4>
+                  <div className="grid grid-cols-4 gap-2 pt-2">
+                    <div className="text-center space-y-1">
+                      <div className="w-8 h-8 mx-auto rounded-full bg-emerald-600 text-white font-bold text-xs flex items-center justify-center shadow-md">✓</div>
+                      <span className="text-[10px] font-bold text-slate-800 block">1. Claim Filed</span>
+                    </div>
+                    <div className="text-center space-y-1">
+                      <div className="w-8 h-8 mx-auto rounded-full bg-emerald-600 text-white font-bold text-xs flex items-center justify-center shadow-md">✓</div>
+                      <span className="text-[10px] font-bold text-slate-800 block">2. Pre-Auth Audit</span>
+                    </div>
+                    <div className="text-center space-y-1">
+                      <div className="w-8 h-8 mx-auto rounded-full bg-emerald-600 text-white font-bold text-xs flex items-center justify-center shadow-md">✓</div>
+                      <span className="text-[10px] font-bold text-slate-800 block">3. Adjudication</span>
+                    </div>
+                    <div className="text-center space-y-1">
+                      <div className="w-8 h-8 mx-auto rounded-full bg-emerald-500 animate-pulse text-white font-bold text-xs flex items-center justify-center shadow-md">✓</div>
+                      <span className="text-[10px] font-bold text-emerald-700 block">4. Settled</span>
+                    </div>
+                  </div>
+                </div>
+
+                {/* Financial Summary */}
+                <div className="p-4 bg-emerald-50/70 border border-emerald-200 rounded-2xl space-y-2 text-xs font-semibold text-emerald-950">
+                  <div className="flex justify-between">
+                    <span>Total Hospital Bill:</span>
+                    <strong className="text-slate-900">₹{selectedTpaInvoice.totalAmount.toLocaleString('en-IN')}</strong>
+                  </div>
+                  <div className="flex justify-between">
+                    <span>Approved TPA Cashless Coverage:</span>
+                    <strong className="text-emerald-700">₹{selectedTpaInvoice.tpaApprovedAmount.toLocaleString('en-IN')}</strong>
+                  </div>
+                  <div className="flex justify-between border-t border-emerald-200 pt-2 text-sm font-black">
+                    <span>Net Out-of-Pocket Co-Pay:</span>
+                    <strong className="text-slate-900">₹{selectedTpaInvoice.netPatientPayable.toLocaleString('en-IN')}</strong>
+                  </div>
+                </div>
+              </div>
+
+              {/* Modal Actions Footer */}
+              <div className="p-6 bg-slate-50 border-t border-slate-200 flex items-center justify-between gap-4 shrink-0">
+                <span className="text-xs font-semibold text-slate-500 flex items-center gap-1">
+                  <ShieldCheck className="w-4 h-4 text-emerald-600" /> Verified TPA Telemetry Key #TPA-{selectedTpaInvoice.invoiceCode.slice(-4)}
+                </span>
+                <button
+                  onClick={() => setIsTpaModalOpen(false)}
+                  className="px-5 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-md cursor-pointer transition-colors"
+                >
+                  Close TPA Telemetry
+                </button>
+              </div>
+            </motion.div>
+          </div>
+        )}
+      </AnimatePresence>
 
       {/* Itemized Patient GST Tax Invoice Detail Modal */}
       <AnimatePresence>
