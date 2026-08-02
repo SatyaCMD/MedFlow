@@ -50,7 +50,7 @@ export const AuthSidebar: React.FC<AuthSidebarProps> = ({ title, subtitle }) => 
   ];
 
   return (
-    <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-slate-950 via-blue-950 to-indigo-950 relative flex-col justify-between p-6 xl:p-8 text-white overflow-y-auto border-r border-blue-900/30">
+    <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-slate-950 via-blue-950 to-indigo-950 relative flex-col justify-between p-8 xl:p-12 text-white overflow-y-auto border-r border-blue-900/30 min-h-screen">
       
       {/* Ambient Glowing Background Orbs */}
       <motion.div
@@ -68,14 +68,14 @@ export const AuthSidebar: React.FC<AuthSidebarProps> = ({ title, subtitle }) => 
       <div className="absolute inset-0 bg-[radial-gradient(rgba(255,255,255,0.06)_1px,transparent_1px)] [background-size:24px_24px] pointer-events-none opacity-60" />
 
       {/* TOP HEADER: Brand Identity */}
-      <div className="relative z-10">
-        <div className="inline-flex items-center gap-3">
-          <div className="bg-white/10 backdrop-blur-xl p-2.5 rounded-2xl border border-white/20 shadow-xl">
-            <Logo size={34} textVisible={false} className="text-white" />
+      <div className="relative z-10 mb-4">
+        <div className="inline-flex items-center gap-3.5">
+          <div className="bg-white/10 backdrop-blur-xl p-3 rounded-2xl border border-white/20 shadow-xl">
+            <Logo size={38} textVisible={false} className="text-white" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <h1 className="text-lg font-black tracking-tight text-white">MEDICORE 360</h1>
+              <h1 className="text-xl font-black tracking-tight text-white">MEDICORE 360</h1>
               <span className="px-2 py-0.5 rounded-full bg-blue-500/20 border border-blue-400/30 text-[9px] font-extrabold tracking-wider text-blue-300">
                 v1.0 ENTERPRISE
               </span>
@@ -88,56 +88,56 @@ export const AuthSidebar: React.FC<AuthSidebarProps> = ({ title, subtitle }) => 
       </div>
 
       {/* MIDDLE SECTION: Hero Copy & Interactive Telemetry Dashboard */}
-      <div className="relative z-10 my-4 py-2 space-y-5 max-w-lg">
+      <div className="relative z-10 my-auto py-6 space-y-6 max-w-lg">
         
         {/* Main Title Banner */}
-        <div className="space-y-2">
-          <div className="inline-flex items-center gap-2 px-2.5 py-0.5 rounded-full bg-blue-500/10 border border-blue-400/20 text-[11px] font-bold text-blue-300">
-            <Radio className="w-3 h-3 text-emerald-400 animate-pulse" />
+        <div className="space-y-3">
+          <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-400/20 text-xs font-bold text-blue-300">
+            <Radio className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
             <span>Secure Medical Gateway</span>
           </div>
-          <h2 className="text-2xl xl:text-3xl font-black tracking-tight leading-snug">
+          <h2 className="text-3xl xl:text-4xl font-black tracking-tight leading-[1.18]">
             {title}
           </h2>
-          <p className="text-xs font-medium text-slate-300/90 leading-relaxed">
+          <p className="text-sm font-medium text-slate-300/90 leading-relaxed">
             {subtitle}
           </p>
         </div>
 
         {/* Interactive Tab Controller */}
-        <div className="space-y-3">
+        <div className="space-y-4">
           <div className="flex items-center p-1 bg-white/5 backdrop-blur-md rounded-xl border border-white/10 text-xs font-bold">
             <button
               onClick={() => setActiveTab('security')}
-              className={`flex-1 py-2 rounded-lg flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+              className={`flex-1 py-2.5 rounded-lg flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                 activeTab === 'security'
                   ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30 border border-blue-400/40'
                   : 'text-slate-400 hover:text-white'
               }`}
             >
-              <ShieldCheck className="w-3.5 h-3.5" />
+              <ShieldCheck className="w-4 h-4" />
               <span>Security</span>
             </button>
             <button
               onClick={() => setActiveTab('telemetry')}
-              className={`flex-1 py-2 rounded-lg flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+              className={`flex-1 py-2.5 rounded-lg flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                 activeTab === 'telemetry'
                   ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30 border border-blue-400/40'
                   : 'text-slate-400 hover:text-white'
               }`}
             >
-              <Activity className="w-3.5 h-3.5" />
+              <Activity className="w-4 h-4" />
               <span>Metrics</span>
             </button>
             <button
               onClick={() => setActiveTab('compliance')}
-              className={`flex-1 py-2 rounded-lg flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
+              className={`flex-1 py-2.5 rounded-lg flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                 activeTab === 'compliance'
                   ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30 border border-blue-400/40'
                   : 'text-slate-400 hover:text-white'
               }`}
             >
-              <Award className="w-3.5 h-3.5" />
+              <Award className="w-4 h-4" />
               <span>Compliance</span>
             </button>
           </div>
@@ -151,22 +151,22 @@ export const AuthSidebar: React.FC<AuthSidebarProps> = ({ title, subtitle }) => 
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.2 }}
-                className="grid grid-cols-1 gap-2.5"
+                className="grid grid-cols-1 gap-3"
               >
                 {securityFeatures.map((item, idx) => (
                   <div
                     key={idx}
-                    className="p-3.5 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-blue-400/40 rounded-xl transition-all flex items-start gap-3 group"
+                    className="p-4 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-blue-400/40 rounded-xl transition-all flex items-start gap-3.5 group"
                   >
-                    <div className="p-2 bg-blue-500/20 text-blue-300 rounded-lg group-hover:bg-blue-600 group-hover:text-white transition-colors shrink-0">
+                    <div className="p-2.5 bg-blue-500/20 text-blue-300 rounded-xl group-hover:bg-blue-600 group-hover:text-white transition-colors shrink-0">
                       <item.icon className="w-4 h-4" />
                     </div>
                     <div>
                       <h4 className="text-xs font-bold text-white group-hover:text-blue-200 transition-colors flex items-center gap-1.5">
                         {item.title}
-                        <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                        <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
                       </h4>
-                      <p className="text-[11px] text-slate-400 font-medium mt-0.5">{item.desc}</p>
+                      <p className="text-[11px] text-slate-400 font-medium mt-0.5 leading-snug">{item.desc}</p>
                     </div>
                   </div>
                 ))}
@@ -199,16 +199,16 @@ export const AuthSidebar: React.FC<AuthSidebarProps> = ({ title, subtitle }) => 
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.2 }}
-                className="grid grid-cols-1 gap-2.5"
+                className="grid grid-cols-1 gap-3"
               >
                 {complianceBadges.map((b, idx) => (
-                  <div key={idx} className="p-3.5 bg-white/5 border border-white/10 rounded-xl flex items-center gap-3">
-                    <div className="p-2 bg-emerald-500/20 text-emerald-300 rounded-lg shrink-0">
+                  <div key={idx} className="p-4 bg-white/5 border border-white/10 rounded-xl flex items-center gap-3.5">
+                    <div className="p-2.5 bg-emerald-500/20 text-emerald-300 rounded-xl shrink-0">
                       <b.icon className="w-4 h-4" />
                     </div>
                     <div>
                       <h4 className="text-xs font-bold text-white">{b.name}</h4>
-                      <p className="text-[11px] text-slate-400 font-medium">{b.desc}</p>
+                      <p className="text-[11px] text-slate-400 font-medium leading-snug">{b.desc}</p>
                     </div>
                   </div>
                 ))}
@@ -220,7 +220,7 @@ export const AuthSidebar: React.FC<AuthSidebarProps> = ({ title, subtitle }) => 
       </div>
 
       {/* FOOTER: Live Infrastructure Telemetry Node */}
-      <div className="relative z-10 pt-6 border-t border-white/10 flex items-center justify-between text-xs font-semibold text-slate-400">
+      <div className="relative z-10 pt-6 border-t border-white/10 flex items-center justify-between text-xs font-semibold text-slate-400 mt-4">
         <div className="flex items-center gap-2">
           <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shadow-xs shadow-emerald-400" />
           <span className="text-slate-300 text-[11px]">System Status: <strong className="text-emerald-400">Operational</strong></span>
