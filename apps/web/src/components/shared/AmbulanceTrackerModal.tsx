@@ -121,12 +121,14 @@ export const AmbulanceTrackerModal: React.FC<AmbulanceTrackerModalProps> = ({
   // Random Assigned Driver
   const [assignedDriver, setAssignedDriver] = useState<DriverProfile>(DRIVER_DATASET[0]);
 
-  // Live Animation Tracking State
-  const [etaSeconds, setEtaSeconds] = useState(517); // 8m 37s
-  const [progressPercent, setProgressPercent] = useState(25);
-  const [currentStage, setCurrentStage] = useState<1 | 2 | 3 | 4>(1); // 1: Accepted, 2: En Route, 3: Arrived & Picked Up, 4: ER Transport
-  const [distanceKm, setDistanceKm] = useState(1.8);
-  const [vehicleSpeed, setVehicleSpeed] = useState(48);
+  // Live Animation Tracking State: Strict 2-minute (120-second) simulation loop
+  const [etaSeconds, setEtaSeconds] = useState(120); // Exactly 2 minutes countdown (120s -> 0s)
+  const [progressPercent, setProgressPercent] = useState(0);
+  const [currentStage, setCurrentStage] = useState<1 | 2 | 3 | 4>(1); // 1: Accepted, 2: Driving to Pickup, 3: Patient Picked Up, 4: Driving to ER
+  const [distanceKm, setDistanceKm] = useState(2.4);
+  const [vehicleSpeed, setVehicleSpeed] = useState(52);
+  const [isSimulationFinished, setIsSimulationFinished] = useState(false);
+  const [simSpeedMultiplier, setSimSpeedMultiplier] = useState<1 | 2>(1); // 1x vs 2x speed
 
   // Map View Mode: 'STREET' | 'SATELLITE'
   const [mapType, setMapType] = useState<'STREET' | 'SATELLITE'>('STREET');
@@ -226,11 +228,11 @@ export const AmbulanceTrackerModal: React.FC<AmbulanceTrackerModalProps> = ({
     // 1. Patient Home Icon Marker
     const homeIcon = L.divIcon({
       className: 'custom-map-pin',
-      html: `<div style="background:#0f172a; color:white; width:34px; height:34px; borderRadius:50%; display:flex; align-items:center; justify-content:center; border:2.5px solid white; box-shadow:0 10px 20px rgba(0,0,0,0.3); font-size:16px;">🏠</div>`,
+      html: `<div style="background:#0f172a; color:white; width:34px; height:34px; borderRadius:50%; display:flex; align-items:center; justify-content:center; border:2.5px solid white; box-shadow:0 10px 20px rgba(0,0,0,0.3); font-size:16px;">📍</div>`,
       iconSize: [34, 34],
       iconAnchor: [17, 17],
     });
-    L.marker(coords, { icon: homeIcon }).addTo(map).bindPopup(`<b>Pickup Location</b><br/>${pickupAddress}`);
+    L.marker(coords, { icon: homeIcon }).addTo(map).bindPopup(`<b>Pickup Spot</b><br/>${pickupAddress}`);
 
     // 2. Hospital ER Base Icon Marker (offset ~1.2 km west)
     const hospitalCoords: [number, number] = [coords[0] - 0.008, coords[1] - 0.012];
@@ -240,11 +242,11 @@ export const AmbulanceTrackerModal: React.FC<AmbulanceTrackerModalProps> = ({
       iconSize: [34, 34],
       iconAnchor: [17, 17],
     });
-    L.marker(hospitalCoords, { icon: hospitalIcon }).addTo(map).bindPopup('<b>MediCore ER Base</b>');
+    L.marker(hospitalCoords, { icon: hospitalIcon }).addTo(map).bindPopup('<b>MediCore Emergency ER Ward</b>');
 
     // 3. Navigation Blue Polyline
     const polyline = L.polyline([hospitalCoords, coords], {
-      color: '#2563eb',
+      color: '#dc2626',
       weight: 6,
       opacity: 0.85,
       dashArray: '8, 8',
@@ -255,14 +257,14 @@ export const AmbulanceTrackerModal: React.FC<AmbulanceTrackerModalProps> = ({
     // 4. Moving Ambulance Icon Marker
     const ambIcon = L.divIcon({
       className: 'custom-amb-pin',
-      html: `<div style="background:#dc2626; color:white; width:36px; height:36px; borderRadius:50%; display:flex; align-items:center; justify-content:center; border:3px solid white; box-shadow:0 0 15px rgba(220,38,38,0.8); font-size:18px;">🚑</div>`,
-      iconSize: [36, 36],
-      iconAnchor: [18, 18],
+      html: `<div style="background:#dc2626; color:white; width:38px; height:38px; borderRadius:50%; display:flex; align-items:center; justify-content:center; border:3px solid white; box-shadow:0 0 20px rgba(220,38,38,0.9); font-size:20px;">🚑</div>`,
+      iconSize: [38, 38],
+      iconAnchor: [19, 19],
     });
 
     const p = Math.max(0, Math.min(100, progressPercent)) / 100;
-    const startPt = currentStage === 4 ? coords : hospitalCoords;
-    const endPt = currentStage === 4 ? hospitalCoords : coords;
+    const startPt = currentStage >= 3 ? coords : hospitalCoords;
+    const endPt = currentStage >= 3 ? hospitalCoords : coords;
 
     const currentLat = startPt[0] + (endPt[0] - startPt[0]) * p;
     const currentLng = startPt[1] + (endPt[1] - startPt[1]) * p;
@@ -277,58 +279,70 @@ export const AmbulanceTrackerModal: React.FC<AmbulanceTrackerModalProps> = ({
     };
   }, [isOpen, step, coords, mapType, progressPercent, currentStage, pickupAddress]);
 
-  // Live Dispatch Simulation Timer
+  // Strict 2-Minute (120-Second) Live Dispatch Simulation Loop Timer
   useEffect(() => {
-    if (!isOpen || step !== 'LIVE_TRACKING') return;
+    if (!isOpen || step !== 'LIVE_TRACKING' || isSimulationFinished) return;
+
+    const intervalTimeMs = simSpeedMultiplier === 2 ? 500 : 1000;
 
     const interval = setInterval(() => {
       setEtaSeconds((prev) => {
         if (prev <= 1) {
-          if (currentStage === 2) {
-            setCurrentStage(3);
-            showToast({
-              title: 'Ambulance Arrived at Pickup Location!',
-              message: `${assignedDriver.name} (${assignedDriver.plate}) has arrived at ${pickupAddress}. Patient picked up.`,
-              type: 'success',
-            });
-            setTimeout(() => {
-              setCurrentStage(4);
-              setEtaSeconds(360);
-              setProgressPercent(10);
-              showToast({
-                title: 'Phase 2: Transporting to ER Trauma Center',
-                message: `Ambulance van is driving passenger to MediCore Hospital ER.`,
-                type: 'info',
-              });
-            }, 3000);
-            return 0;
-          } else if (currentStage === 4) {
-            clearInterval(interval);
-            showToast({
-              title: 'Safely Arrived at MediCore ER!',
-              message: 'Patient delivered directly to ER Emergency Trauma Ward.',
-              type: 'success',
-            });
-            return 0;
-          }
+          clearInterval(interval);
+          setIsSimulationFinished(true);
+          setCurrentStage(4);
+          setProgressPercent(100);
+          setDistanceKm(0.0);
+          setVehicleSpeed(0);
+
+          showToast({
+            title: '🎉 Job Finished in 2 Minutes! Patient Admitted to ER',
+            message: `Ambulance ${assignedDriver.plate} has successfully arrived at MediCore Hospital ER. Patient safely admitted.`,
+            type: 'success',
+          });
           return 0;
         }
-        return prev - 1;
-      });
 
-      setProgressPercent((prev) => {
-        const next = Math.min(100, prev + 1.2);
-        const remDistance = Number.parseFloat((1.8 * (1 - next / 100)).toFixed(1));
-        setDistanceKm(remDistance > 0 ? remDistance : 0.1);
+        const remaining = prev - 1;
+        const elapsed = 120 - remaining;
+
+        // Stage Transitions over the 2-Minute (120s) Loop:
+        // 0s - 60s (First Minute): Phase 1 - En Route to Patient Pickup
+        // 60s mark: Patient Picked Up & Loaded onto Ambulance!
+        // 60s - 120s (Second Minute): Phase 2 - Patient En Route to Hospital ER Ward
+        if (elapsed < 60) {
+          setCurrentStage(2);
+          const p1Progress = (elapsed / 60) * 100;
+          setProgressPercent(p1Progress);
+          const remDist = Number.parseFloat((2.4 * (1 - p1Progress / 100)).toFixed(1));
+          setDistanceKm(remDist > 0 ? remDist : 0.1);
+        } else if (elapsed === 60) {
+          setCurrentStage(3);
+          setProgressPercent(0);
+          setDistanceKm(3.2);
+          showToast({
+            title: 'Phase 2: Patient Picked Up! Driving to ER',
+            message: `Driver ${assignedDriver.name} has picked up patient at ${pickupAddress}. En route to ER Trauma Center.`,
+            type: 'info',
+          });
+        } else {
+          setCurrentStage(4);
+          const p2Progress = ((elapsed - 60) / 60) * 100;
+          setProgressPercent(p2Progress);
+          const remDist = Number.parseFloat((3.2 * (1 - p2Progress / 100)).toFixed(1));
+          setDistanceKm(remDist > 0 ? remDist : 0.1);
+        }
+
         const randBuf = new Uint32Array(1);
         window.crypto.getRandomValues(randBuf);
-        setVehicleSpeed(Math.floor(42 + (randBuf[0] % 18)));
-        return next;
+        setVehicleSpeed(Math.floor(48 + (randBuf[0] % 18)));
+
+        return remaining;
       });
-    }, 1000);
+    }, intervalTimeMs);
 
     return () => clearInterval(interval);
-  }, [isOpen, step, currentStage, assignedDriver, pickupAddress, showToast]);
+  }, [isOpen, step, isSimulationFinished, simSpeedMultiplier, assignedDriver, pickupAddress, showToast]);
 
   if (!isOpen) return null;
 
@@ -336,6 +350,20 @@ export const AmbulanceTrackerModal: React.FC<AmbulanceTrackerModalProps> = ({
     const m = Math.floor(secs / 60);
     const s = secs % 60;
     return `${m}m ${s < 10 ? '0' : ''}${s}s`;
+  };
+
+  const handleRestartSimulation = () => {
+    setIsSimulationFinished(false);
+    setEtaSeconds(120);
+    setProgressPercent(0);
+    setCurrentStage(2);
+    setDistanceKm(2.4);
+    setVehicleSpeed(52);
+    showToast({
+      title: 'Restarting 2-Minute Live Map Simulation',
+      message: 'Ambulance dispatch simulation restarted from 02:00 countdown.',
+      type: 'info',
+    });
   };
 
   const handleRequestAmbulanceSubmit = (e: React.FormEvent) => {
@@ -354,14 +382,15 @@ export const AmbulanceTrackerModal: React.FC<AmbulanceTrackerModalProps> = ({
 
     setTimeout(() => {
       setStep('LIVE_TRACKING');
+      setIsSimulationFinished(false);
       setCurrentStage(2);
-      setEtaSeconds(517);
-      setProgressPercent(20);
-      setDistanceKm(1.8);
+      setEtaSeconds(120);
+      setProgressPercent(0);
+      setDistanceKm(2.4);
 
       showToast({
         title: 'Emergency Ambulance Dispatched!',
-        message: `Driver ${selected.name} (${selected.plate}) assigned. En route to ${pickupAddress}.`,
+        message: `Driver ${selected.name} (${selected.plate}) assigned. 2-Minute live dispatch simulation started!`,
         type: 'success',
       });
     }, 1500);
@@ -526,24 +555,51 @@ export const AmbulanceTrackerModal: React.FC<AmbulanceTrackerModalProps> = ({
 
         {/* STEP 3: DYNAMIC REAL MAP TRACKING */}
         {step === 'LIVE_TRACKING' && (
-          <div className="space-y-4">
+          <div className="space-y-4 font-sans">
             {/* 100% UN-OBSCURED DYNAMIC MAP CONTAINER IN NATIVE DIV REF */}
-            <div className="relative h-72 min-h-[288px] rounded-3xl overflow-hidden border border-slate-300 shadow-xl bg-slate-100 p-3 select-none flex flex-col justify-between">
-              {/* Dynamic Native Div Map Engine (Zero Iframe Block Errors!) */}
+            <div className="relative h-72 min-h-[288px] rounded-3xl overflow-hidden border border-slate-300 shadow-xl bg-slate-900 p-3 select-none flex flex-col justify-between">
+              {/* Dynamic Native Div Map Engine */}
               <div
                 ref={mapContainerRef}
                 style={{ width: '100%', height: '100%', minHeight: '288px', position: 'absolute', inset: 0, zIndex: 0 }}
-                className="rounded-3xl"
+                className="rounded-3xl opacity-90"
               />
 
               {/* Floating Top Status Header */}
               <div className="relative z-10 flex items-center justify-between pointer-events-auto">
-                <span className="px-3.5 py-1 bg-rose-600 text-white font-black text-[11px] rounded-full shadow-lg flex items-center gap-1.5 animate-pulse">
+                <span
+                  className={`px-3.5 py-1 text-white font-black text-[11px] rounded-full shadow-lg flex items-center gap-1.5 ${
+                    isSimulationFinished
+                      ? 'bg-emerald-600'
+                      : currentStage >= 3
+                      ? 'bg-blue-600 animate-pulse'
+                      : 'bg-rose-600 animate-pulse'
+                  }`}
+                >
                   <Activity className="w-3.5 h-3.5" />
-                  <span>{currentStage === 4 ? 'ER TRANSPORT IN PROGRESS' : 'LIVE DISPATCH TRACKING'}</span>
+                  <span>
+                    {isSimulationFinished
+                      ? '✅ JOB COMPLETED — PATIENT ADMITTED TO ER'
+                      : currentStage >= 3
+                      ? '🔵 PHASE 2: PATIENT ON BOARD — EN ROUTE TO ER'
+                      : '🔴 PHASE 1: DISPATCHED — EN ROUTE TO PICKUP'}
+                  </span>
                 </span>
 
                 <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={() => setSimSpeedMultiplier(simSpeedMultiplier === 1 ? 2 : 1)}
+                    className={`px-2.5 py-1 text-xs font-black rounded-xl border shadow-md flex items-center gap-1 cursor-pointer transition-all ${
+                      simSpeedMultiplier === 2
+                        ? 'bg-amber-400 text-slate-900 border-amber-500'
+                        : 'bg-slate-800/90 text-slate-200 border-slate-700'
+                    }`}
+                    title="Toggle 2x Speed Fast-Forward"
+                  >
+                    <span>⚡ {simSpeedMultiplier}x Speed</span>
+                  </button>
+
                   <button
                     type="button"
                     onClick={() => setMapType(mapType === 'STREET' ? 'SATELLITE' : 'STREET')}
@@ -554,7 +610,7 @@ export const AmbulanceTrackerModal: React.FC<AmbulanceTrackerModalProps> = ({
                   </button>
 
                   <span className="px-3 py-1 bg-slate-900/90 border border-slate-700 text-emerald-400 font-black text-xs rounded-full font-mono shadow-md">
-                    ETA: {formatEta(etaSeconds)}
+                    2-MIN LOOP: {formatEta(etaSeconds)}
                   </span>
                 </div>
               </div>
@@ -568,17 +624,42 @@ export const AmbulanceTrackerModal: React.FC<AmbulanceTrackerModalProps> = ({
               </div>
             </div>
 
-            {/* ACTIVE NAVIGATION ROUTE & TELEMETRY BAR (PLACED CLEANLY BELOW MAP) */}
+            {/* 2-MINUTE JOB COMPLETED NOTIFICATION BANNER */}
+            {isSimulationFinished && (
+              <div className="p-4 bg-emerald-50 border border-emerald-300 rounded-2xl flex flex-col sm:flex-row items-center justify-between gap-4 shadow-sm">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-2xl bg-emerald-600 text-white font-black flex items-center justify-center text-lg shrink-0">
+                    ✓
+                  </div>
+                  <div>
+                    <h4 className="font-black text-sm text-emerald-950">2-Minute Dispatch Mission Completed!</h4>
+                    <p className="text-xs text-emerald-800 font-medium">
+                      Ambulance <strong>{assignedDriver.plate}</strong> delivered patient to ER Trauma Bed #04 in exactly 2 minutes.
+                    </p>
+                  </div>
+                </div>
+                <button
+                  type="button"
+                  onClick={handleRestartSimulation}
+                  className="px-4 py-2 bg-emerald-700 hover:bg-emerald-600 text-white font-black text-xs rounded-xl shadow-md cursor-pointer transition-all hover:scale-105 shrink-0 flex items-center gap-1.5"
+                >
+                  <RotateCcw className="w-4 h-4" />
+                  <span>Re-Run 2-Min Live Simulation</span>
+                </button>
+              </div>
+            )}
+
+            {/* ACTIVE NAVIGATION ROUTE & TELEMETRY BAR */}
             <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-between gap-3 text-xs text-white shadow-xl">
               <div className="flex items-center gap-3 truncate">
-                <div className="w-9 h-9 rounded-xl bg-blue-600/20 border border-blue-500/30 flex items-center justify-center text-blue-400 shrink-0">
+                <div className="w-9 h-9 rounded-xl bg-rose-600/20 border border-rose-500/30 flex items-center justify-center text-rose-400 shrink-0">
                   <Navigation className="w-4 h-4" />
                 </div>
                 <div className="truncate">
-                  <span className="text-[10px] text-slate-400 font-black uppercase tracking-wider block">Active Navigation Route</span>
+                  <span className="text-[10px] text-slate-400 font-black uppercase tracking-wider block">Live Swiggy / Uber Simulation Path</span>
                   <span className="font-extrabold text-white text-xs truncate block mt-0.5">
-                    {currentStage === 4
-                      ? `${pickupAddress} ➔ MediCore ER`
+                    {currentStage >= 3
+                      ? `${pickupAddress} ➔ MediCore Emergency ER`
                       : `MediCore ER Base ➔ ${pickupAddress}`}
                   </span>
                 </div>
@@ -586,25 +667,13 @@ export const AmbulanceTrackerModal: React.FC<AmbulanceTrackerModalProps> = ({
 
               <div className="flex items-center justify-between sm:justify-end gap-4 shrink-0 border-t sm:border-t-0 border-slate-800 pt-2 sm:pt-0">
                 <div className="text-right">
-                  <span className="text-[10px] text-slate-400 font-semibold uppercase block">Distance</span>
+                  <span className="text-[10px] text-slate-400 font-semibold uppercase block">Distance Remaining</span>
                   <span className="font-mono font-black text-amber-400 text-xs">{distanceKm} km</span>
                 </div>
                 <div className="text-right">
-                  <span className="text-[10px] text-slate-400 font-semibold uppercase block">Live Speed</span>
+                  <span className="text-[10px] text-slate-400 font-semibold uppercase block">GPS Live Speed</span>
                   <span className="font-mono font-black text-emerald-400 text-xs">{vehicleSpeed} km/h</span>
                 </div>
-
-                {/* SIMULATE PICKUP BUTTON (PLACED CLEANLY INSIDE TELEMETRY BAR BELOW MAP) */}
-                {currentStage === 2 && (
-                  <button
-                    type="button"
-                    onClick={handleSimulatePickup}
-                    className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs rounded-xl shadow-lg cursor-pointer transition-all hover:scale-105 flex items-center gap-1.5 shrink-0"
-                  >
-                    <CheckCircle2 className="w-4 h-4" />
-                    <span>Simulate Pickup</span>
-                  </button>
-                )}
               </div>
             </div>
 

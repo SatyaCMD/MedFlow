@@ -78,11 +78,11 @@ const INITIAL_FLEET: AmbulanceVehicle[] = [
     vehiclePlate: 'KA-03-ER-8820',
     unitType: 'ALS',
     model: 'Force Traveler Advanced ICU',
-    status: 'Available',
+    status: 'On Route to Hospital',
     driverName: 'Suresh Patil',
     driverPhone: '+91 99401 22849',
-    currentSpeed: 0,
-    lastLocation: 'MediCore Main ER Base Station',
+    currentSpeed: 56,
+    lastLocation: '1.8 km from MediCore ER Ward',
     odometerKm: 18900,
   },
   {
@@ -90,12 +90,12 @@ const INITIAL_FLEET: AmbulanceVehicle[] = [
     vehiclePlate: 'WB-04-AB-1109',
     unitType: 'NEONATAL',
     model: 'Mahindra Supro Neonatal ICU',
-    status: 'Maintenance',
+    status: 'Available',
     driverName: 'Dharmendra Roy',
     driverPhone: '+91 97321 00582',
     currentSpeed: 0,
-    lastLocation: 'MediCore Central Workshop Bay 2',
-    odometerKm: 54200,
+    lastLocation: 'MediCore Sector 5 Outpost',
+    odometerKm: 24200,
   },
   {
     id: 'amb-5',
@@ -108,6 +108,18 @@ const INITIAL_FLEET: AmbulanceVehicle[] = [
     currentSpeed: 0,
     lastLocation: 'MediCore Sector 4 Outpost',
     odometerKm: 27400,
+  },
+  {
+    id: 'amb-6',
+    vehiclePlate: 'OD-02-ER-5511',
+    unitType: 'ALS',
+    model: 'Tata Winger ALS Unit',
+    status: 'Maintenance',
+    driverName: 'Sunita Rao',
+    driverPhone: '+91 94370 88291',
+    currentSpeed: 0,
+    lastLocation: 'MediCore Workshop Bay 2',
+    odometerKm: 58900,
   },
 ];
 
@@ -675,56 +687,106 @@ export const AmbulanceManagementModule: React.FC = () => {
               </button>
             </div>
 
-            {/* Active Trips Card Grid */}
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              {fleet
-                .filter((v) => v.status !== 'Available' && v.status !== 'Maintenance')
-                .map((trip) => (
-                  <div key={trip.id} className="p-5 bg-white border border-rose-200 rounded-2xl shadow-sm space-y-3">
-                    <div className="flex items-center justify-between">
-                      <span className="px-3 py-1 bg-rose-100 text-rose-900 font-black text-xs rounded-full border border-rose-300">
-                        {trip.status}
-                      </span>
-                      <span className="text-xs font-mono font-bold text-slate-500">Plate: {trip.vehiclePlate}</span>
-                    </div>
-
-                    <div>
-                      <h4 className="font-extrabold text-sm text-slate-900">Driver: {trip.driverName}</h4>
-                      <p className="text-xs font-semibold text-slate-500">Contact: {trip.driverPhone}</p>
-                    </div>
-
-                    <div className="p-3 bg-slate-50 rounded-xl text-xs space-y-1">
-                      <div className="flex justify-between font-semibold">
-                        <span className="text-slate-500">Telemetry Speed:</span>
-                        <span className="font-bold text-slate-900 font-mono">{trip.currentSpeed} km/h</span>
-                      </div>
-                      <div className="flex justify-between font-semibold">
-                        <span className="text-slate-500">Location:</span>
-                        <span className="font-bold text-rose-600 truncate max-w-[200px]">{trip.lastLocation}</span>
-                      </div>
-                    </div>
-
-                    <button
-                      onClick={() => {
-                        setSelectedPickupAddress(trip.lastLocation);
-                        setIsTrackerOpen(true);
-                      }}
-                      className="w-full py-2 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl cursor-pointer"
-                    >
-                      View Real-Time Live Route Map
-                    </button>
-                  </div>
-                ))}
-
-              {fleet.filter((v) => v.status !== 'Available' && v.status !== 'Maintenance').length === 0 && (
-                <div className="col-span-2 p-8 bg-white border border-slate-200 rounded-2xl text-center space-y-2">
-                  <CheckCircle2 className="w-10 h-10 text-emerald-500 mx-auto" />
-                  <h4 className="font-extrabold text-sm text-slate-900">All Emergency Dispatch Queues Clear</h4>
-                  <p className="text-xs text-slate-500 font-medium">
-                    All response units are currently staged at MediCore ER Base Station ready for new dispatch requests.
-                  </p>
+            {/* Active Trips & Available Fleet Grid */}
+            <div className="space-y-3">
+              <div className="flex items-center justify-between">
+                <span className="text-xs font-black uppercase tracking-wider text-slate-500">
+                  Real-Time Ambulance Fleet Telemetry ({fleet.length} Units)
+                </span>
+                <div className="flex items-center gap-2">
+                  <span className="px-2.5 py-0.5 bg-emerald-100 border border-emerald-300 text-emerald-900 text-[10px] font-black rounded-full">
+                    {fleet.filter((v) => v.status === 'Available').length} FREE / READY
+                  </span>
+                  <span className="px-2.5 py-0.5 bg-rose-100 border border-rose-300 text-rose-900 text-[10px] font-black rounded-full">
+                    {fleet.filter((v) => v.status.includes('Route') || v.status.includes('Assigned')).length} ON DUTY
+                  </span>
                 </div>
-              )}
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {fleet.map((trip) => {
+                  const isAvailable = trip.status === 'Available';
+                  const isMaintenance = trip.status === 'Maintenance';
+                  return (
+                    <div
+                      key={trip.id}
+                      className={`p-5 rounded-2xl border transition-all shadow-xs hover:shadow-md ${
+                        isAvailable
+                          ? 'bg-white border-emerald-200'
+                          : isMaintenance
+                          ? 'bg-slate-50 border-slate-200'
+                          : 'bg-white border-rose-300 ring-2 ring-rose-500/10'
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-3">
+                        <span
+                          className={`px-2.5 py-0.5 font-black text-[10px] uppercase rounded-full border flex items-center gap-1.5 ${
+                            isAvailable
+                              ? 'bg-emerald-100 text-emerald-900 border-emerald-300'
+                              : isMaintenance
+                              ? 'bg-amber-100 text-amber-900 border-amber-300'
+                              : 'bg-rose-100 text-rose-900 border-rose-300 animate-pulse'
+                          }`}
+                        >
+                          <span
+                            className={`w-2 h-2 rounded-full ${
+                              isAvailable ? 'bg-emerald-500' : isMaintenance ? 'bg-amber-500' : 'bg-rose-600 animate-ping'
+                            }`}
+                          />
+                          {isAvailable ? 'AVAILABLE - READY FOR DISPATCH' : trip.status}
+                        </span>
+                        <span className="text-[11px] font-mono font-bold text-slate-500">Plate: {trip.vehiclePlate}</span>
+                      </div>
+
+                      <div className="space-y-1 mb-3">
+                        <div className="flex items-center justify-between">
+                          <h4 className="font-extrabold text-xs text-slate-900">Driver: {trip.driverName}</h4>
+                          <span className="text-[10px] font-bold text-blue-600 bg-blue-50 px-2 py-0.5 rounded border border-blue-200">
+                            {trip.unitType} ICU
+                          </span>
+                        </div>
+                        <p className="text-[11px] font-semibold text-slate-500">Contact: {trip.driverPhone}</p>
+                      </div>
+
+                      <div className="p-3 bg-slate-50 border border-slate-100 rounded-xl text-xs space-y-1 mb-3">
+                        <div className="flex justify-between font-semibold">
+                          <span className="text-slate-500 text-[11px]">Telemetry Speed:</span>
+                          <span className="font-bold text-slate-900 font-mono text-[11px]">
+                            {trip.currentSpeed > 0 ? `${trip.currentSpeed} km/h` : '0 km/h (Stationary)'}
+                          </span>
+                        </div>
+                        <div className="flex justify-between font-semibold">
+                          <span className="text-slate-500 text-[11px]">GPS Location:</span>
+                          <span
+                            className={`font-bold truncate max-w-[170px] text-[11px] ${
+                              isAvailable ? 'text-slate-700' : 'text-rose-600'
+                            }`}
+                          >
+                            {trip.lastLocation}
+                          </span>
+                        </div>
+                      </div>
+
+                      <button
+                        onClick={() => {
+                          setSelectedPickupAddress(trip.lastLocation);
+                          setIsTrackerOpen(true);
+                        }}
+                        className={`w-full py-2.5 font-black text-xs rounded-xl flex items-center justify-center gap-2 cursor-pointer transition-all ${
+                          isAvailable
+                            ? 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-md shadow-emerald-600/20'
+                            : isMaintenance
+                            ? 'bg-slate-200 hover:bg-slate-300 text-slate-700'
+                            : 'bg-slate-900 hover:bg-slate-800 text-white shadow-md'
+                        }`}
+                      >
+                        <Radio className="w-3.5 h-3.5 text-rose-400" />
+                        <span>{isAvailable ? 'Dispatch This Ambulance' : 'View Real-Time Live Route Map'}</span>
+                      </button>
+                    </div>
+                  );
+                })}
+              </div>
             </div>
           </div>
         </div>
