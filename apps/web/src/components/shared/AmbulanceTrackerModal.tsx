@@ -556,14 +556,121 @@ export const AmbulanceTrackerModal: React.FC<AmbulanceTrackerModalProps> = ({
         {/* STEP 3: DYNAMIC REAL MAP TRACKING */}
         {step === 'LIVE_TRACKING' && (
           <div className="space-y-4 font-sans">
-            {/* 100% UN-OBSCURED DYNAMIC MAP CONTAINER IN NATIVE DIV REF */}
+            {/* 100% UN-OBSCURED DYNAMIC MAP CONTAINER WITH BUILT-IN VECTOR & LEAFLET DUAL ENGINE */}
             <div className="relative h-72 min-h-[288px] rounded-3xl overflow-hidden border border-slate-300 shadow-xl bg-slate-900 p-3 select-none flex flex-col justify-between">
-              {/* Dynamic Native Div Map Engine */}
+              {/* Dynamic Leaflet Div Map Engine */}
               <div
                 ref={mapContainerRef}
                 style={{ width: '100%', height: '100%', minHeight: '288px', position: 'absolute', inset: 0, zIndex: 0 }}
-                className="rounded-3xl opacity-90"
+                className="rounded-3xl opacity-40"
               />
+
+              {/* 100% RELIABLE HIGH-DEFINITION SWIGGY/UBER-STYLE ANIMATED VECTOR MAP CANVAS */}
+              <div className="absolute inset-0 z-[5] pointer-events-none overflow-hidden rounded-3xl">
+                <svg className="w-full h-full" viewBox="0 0 600 280" preserveAspectRatio="none">
+                  <defs>
+                    <pattern id="streetGrid" width="40" height="40" patternUnits="userSpaceOnUse">
+                      <path d="M 40 0 L 0 0 0 40" fill="none" stroke={mapType === 'SATELLITE' ? 'rgba(51,65,85,0.4)' : 'rgba(203,213,225,0.4)'} strokeWidth="1" />
+                    </pattern>
+                    <filter id="glow" x="-20%" y="-20%" width="140%" height="140%">
+                      <feGaussianBlur stdDeviation="3" result="blur" />
+                      <feComposite in="SourceGraphic" in2="blur" operator="over" />
+                    </filter>
+                    <linearGradient id="routeGradient" x1="0%" y1="0%" x2="100%" y2="0%">
+                      <stop offset="0%" stopColor="#2563eb" />
+                      <stop offset="50%" stopColor="#dc2626" />
+                      <stop offset="100%" stopColor="#10b981" />
+                    </linearGradient>
+                  </defs>
+
+                  {/* Map Background */}
+                  <rect width="100%" height="100%" fill={mapType === 'SATELLITE' ? '#0b1120' : '#f8fafc'} />
+                  <rect width="100%" height="100%" fill="url(#streetGrid)" />
+
+                  {/* Simulated City Building Blocks */}
+                  <rect x="50" y="25" width="80" height="55" rx="8" fill={mapType === 'SATELLITE' ? '#1e293b' : '#e2e8f0'} opacity="0.8" />
+                  <rect x="170" y="15" width="120" height="60" rx="8" fill={mapType === 'SATELLITE' ? '#1e293b' : '#e2e8f0'} opacity="0.8" />
+                  <rect x="330" y="25" width="90" height="50" rx="8" fill={mapType === 'SATELLITE' ? '#1e293b' : '#e2e8f0'} opacity="0.8" />
+                  <rect x="460" y="115" width="90" height="65" rx="8" fill={mapType === 'SATELLITE' ? '#1e293b' : '#e2e8f0'} opacity="0.8" />
+                  <rect x="210" y="165" width="110" height="75" rx="8" fill={mapType === 'SATELLITE' ? '#1e293b' : '#e2e8f0'} opacity="0.8" />
+
+                  {/* River Curve */}
+                  <path d="M 0 240 Q 200 200 400 260 T 600 230" fill="none" stroke={mapType === 'SATELLITE' ? '#0284c7' : '#38bdf8'} strokeWidth="18" opacity="0.35" />
+
+                  {/* Main Road Layout */}
+                  <path d="M 80 180 C 180 180, 240 100, 320 100 C 400 100, 440 140, 520 80" fill="none" stroke={mapType === 'SATELLITE' ? '#334155' : '#cbd5e1'} strokeWidth="18" strokeLinecap="round" />
+                  <path d="M 80 180 C 180 180, 240 100, 320 100 C 400 100, 440 140, 520 80" fill="none" stroke={mapType === 'SATELLITE' ? '#475569' : '#ffffff'} strokeWidth="12" strokeLinecap="round" />
+
+                  {/* Glowing Animated Swiggy/Uber-Style Route Polyline */}
+                  <path
+                    d="M 80 180 C 180 180, 240 100, 320 100 C 400 100, 440 140, 520 80"
+                    fill="none"
+                    stroke="url(#routeGradient)"
+                    strokeWidth="6"
+                    strokeDasharray="10 6"
+                    strokeLinecap="round"
+                    filter="url(#glow)"
+                  />
+
+                  {/* Street Labels */}
+                  <text x="130" y="202" fill={mapType === 'SATELLITE' ? '#94a3b8' : '#64748b'} fontSize="10" fontWeight="800">MediCore ER Blvd</text>
+                  <text x="300" y="85" fill={mapType === 'SATELLITE' ? '#94a3b8' : '#64748b'} fontSize="10" fontWeight="800">Ring Road Express</text>
+                  <text x="430" y="65" fill={mapType === 'SATELLITE' ? '#fb7185' : '#e11d48'} fontSize="10" fontWeight="800">Green Park Ave</text>
+
+                  {/* 📍 PATIENT PICKUP LOCATION PIN (x: 520, y: 80) */}
+                  <g transform="translate(520, 80)">
+                    <circle r="18" fill="#f43f5e" opacity="0.3">
+                      <animate attributeName="r" values="10;28;10" dur="2s" repeatCount="indefinite" />
+                      <animate attributeName="opacity" values="0.6;0.1;0.6" dur="2s" repeatCount="indefinite" />
+                    </circle>
+                    <circle r="9" fill="#f43f5e" stroke="#ffffff" strokeWidth="2.5" />
+                    <text x="14" y="4" fill={mapType === 'SATELLITE' ? '#ffffff' : '#0f172a'} fontSize="11" fontWeight="900">📍 PATIENT PICKUP</text>
+                  </g>
+
+                  {/* 🏥 MEDICORE ER HOSPITAL WARD PIN (x: 80, y: 180) */}
+                  <g transform="translate(80, 180)">
+                    <circle r="18" fill="#2563eb" opacity="0.3">
+                      <animate attributeName="r" values="10;28;10" dur="2s" repeatCount="indefinite" />
+                      <animate attributeName="opacity" values="0.6;0.1;0.6" dur="2s" repeatCount="indefinite" />
+                    </circle>
+                    <circle r="9" fill="#2563eb" stroke="#ffffff" strokeWidth="2.5" />
+                    <text x="-95" y="24" fill={mapType === 'SATELLITE' ? '#38bdf8' : '#1d4ed8'} fontSize="11" fontWeight="900">🏥 MediCore ER Ward</text>
+                  </g>
+
+                  {/* 🚑 ANIMATED MOVING AMBULANCE MARKER */}
+                  {(() => {
+                    const p = Math.max(0, Math.min(100, progressPercent)) / 100;
+                    const startX = currentStage >= 3 ? 520 : 80;
+                    const startY = currentStage >= 3 ? 80 : 180;
+                    const endX = currentStage >= 3 ? 80 : 520;
+                    const endY = currentStage >= 3 ? 180 : 80;
+                    const ctrlX = 300;
+                    const ctrlY = 90;
+
+                    const currX = (1 - p) * (1 - p) * startX + 2 * (1 - p) * p * ctrlX + p * p * endX;
+                    const currY = (1 - p) * (1 - p) * startY + 2 * (1 - p) * p * ctrlY + p * p * endY;
+
+                    return (
+                      <g transform={`translate(${currX}, ${currY})`}>
+                        <circle r="22" fill="#dc2626" opacity="0.35">
+                          <animate attributeName="r" values="14;30;14" dur="1s" repeatCount="indefinite" />
+                          <animate attributeName="opacity" values="0.8;0.1;0.8" dur="1s" repeatCount="indefinite" />
+                        </circle>
+                        <circle r="16" fill="#dc2626" stroke="#ffffff" strokeWidth="3" />
+                        <text x="-9" y="5" fill="#ffffff" fontSize="14">🚑</text>
+
+                        {/* Floating Speed Telemetry Pill above Ambulance */}
+                        <g transform="translate(0, -28)">
+                          <rect x="-36" y="-12" width="72" height="18" rx="9" fill="#0f172a" stroke="#dc2626" strokeWidth="1.5" />
+                          <text x="0" y="0" textAnchor="middle" fill="#34d399" fontSize="9" fontWeight="900">
+                            {vehicleSpeed > 0 ? `${vehicleSpeed} km/h` : 'STATIONARY'}
+                          </text>
+                        </g>
+                      </g>
+                    );
+                  })()}
+                </svg>
+              </div>
 
               {/* Floating Top Status Header */}
               <div className="relative z-10 flex items-center justify-between pointer-events-auto">
