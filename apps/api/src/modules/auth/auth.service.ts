@@ -258,14 +258,6 @@ export class AuthService {
     await redis.del(`failed_attempts:${normInput}`);
     await redis.del(lockKey);
 
-    // Dispatch Successful Login Alert Email (All Roles)
-    const loginMail = getLoginAlertEmail({
-      userName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'User',
-      role: user.role,
-      timestamp: new Date().toLocaleString(),
-    });
-    sendMail({ to: user.email, subject: loginMail.subject, html: loginMail.html }).catch(() => {});
-
     // Generate OTP and temporary token
     const tempToken = uuidv4();
     const otpCode = crypto.randomInt(100000, 1000000).toString();
@@ -509,6 +501,18 @@ export class AuthService {
 
     const accessToken = signAccessToken(payload);
     const refreshToken = signRefreshToken(payload);
+
+    // Dispatch Successful Login Alert Email upon 2FA OTP verification completion (All Roles)
+    try {
+      const loginMail = getLoginAlertEmail({
+        userName: `${user.firstName || ''} ${user.lastName || ''}`.trim() || 'User',
+        role: user.role,
+        timestamp: new Date().toLocaleString(),
+      });
+      sendMail({ to: user.email, subject: loginMail.subject, html: loginMail.html }).catch(() => {});
+    } catch {
+      // Non-blocking mail
+    }
 
     return {
       accessToken,

@@ -496,9 +496,8 @@ export const AppShell: React.FC<AppShellProps> = ({ children, userRole = 'DOCTOR
 
       {/* Sidebar Navigation */}
       <aside
-        className={`fixed lg:sticky top-0 left-0 z-50 bg-white border-r border-slate-200/80 flex flex-col justify-between overflow-y-auto h-screen shrink-0 select-none transition-all duration-300 ${
-          isCollapsed ? 'w-20' : 'w-64'
-        } ${isMobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
+        className={`fixed lg:sticky top-0 left-0 z-50 bg-white border-r border-slate-200/80 flex flex-col justify-between overflow-y-auto h-screen shrink-0 select-none transition-all duration-300 ${isCollapsed ? 'w-20' : 'w-64'
+          } ${isMobileOpen ? 'translate-x-0' : '-translate-x-full lg:translate-x-0'}`}
       >
         <div className="space-y-3 p-3 sm:p-4 flex-1 flex flex-col min-h-0 overflow-hidden">
           <div className="flex items-center justify-between shrink-0 pb-2 border-b border-slate-100/80 min-w-0">
@@ -543,11 +542,10 @@ export const AppShell: React.FC<AppShellProps> = ({ children, userRole = 'DOCTOR
                 <Link
                   key={item.href + item.label}
                   href={item.href}
-                  className={`flex items-center gap-2.5 px-3 py-2 rounded-xl font-bold text-xs transition-all ${
-                    isActive
+                  className={`flex items-center gap-2.5 px-3 py-2 rounded-xl font-bold text-xs transition-all ${isActive
                       ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20'
                       : 'text-slate-600 hover:bg-slate-100 hover:text-slate-900'
-                  }`}
+                    }`}
                 >
                   <Icon className="w-4 h-4 shrink-0" />
                   {!isCollapsed && <span className="truncate">{item.label}</span>}
@@ -651,7 +649,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children, userRole = 'DOCTOR
                   <span className="text-slate-300">•</span>
                   <span className="text-slate-500 font-semibold">MediCore 360 Enterprise Healthcare System</span>
                   <span className="text-slate-300">•</span>
-                  <span className="text-indigo-600 font-extrabold text-[11px]">256-bit HIPAA EMR Vault Secured</span>
+                  <span className="text-indigo-600 font-extrabold text-[11px]">Secured Workstation</span>
                 </motion.div>
               );
             })()}
