@@ -1,6 +1,5 @@
 import { Request, Response, NextFunction } from 'express';
 import { v4 as uuidv4 } from 'uuid';
-import { logger } from '../lib/logger.js';
 
 export interface GatewayRequest extends Request {
   correlationId?: string;
@@ -19,14 +18,9 @@ export const apiGatewayMiddleware = (req: GatewayRequest, res: Response, next: N
   res.setHeader('X-Trace-ID', traceId);
   res.setHeader('X-API-Version', 'v1');
 
-  // Exclude OPTIONS CORS preflights and internal telemetry/health check scraping endpoints from logging pollution
+  // Exclude OPTIONS CORS preflights
   if (req.method === 'OPTIONS') {
     return next();
-  }
-
-  const internalPaths = ['/metrics', '/health', '/ready', '/favicon.ico'];
-  if (!internalPaths.includes(req.path)) {
-    logger.debug({ path: req.path, method: req.method, correlationId }, 'API Gateway request received.');
   }
 
   next();
