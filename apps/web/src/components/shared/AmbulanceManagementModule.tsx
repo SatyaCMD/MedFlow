@@ -173,6 +173,7 @@ export const AmbulanceManagementModule: React.FC = () => {
 
   // Modals state
   const [isTrackerOpen, setIsTrackerOpen] = useState(false);
+  const [trackerInitialStep, setTrackerInitialStep] = useState<'REQUEST_FORM' | 'DISPATCHING' | 'LIVE_TRACKING'>('LIVE_TRACKING');
   const [selectedPickupAddress, setSelectedPickupAddress] = useState('Building 4B, Green Park Avenue, Flat 302');
   const [isRegisterAmbulanceOpen, setIsRegisterAmbulanceOpen] = useState(false);
   const [isLogMaintenanceOpen, setIsLogMaintenanceOpen] = useState(false);
@@ -354,6 +355,7 @@ export const AmbulanceManagementModule: React.FC = () => {
         isOpen={isTrackerOpen}
         onClose={() => setIsTrackerOpen(false)}
         defaultPickupLocation={selectedPickupAddress}
+        initialStep={trackerInitialStep}
       />
 
       {/* Register Ambulance Modal */}
@@ -597,7 +599,10 @@ export const AmbulanceManagementModule: React.FC = () => {
         {/* Action Buttons */}
         <div className="flex flex-wrap gap-2.5 w-full md:w-auto">
           <button
-            onClick={() => setIsTrackerOpen(true)}
+            onClick={() => {
+              setTrackerInitialStep('LIVE_TRACKING');
+              setIsTrackerOpen(true);
+            }}
             className="px-5 py-3 bg-rose-600 hover:bg-rose-500 text-white font-black text-xs rounded-2xl shadow-lg shadow-rose-600/30 flex items-center gap-2 transition-all cursor-pointer hover:scale-[1.02]"
           >
             <Radio className="w-4 h-4" /> Open Dispatch Tracker Map
@@ -682,7 +687,10 @@ export const AmbulanceManagementModule: React.FC = () => {
               </div>
 
               <button
-                onClick={() => setIsTrackerOpen(true)}
+                onClick={() => {
+                  setTrackerInitialStep('LIVE_TRACKING');
+                  setIsTrackerOpen(true);
+                }}
                 className="px-4 py-2 bg-rose-600 hover:bg-rose-500 text-white font-black text-xs rounded-xl shadow-md flex items-center gap-2 cursor-pointer"
               >
                 <Sparkles className="w-4 h-4" /> Launch Interactive Live Map
@@ -736,6 +744,7 @@ export const AmbulanceManagementModule: React.FC = () => {
                       <button
                         onClick={() => {
                           setSelectedPickupAddress(patientBookedAmbulance.lastLocation);
+                          setTrackerInitialStep('LIVE_TRACKING');
                           setIsTrackerOpen(true);
                         }}
                         className="w-full py-3 bg-slate-900 hover:bg-slate-800 text-white font-black text-xs rounded-2xl shadow-xl flex items-center justify-center gap-2 cursor-pointer transition-all hover:scale-[1.01]"
@@ -745,7 +754,10 @@ export const AmbulanceManagementModule: React.FC = () => {
                       </button>
 
                       <button
-                        onClick={() => setIsTrackerOpen(true)}
+                        onClick={() => {
+                          setTrackerInitialStep('REQUEST_FORM');
+                          setIsTrackerOpen(true);
+                        }}
                         className="w-full py-2 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl cursor-pointer transition-colors"
                       >
                         Book / Request Another Ambulance Dispatch
@@ -760,8 +772,11 @@ export const AmbulanceManagementModule: React.FC = () => {
                       Click below to request an emergency ambulance dispatch to your location.
                     </p>
                     <button
-                      onClick={() => setIsTrackerOpen(true)}
-                      className="px-5 py-2.5 bg-rose-600 text-white font-black text-xs rounded-xl shadow-md"
+                      onClick={() => {
+                        setTrackerInitialStep('REQUEST_FORM');
+                        setIsTrackerOpen(true);
+                      }}
+                      className="px-5 py-2.5 bg-rose-600 text-white font-black text-xs rounded-xl shadow-md cursor-pointer"
                     >
                       Book Emergency Ambulance Now
                     </button>

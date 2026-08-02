@@ -102,17 +102,25 @@ interface AmbulanceTrackerModalProps {
   isOpen: boolean;
   onClose: () => void;
   defaultPickupLocation?: string;
+  initialStep?: 'REQUEST_FORM' | 'DISPATCHING' | 'LIVE_TRACKING';
 }
 
 export const AmbulanceTrackerModal: React.FC<AmbulanceTrackerModalProps> = ({
   isOpen,
   onClose,
   defaultPickupLocation = 'Badagada, Bhubaneswar',
+  initialStep = 'LIVE_TRACKING',
 }) => {
   const { showToast } = useToast();
 
   // Mode: 'REQUEST_FORM' -> 'DISPATCHING' -> 'LIVE_TRACKING'
-  const [step, setStep] = useState<'REQUEST_FORM' | 'DISPATCHING' | 'LIVE_TRACKING'>('REQUEST_FORM');
+  const [step, setStep] = useState<'REQUEST_FORM' | 'DISPATCHING' | 'LIVE_TRACKING'>(initialStep);
+
+  useEffect(() => {
+    if (isOpen) {
+      setStep(initialStep);
+    }
+  }, [isOpen, initialStep]);
 
   // Input & Unit Selection
   const [pickupAddress, setPickupAddress] = useState(defaultPickupLocation);
