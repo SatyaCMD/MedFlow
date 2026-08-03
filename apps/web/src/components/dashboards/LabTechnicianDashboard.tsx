@@ -14,6 +14,7 @@ import {
 } from '../../data/medicalHistoryStore';
 import { getLabEquipmentInvoices } from '../../data/patientBillingStore';
 import { PaymentModal } from '../shared/PaymentModal';
+import { PharmacyPurchaseModal } from '../shared/PharmacyPurchaseModal';
 import {
   FlaskConical,
   CheckCircle2,
@@ -30,7 +31,8 @@ import {
   Send,
   FileCheck2,
   Calendar,
-  Building2
+  Building2,
+  ShoppingBag
 } from 'lucide-react';
 
 export const LabTechnicianDashboard: React.FC = () => {
@@ -187,9 +189,18 @@ export const LabTechnicianDashboard: React.FC = () => {
   ];
 
   const [isProcurementModalOpen, setIsProcurementModalOpen] = useState(false);
+  const [isPharmacyModalOpen, setIsPharmacyModalOpen] = useState(false);
 
   return (
     <div className="space-y-8 relative">
+      {/* Pharmacy & Reagents Purchase Modal */}
+      <PharmacyPurchaseModal
+        isOpen={isPharmacyModalOpen}
+        onClose={() => setIsPharmacyModalOpen(false)}
+        patientName={techDisplayName}
+        userRole="LAB_ASSISTANT"
+      />
+
       {/* Payment Gateway Sandbox Modal (Staff Procurement Gateway) */}
       <PaymentModal
         isOpen={isProcurementModalOpen}
@@ -226,11 +237,11 @@ export const LabTechnicianDashboard: React.FC = () => {
 
         <div className="flex items-center gap-3">
           <button
-            onClick={() => setIsProcurementModalOpen(true)}
+            onClick={() => setIsPharmacyModalOpen(true)}
             className="px-4 py-2.5 bg-purple-600 hover:bg-purple-500 text-white font-bold text-xs rounded-xl shadow-lg shadow-purple-600/20 flex items-center gap-2 cursor-pointer transition-all"
           >
-            <Building2 className="w-4 h-4 text-purple-200" />
-            <span>Purchase Lab Supplies & Reagents</span>
+            <ShoppingBag className="w-4 h-4 text-purple-200" />
+            <span>Order Lab Reagents & Pharmacy Supplies</span>
           </button>
 
           <button

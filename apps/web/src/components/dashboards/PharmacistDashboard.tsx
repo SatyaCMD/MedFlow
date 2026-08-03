@@ -12,6 +12,15 @@ import {
   PharmacySaleRecord,
 } from '../../data/medicalHistoryStore';
 import {
+  PharmacyItem,
+} from '../../data/pharmacyCatalog';
+import {
+  getPharmacyInventory,
+  replenishStock,
+  addPharmacyItemToInventory,
+  INVENTORY_UPDATED_EVENT,
+} from '../../data/pharmacyInventoryStore';
+import {
   Pill,
   Package,
   AlertTriangle,
@@ -28,7 +37,9 @@ import {
   Receipt,
   ShoppingBag,
   DollarSign,
-  ShieldCheck
+  ShieldCheck,
+  Syringe,
+  FlaskConical,
 } from 'lucide-react';
 
 export const PharmacistDashboard: React.FC = () => {
@@ -39,60 +50,100 @@ export const PharmacistDashboard: React.FC = () => {
   const [isAddItemModalOpen, setIsAddItemModalOpen] = useState(false);
   const [isSalesHistoryOpen, setIsSalesHistoryOpen] = useState(false);
   const [salesSearchQuery, setSalesSearchQuery] = useState('');
+  const [inventorySearchQuery, setInventorySearchQuery] = useState('');
 
+  // New Stock Form
   const [newItemName, setNewItemName] = useState('');
-  const [newItemCategory, setNewItemCategory] = useState('MEDICINE');
+  const [newItemCategory, setNewItemCategory] = useState<any>('TABLET_CAPSULE');
+  const [newItemPrice, setNewItemPrice] = useState('120');
+  const [newItemUnit, setNewItemUnit] = useState('Strip');
   const [newItemStock, setNewItemStock] = useState('250');
   const [newItemBatch, setNewItemBatch] = useState('BAT-99210');
-  const [newItemExpiry, setNewItemExpiry] = useState('2028-12-31');
+  const [newItemExpiry, setNewItemExpiry] = useState('Dec 2028');
+  const [newItemDesc, setNewItemDesc] = useState('');
 
   // Sales Records
   const [salesRecords, setSalesRecords] = useState<PharmacySaleRecord[]>([]);
 
-  // Inventory Data
-  const [inventory, setInventory] = useState([
-    { id: '1', name: 'Amoxicillin 500mg Capsules', category: 'Medicine', batch: 'BAT-88912', stock: 450, unit: 'Capsules', expiry: 'Nov 2027', status: 'In Stock' },
-    { id: '2', name: 'Amlodipine Besylate 5mg', category: 'Medicine', batch: 'BAT-77210', stock: 320, unit: 'Tablets', expiry: 'Jan 2028', status: 'In Stock' },
-    { id: '3', name: 'Sterile Surgical Gloves (Size 7.5)', category: 'Hospital Consumable', batch: 'SUP-44120', stock: 24, unit: 'Pairs', expiry: 'Aug 2026', status: 'Low Stock Alert (<50)' },
-    { id: '4', name: 'IV Saline Normal 0.9% (500ml)', category: 'Hospital Consumable', batch: 'SUP-99102', stock: 180, unit: 'Bags', expiry: 'May 2027', status: 'In Stock' },
-    { id: '5', name: 'Single-Use Syringes 5ml', category: 'Hospital Consumable', batch: 'SUP-11204', stock: 18, unit: 'Units', expiry: 'Dec 2026', status: 'Low Stock Alert (<50)' },
-  ]);
+  // Reactive Pharmacy Inventory Data
+  const [inventory, setInventory] = useState<PharmacyItem[]>([]);
+
+  // Synchronize inventory with pharmacyInventoryStore & custom window events
+  useEffect(() => {
+    setInventory(getPharmacyInventory());
+    setSalesRecords(getPharmacySales());
+
+    const handleInventoryUpdate = (e: any) => {
+      if (e.detail) {
+        setInventory(e.detail);
+      } else {
+        setInventory(getPharmacyInventory());
+      }
+      setSalesRecords(getPharmacySales());
+    };
+
+    window.addEventListener(INVENTORY_UPDATED_EVENT, handleInventoryUpdate);
+    return () => {
+      window.removeEventListener(INVENTORY_UPDATED_EVENT, handleInventoryUpdate);
+    };
+  }, []);
 
   useEffect(() => {
-    setSalesRecords(getPharmacySales());
+    if (isSalesHistoryOpen) {
+      setSalesRecords(getPharmacySales());
+    }
   }, [isSalesHistoryOpen]);
 
   const handleAddItemSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    const newItem = {
-      id: Date.now().toString(),
+    const newItem: PharmacyItem = {
+      id: `pharm-custom-${Date.now()}`,
       name: newItemName,
-      category: newItemCategory === 'MEDICINE' ? 'Medicine' : 'Hospital Consumable',
+      category: newItemCategory,
+      price: Number.parseFloat(newItemPrice) || 100,
+      unit: newItemUnit || 'Unit',
       batch: newItemBatch,
-      stock: Number.parseInt(newItemStock, 10),
-      unit: 'Units',
-      expiry: newItemExpiry,
-      status: Number.parseInt(newItemStock, 10) < 50 ? 'Low Stock Alert (<50)' : 'In Stock',
+      stock: Number.parseInt(newItemStock, 10) || 100,
+      expiry: newItemExpiry || 'Dec 2028',
+      description: newItemDesc || 'Newly registered inventory item',
     };
-    setInventory([newItem, ...inventory]);
+
+    const updated = addPharmacyItemToInventory(newItem);
+    setInventory(updated);
     setIsAddItemModalOpen(false);
     showToast({
       title: 'Inventory Item Added!',
-      message: `Registered ${newItem.name} (Batch: ${newItem.batch}) into Pharmacy Master Stock.`,
+      message: `Registered ${newItem.name} (Batch: ${newItem.batch}, Stock: ${newItem.stock}) into Central Pharmacy Inventory.`,
       type: 'success',
     });
   };
 
-  const handleReorder = (item: any) => {
-    setInventory((prev) =>
-      prev.map((i) => (i.id === item.id ? { ...i, stock: i.stock + 500, status: 'In Stock' } : i))
-    );
+  const handleReorder = (item: PharmacyItem) => {
+    const updated = replenishStock(item.id, 500);
+    setInventory(updated);
     showToast({
-      title: 'Stock Reorder Dispatched!',
-      message: `Added +500 units to ${item.name} inventory.`,
+      title: 'Stock Reordered & Replenished! 📦',
+      message: `Added +500 units to ${item.name} (New Stock: ${item.stock + 500}).`,
       type: 'success',
     });
   };
+
+  // KPI Calculations
+  const lowStockItems = inventory.filter((i) => i.stock <= 50);
+  const outOfStockItems = inventory.filter((i) => i.stock <= 0);
+  const totalSKUs = inventory.length;
+
+  // Filter Inventory Data
+  const filteredInventory = inventory.filter((item) => {
+    if (!inventorySearchQuery) return true;
+    const q = inventorySearchQuery.toLowerCase();
+    return (
+      item.name.toLowerCase().includes(q) ||
+      item.category.toLowerCase().includes(q) ||
+      item.batch.toLowerCase().includes(q) ||
+      item.description.toLowerCase().includes(q)
+    );
+  });
 
   // Filter Sales Records
   const filteredSales = salesRecords.filter((s) => {
@@ -102,60 +153,77 @@ export const PharmacistDashboard: React.FC = () => {
       s.customerName.toLowerCase().includes(q) ||
       s.invoiceNo.toLowerCase().includes(q) ||
       s.date.toLowerCase().includes(q) ||
+      (s.dispensedBy && s.dispensedBy.toLowerCase().includes(q)) ||
       s.items.some((i) => i.medicineName.toLowerCase().includes(q))
     );
   });
 
   const columns = [
     {
-      header: 'Item Description',
-      accessor: (row: typeof inventory[0]) => (
+      header: 'Item Description & Batch',
+      accessor: (row: PharmacyItem) => (
         <div className="flex flex-col">
           <span className="font-bold text-slate-900">{row.name}</span>
-          <span className="text-[10px] font-bold text-amber-600">Batch: {row.batch}</span>
+          <span className="text-[10px] font-bold text-amber-700">Batch: {row.batch} • Unit Price: ₹{row.price}</span>
         </div>
       ),
     },
     {
       header: 'Category',
-      accessor: (row: typeof inventory[0]) => (
-        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase bg-slate-100 text-slate-700 border border-slate-200">
-          {row.category}
-        </span>
-      ),
+      accessor: (row: PharmacyItem) => {
+        let badgeColor = 'bg-slate-100 text-slate-700 border-slate-200';
+        if (row.category === 'TABLET_CAPSULE') badgeColor = 'bg-blue-50 text-blue-800 border-blue-200';
+        if (row.category === 'SYRUP_LIQUID') badgeColor = 'bg-indigo-50 text-indigo-800 border-indigo-200';
+        if (row.category === 'INJECTION_VACCINE') badgeColor = 'bg-rose-50 text-rose-800 border-rose-200';
+        if (row.category === 'SURGICAL_SUPPLY') badgeColor = 'bg-amber-50 text-amber-800 border-amber-200';
+        if (row.category === 'LAB_REAGENT') badgeColor = 'bg-purple-50 text-purple-800 border-purple-200';
+
+        return (
+          <span className={`px-2.5 py-0.5 rounded-full text-[10px] font-extrabold uppercase border ${badgeColor}`}>
+            {row.category.replace('_', ' ')}
+          </span>
+        );
+      },
     },
     {
-      header: 'Current Stock Level',
-      accessor: (row: typeof inventory[0]) => (
+      header: 'Stock Level',
+      accessor: (row: PharmacyItem) => (
         <span className="font-black text-slate-900 tabular-nums">
           {row.stock} {row.unit}
         </span>
       ),
     },
-    { header: 'Expiration Date', accessor: (row: typeof inventory[0]) => <span className="text-slate-600 font-semibold">{row.expiry}</span> },
+    { header: 'Expiry Date', accessor: (row: PharmacyItem) => <span className="text-slate-600 font-semibold text-xs">{row.expiry}</span> },
     {
-      header: 'Stock Status',
-      accessor: (row: typeof inventory[0]) => (
-        <span
-          className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase ${
-            row.status.includes('Low')
-              ? 'bg-rose-100 text-rose-800 border border-rose-300 animate-pulse'
-              : 'bg-emerald-100 text-emerald-800 border border-emerald-300'
-          }`}
-        >
-          {row.status}
-        </span>
-      ),
+      header: 'Inventory Status',
+      accessor: (row: PharmacyItem) => {
+        const isOut = row.stock <= 0;
+        const isLow = row.stock > 0 && row.stock <= 50;
+
+        return (
+          <span
+            className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase border ${
+              isOut
+                ? 'bg-rose-100 text-rose-800 border-rose-300 animate-pulse'
+                : isLow
+                ? 'bg-amber-100 text-amber-800 border-amber-300 animate-pulse'
+                : 'bg-emerald-100 text-emerald-800 border-emerald-300'
+            }`}
+          >
+            {isOut ? 'OUT OF STOCK' : isLow ? 'LOW STOCK ALERT (<50)' : 'IN STOCK'}
+          </span>
+        );
+      },
     },
     {
-      header: 'Manager Actions',
-      accessor: (row: typeof inventory[0]) => (
+      header: 'Actions',
+      accessor: (row: PharmacyItem) => (
         <button
           onClick={() => handleReorder(row)}
           className="px-3 py-1 bg-amber-50 hover:bg-amber-100 text-amber-700 text-xs font-bold rounded-lg border border-amber-200 flex items-center gap-1 transition-all cursor-pointer"
         >
           <RefreshCw className="w-3.5 h-3.5" />
-          <span>Reorder Stock</span>
+          <span>Reorder (+500)</span>
         </button>
       ),
     },
@@ -171,7 +239,7 @@ export const PharmacistDashboard: React.FC = () => {
             Hospital Pharmacy & Inventory Management Center
           </h1>
           <p className="text-xs font-semibold text-slate-600 mt-1">
-            Manage medicine stocks, hospital consumable supplies, batch numbers, and sales audit history.
+            Real-time stock deduction for Patients, Nurses, Caregivers, & Lab Tech purchases with sales audit vault.
           </p>
         </div>
 
@@ -195,12 +263,12 @@ export const PharmacistDashboard: React.FC = () => {
                 mrn: 'MC-1001',
                 type: 'PATIENT_DISPENSARY',
                 items: [
-                  { medicineName: 'Amlodipine Besylate 5mg Tablets', qty: 30, unitPrice: 8.5, total: 255 },
-                  { medicineName: 'Atorvastatin 10mg Tablets', qty: 30, unitPrice: 14.0, total: 420 },
+                  { medicineName: 'Paracetamol 650mg Tablets', qty: 2, unitPrice: 35, total: 70 },
+                  { medicineName: 'Amoxicillin 625mg Antibiotic', qty: 1, unitPrice: 210, total: 210 },
                 ],
-                totalAmount: 675,
+                totalAmount: 280,
                 paymentMethod: 'Credit Card (Paid)',
-                dispensedBy: 'Pharmacist Dispensary',
+                dispensedBy: 'Pharmacist Dispensary (PHARMACIST)',
               };
               savePharmacySale(newSale);
               setSalesRecords(getPharmacySales());
@@ -228,40 +296,48 @@ export const PharmacistDashboard: React.FC = () => {
 
       {/* KPI Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
-        <StatCard title="Total Stock Items" value="1,240 SKUs" change={4.5} changeLabel="active inventory" icon={Package} />
-        <StatCard title="Low Stock Alerts (<50)" value="2 Items" change={-1.0} changeLabel="reorder required" icon={AlertTriangle} />
-        <StatCard title="Prescriptions Fulfilled" value={`${salesRecords.length} Sales`} change={12.0} changeLabel="100% verified" icon={CheckCircle2} />
-        <StatCard title="Hospital Consumables" value="840 Units" change={0.0} changeLabel="syringes & IV saline" icon={Box} />
+        <StatCard title="Total Inventory SKUs" value={`${totalSKUs} SKUs`} change={5.2} changeLabel="active catalog" icon={Package} />
+        <StatCard title="Low Stock Alerts (<50)" value={`${lowStockItems.length} Items`} change={-1.0} changeLabel="reorder required" icon={AlertTriangle} />
+        <StatCard title="Dispensary Sales Fulfilled" value={`${salesRecords.length} Sales`} change={14.0} changeLabel="audit verified" icon={CheckCircle2} />
+        <StatCard title="Out of Stock Alerts" value={`${outOfStockItems.length} Items`} change={0.0} changeLabel="requires restocking" icon={Box} />
       </div>
 
       {/* Main Inventory Table */}
       <div className="space-y-4">
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
           <h2 className="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
-            <Box className="w-4 h-4 text-amber-600" /> Pharmacy & Hospital Supplies Inventory Master
+            <Box className="w-4 h-4 text-amber-600" /> Central Pharmacy & Consumables Master Inventory
           </h2>
-          <span className="text-xs text-amber-600 font-bold flex items-center gap-1">
-            <CheckCircle2 className="w-4 h-4" /> Automated Reorder Engine Active
-          </span>
+
+          <div className="relative w-full sm:w-72">
+            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+            <input
+              type="text"
+              value={inventorySearchQuery}
+              onChange={(e) => setInventorySearchQuery(e.target.value)}
+              placeholder="Filter inventory table..."
+              className="w-full pl-9 pr-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 outline-none focus:border-amber-500"
+            />
+          </div>
         </div>
 
         <DataTable
           columns={columns}
-          data={inventory}
+          data={filteredInventory}
           currentPage={currentPage}
-          totalPages={1}
+          totalPages={Math.ceil(filteredInventory.length / 10) || 1}
           onPageChange={(page) => setCurrentPage(page)}
         />
       </div>
 
-      {/* Dispensary & Sales Audit History Modal */}
+      {/* Dispensary & Sales Audit History Vault Modal */}
       <AnimatePresence>
         {isSalesHistoryOpen && (
-          <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm">
+          <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-md">
             <motion.div
-              initial={{ opacity: 0, scale: 0.94 }}
+              initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.94 }}
+              exit={{ opacity: 0, scale: 0.95 }}
               className="bg-white border border-slate-200 rounded-3xl max-w-4xl w-full p-6 sm:p-8 shadow-2xl space-y-6 max-h-[90vh] overflow-y-auto"
             >
               <div className="flex items-center justify-between border-b border-slate-100 pb-4">
@@ -271,7 +347,9 @@ export const PharmacistDashboard: React.FC = () => {
                   </div>
                   <div>
                     <h3 className="font-black text-base text-slate-900">Dispensary & Sales Audit History Vault</h3>
-                    <p className="text-xs font-semibold text-slate-500">Track date, time, customer/hospital department, items sold, and payment status</p>
+                    <p className="text-xs font-semibold text-slate-500">
+                      Audit history of purchases made by Patients, Nurses, Caregivers, Lab Techs, and Pharmacists
+                    </p>
                   </div>
                 </div>
                 <button onClick={() => setIsSalesHistoryOpen(false)} className="text-slate-400 hover:text-slate-600 p-2 rounded-xl cursor-pointer">
@@ -285,7 +363,7 @@ export const PharmacistDashboard: React.FC = () => {
                   type="text"
                   value={salesSearchQuery}
                   onChange={(e) => setSalesSearchQuery(e.target.value)}
-                  placeholder="Search sales history by Invoice #, Patient Name, Hospital Ward, Medicine..."
+                  placeholder="Search sales audit history by Invoice #, Patient Name, Purchaser Role..."
                   className="w-full pl-10 pr-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 outline-none focus:ring-2 focus:ring-amber-500/20"
                 />
               </div>
@@ -296,7 +374,9 @@ export const PharmacistDashboard: React.FC = () => {
                     <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-200 pb-2.5">
                       <div>
                         <span className="font-black text-slate-900 text-sm block">{sale.customerName}</span>
-                        <span className="text-[11px] font-bold text-amber-700 block">Invoice #{sale.invoiceNo} • {sale.type === 'PATIENT_DISPENSARY' ? 'Patient Prescription Sale' : 'Hospital Ward Stock Dispense'}</span>
+                        <span className="text-[11px] font-bold text-amber-700 block">
+                          Invoice #{sale.invoiceNo} • {sale.type === 'PATIENT_DISPENSARY' ? 'Patient Prescription Sale' : 'Hospital Ward / Lab Stock Dispense'}
+                        </span>
                       </div>
                       <div className="text-right">
                         <span className="font-black text-base text-slate-900 block">₹{sale.totalAmount}</span>
@@ -305,7 +385,7 @@ export const PharmacistDashboard: React.FC = () => {
                     </div>
 
                     <div className="space-y-1.5">
-                      <span className="text-[10px] font-black uppercase text-slate-500 block">DISPENSED ITEMS AUDIT</span>
+                      <span className="text-[10px] font-black uppercase text-slate-500 block">DISPENSED & DEDUCTED ITEMS AUDIT</span>
                       {sale.items?.map((it, idx) => (
                         <div key={idx} className="p-2 bg-white border border-slate-200 rounded-xl flex items-center justify-between text-xs font-bold">
                           <span className="text-slate-900">{it.medicineName} (Qty: {it.qty})</span>
@@ -314,9 +394,9 @@ export const PharmacistDashboard: React.FC = () => {
                       ))}
                     </div>
 
-                    <div className="text-[10px] text-slate-400 font-bold flex items-center justify-between pt-1">
-                      <span>Dispensed By: {sale.dispensedBy}</span>
-                      <span className="text-emerald-700 flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> Audit Verified</span>
+                    <div className="text-[10px] text-slate-500 font-bold flex items-center justify-between pt-1">
+                      <span>Purchaser / Dispensed By: <strong className="text-slate-900">{sale.dispensedBy}</strong></span>
+                      <span className="text-emerald-700 flex items-center gap-1"><CheckCircle2 className="w-3 h-3" /> Audit Verified & Stock Deducted</span>
                     </div>
                   </div>
                 ))}
@@ -335,7 +415,7 @@ export const PharmacistDashboard: React.FC = () => {
       {/* ADD NEW INVENTORY ITEM MODAL */}
       <AnimatePresence>
         {isAddItemModalOpen && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/50 backdrop-blur-xs">
+          <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-xs">
             <motion.div
               initial={{ opacity: 0, scale: 0.95 }}
               animate={{ opacity: 1, scale: 1 }}
@@ -349,7 +429,7 @@ export const PharmacistDashboard: React.FC = () => {
                   </div>
                   <div>
                     <h3 className="font-black text-base text-slate-900">Add Stock to Pharmacy Inventory</h3>
-                    <p className="text-xs font-semibold text-slate-500">Register new medicine or hospital consumable item</p>
+                    <p className="text-xs font-semibold text-slate-500">Register new medicine, tablet, syrup, injection or reagent</p>
                   </div>
                 </div>
                 <button onClick={() => setIsAddItemModalOpen(false)} className="text-slate-400 hover:text-slate-600 p-2 rounded-xl">
@@ -367,7 +447,7 @@ export const PharmacistDashboard: React.FC = () => {
                     required
                     value={newItemName}
                     onChange={(e) => setNewItemName(e.target.value)}
-                    placeholder="e.g. Paracetamol 650mg, Sterile Gloves"
+                    placeholder="e.g. Paracetamol 650mg, Insulin Pen, Blood Grouping Kit"
                     className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 focus:ring-2 focus:ring-amber-500/20 focus:border-amber-600 outline-none"
                   />
                 </div>
@@ -382,14 +462,35 @@ export const PharmacistDashboard: React.FC = () => {
                       onChange={(e) => setNewItemCategory(e.target.value)}
                       className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 outline-none"
                     >
-                      <option value="MEDICINE">Prescription Medicine</option>
-                      <option value="CONSUMABLE">Hospital Consumable Supply</option>
+                      <option value="TABLET_CAPSULE">💊 Tablets & Capsules</option>
+                      <option value="SYRUP_LIQUID">🥤 Syrups & Liquids</option>
+                      <option value="INJECTION_VACCINE">💉 Injections & Vaccines</option>
+                      <option value="SYRUP_DROPPER">💧 Eye/Ear Droppers</option>
+                      <option value="SPECIALTY_MEDICINE">Specialty Medicine</option>
+                      <option value="SURGICAL_SUPPLY">✂️ Surgical Supply</option>
+                      <option value="LAB_REAGENT">🧪 Lab Reagent</option>
+                      <option value="DIGITAL_DEVICE">⚡ Digital Device</option>
                     </select>
                   </div>
 
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
-                      Initial Quantity Stock
+                      Unit Price (₹ INR)
+                    </label>
+                    <input
+                      type="number"
+                      required
+                      value={newItemPrice}
+                      onChange={(e) => setNewItemPrice(e.target.value)}
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 outline-none"
+                    />
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+                      Initial Stock Quantity
                     </label>
                     <input
                       type="number"
@@ -399,12 +500,26 @@ export const PharmacistDashboard: React.FC = () => {
                       className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 outline-none"
                     />
                   </div>
+
+                  <div>
+                    <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
+                      Unit Packaging
+                    </label>
+                    <input
+                      type="text"
+                      required
+                      value={newItemUnit}
+                      onChange={(e) => setNewItemUnit(e.target.value)}
+                      placeholder="Strip, Bottle, Vial, Kit"
+                      className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 outline-none"
+                    />
+                  </div>
                 </div>
 
                 <div className="grid grid-cols-2 gap-4">
                   <div>
                     <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
-                      Batch Code Number
+                      Batch Code
                     </label>
                     <input
                       type="text"
@@ -420,10 +535,11 @@ export const PharmacistDashboard: React.FC = () => {
                       Expiry Date
                     </label>
                     <input
-                      type="date"
+                      type="text"
                       required
                       value={newItemExpiry}
                       onChange={(e) => setNewItemExpiry(e.target.value)}
+                      placeholder="Dec 2028"
                       className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 outline-none"
                     />
                   </div>

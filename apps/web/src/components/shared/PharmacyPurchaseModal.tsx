@@ -1,11 +1,10 @@
 'use client';
 
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Pill,
-  FileUp,
   CreditCard,
   Download,
   CheckCircle2,
@@ -23,10 +22,19 @@ import {
   FileText,
   AlertCircle,
   Loader2,
+  FlaskConical,
+  Syringe,
+  Layers,
+  Thermometer,
 } from 'lucide-react';
 import { useToast } from '../../context/ToastContext';
 import { PaymentModal } from './PaymentModal';
-import { MASTER_PHARMACY_CATALOG, PharmacyItem } from '../../data/pharmacyCatalog';
+import { PharmacyItem } from '../../data/pharmacyCatalog';
+import {
+  getPharmacyInventory,
+  deductPharmacyStock,
+  INVENTORY_UPDATED_EVENT,
+} from '../../data/pharmacyInventoryStore';
 import { api } from '../../lib/axios';
 
 interface PharmacyPurchaseModalProps {
@@ -45,10 +53,12 @@ export const PharmacyPurchaseModal: React.FC<PharmacyPurchaseModalProps> = ({
   patientEmail = 'patient@medflow.com',
 }) => {
   const { showToast } = useToast();
-  const [uploadedRxName, setUploadedRxName] = useState<string | null>('Digital_Signed_Rx_89021.pdf');
   const [isPaymentOpen, setIsPaymentOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [activeCategory, setActiveCategory] = useState('ALL');
+
+  // Live Pharmacy Inventory
+  const [catalog, setCatalog] = useState<PharmacyItem[]>([]);
 
   // Role & Recipient purchasing form states
   const [purchaserRole, setPurchaserRole] = useState<string>(userRole || 'PATIENT');
@@ -58,18 +68,45 @@ export const PharmacyPurchaseModal: React.FC<PharmacyPurchaseModalProps> = ({
   const [customerPhone, setCustomerPhone] = useState<string>('+91 98765 xxxxx');
 
   // Cart Items in ₹ (INR)
-  const [cart, setCart] = useState([
-    { id: 'dev-1', name: 'Digital Blood Glucose Meter Kit (Glucometer + 50 Strips)', price: 1450, qty: 1 },
-    { id: 'pharm-1', name: 'Levetiracetam 500mg Tablets (Strip of 10)', price: 280, qty: 1 },
-    { id: 'pharm-8', name: 'Pantoprazole 40mg Tablets (Strip of 10)', price: 110, qty: 1 },
+  const [cart, setCart] = useState<Array<{ id: string; name: string; price: number; qty: number; batch?: string }>>([
+    { id: 'tab-1', name: 'Paracetamol 650mg Tablets (Strip of 15)', price: 35, qty: 2, batch: 'BAT-TAB-001' },
+    { id: 'syr-1', name: 'Cough Suppressant Syrup (Dextromethorphan 100ml)', price: 115, qty: 1, batch: 'SYR-COF-01' },
   ]);
 
   const [completedOrder, setCompletedOrder] = useState<any>(null);
   const [isSubmittingCheckout, setIsSubmittingCheckout] = useState(false);
 
+  // Sync catalog from pharmacyInventoryStore & keep in sync with window events
+  useEffect(() => {
+    if (!isOpen) return;
+    setCatalog(getPharmacyInventory());
+
+    const handleInventoryUpdate = (e: any) => {
+      if (e.detail) {
+        setCatalog(e.detail);
+      } else {
+        setCatalog(getPharmacyInventory());
+      }
+    };
+
+    window.addEventListener(INVENTORY_UPDATED_EVENT, handleInventoryUpdate);
+    return () => {
+      window.removeEventListener(INVENTORY_UPDATED_EVENT, handleInventoryUpdate);
+    };
+  }, [isOpen]);
+
+  // Update default role when prop changes
+  useEffect(() => {
+    if (userRole) setPurchaserRole(userRole);
+    if (patientName) {
+      setPurchaserName(patientName);
+      setPatientNameInput(patientName);
+    }
+  }, [userRole, patientName]);
+
   if (!isOpen) return null;
 
-  const filteredCatalog = MASTER_PHARMACY_CATALOG.filter((item) => {
+  const filteredCatalog = catalog.filter((item) => {
     const matchesCat = activeCategory === 'ALL' || item.category === activeCategory;
     const matchesQuery =
       item.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -78,11 +115,31 @@ export const PharmacyPurchaseModal: React.FC<PharmacyPurchaseModalProps> = ({
   });
 
   const handleAddToCart = (item: PharmacyItem) => {
+    if (item.stock <= 0) {
+      showToast({
+        title: 'Out of Stock',
+        message: `${item.name} is currently out of stock. Please inform the pharmacist to reorder.`,
+        type: 'error',
+      });
+      return;
+    }
+
     const existing = cart.find((c) => c.id === item.id);
+    const currentQtyInCart = existing ? existing.qty : 0;
+
+    if (currentQtyInCart + 1 > item.stock) {
+      showToast({
+        title: 'Stock Limit Reached',
+        message: `Cannot add more units of ${item.name}. Only ${item.stock} units available in inventory.`,
+        type: 'error',
+      });
+      return;
+    }
+
     if (existing) {
       setCart(cart.map((c) => (c.id === item.id ? { ...c, qty: c.qty + 1 } : c)));
     } else {
-      setCart([...cart, { id: item.id, name: item.name, price: item.price, qty: 1 }]);
+      setCart([...cart, { id: item.id, name: item.name, price: item.price, qty: 1, batch: item.batch }]);
     }
     showToast({ title: 'Item Added to Cart', message: `${item.name} (₹${item.price})`, type: 'success' });
   };
@@ -92,11 +149,23 @@ export const PharmacyPurchaseModal: React.FC<PharmacyPurchaseModalProps> = ({
   const total = subtotal + taxes;
 
   const handleQuantityChange = (id: string, delta: number) => {
+    const inventoryItem = catalog.find((c) => c.id === id);
+
     setCart((prev) =>
       prev
         .map((item) => {
           if (item.id === id) {
             const newQty = item.qty + delta;
+
+            if (delta > 0 && inventoryItem && newQty > inventoryItem.stock) {
+              showToast({
+                title: 'Stock Limit Exceeded',
+                message: `Only ${inventoryItem.stock} units available for ${item.name}.`,
+                type: 'error',
+              });
+              return item;
+            }
+
             return newQty > 0 ? { ...item, qty: newQty } : null;
           }
           return item;
@@ -107,7 +176,7 @@ export const PharmacyPurchaseModal: React.FC<PharmacyPurchaseModalProps> = ({
 
   const handleCheckoutTrigger = () => {
     if (cart.length === 0) {
-      showToast({ title: 'Cart Empty', message: 'Please add at least one medication or device.', type: 'error' });
+      showToast({ title: 'Cart Empty', message: 'Please select at least one medicine or device.', type: 'error' });
       return;
     }
     setIsPaymentOpen(true);
@@ -123,6 +192,18 @@ export const PharmacyPurchaseModal: React.FC<PharmacyPurchaseModalProps> = ({
     }
     const generatedInvoiceId = `INV-${(ordArr[0] % 900000) + 100000}`;
 
+    // Deduct Pharmacy Stock in real time across the frontend state & localStorage
+    const stockDeductResult = deductPharmacyStock(
+      cart.map((c) => ({ id: c.id, name: c.name, qty: c.qty, price: c.price })),
+      {
+        purchaserRole,
+        purchaserName: purchaserName || patientNameInput,
+        customerName: patientNameInput,
+        invoiceId: generatedInvoiceId,
+        paymentMethod: receipt.gateway || 'UPI / Online Card',
+      }
+    );
+
     const checkoutPayload = {
       invoiceId: generatedInvoiceId,
       purchaserRole,
@@ -134,7 +215,7 @@ export const PharmacyPurchaseModal: React.FC<PharmacyPurchaseModalProps> = ({
       items: cart.map((i) => ({
         id: i.id,
         name: i.name,
-        batchNo: 'BTH-8821',
+        batchNo: i.batch || 'BAT-9901',
         quantity: i.qty,
         unitPrice: i.price,
         total: i.price * i.qty,
@@ -157,12 +238,12 @@ export const PharmacyPurchaseModal: React.FC<PharmacyPurchaseModalProps> = ({
       });
 
       showToast({
-        title: 'Pharmacy Purchase Completed!',
-        message: `Invoice #${orderRes.invoiceId} dispatched to ${customerEmail} via SMTP with PDF attached.`,
+        title: 'Pharmacy Order Completed & Inventory Updated! 💊',
+        message: `Stock deducted for ${cart.length} items. Invoice #${orderRes.invoiceId} dispatched to ${customerEmail}.`,
         type: 'success',
       });
     } catch (error) {
-      // Fallback state if backend is running in isolated mock mode
+      // Fallback state if backend runs in offline mock mode
       setCompletedOrder({
         invoiceId: generatedInvoiceId,
         customerName: patientNameInput,
@@ -179,8 +260,8 @@ export const PharmacyPurchaseModal: React.FC<PharmacyPurchaseModalProps> = ({
       });
 
       showToast({
-        title: 'Order Confirmed & Emailed!',
-        message: `Invoice #${generatedInvoiceId} ready for interactive PDF download.`,
+        title: 'Pharmacy Order Processed & Inventory Decreased!',
+        message: `Invoice #${generatedInvoiceId} ready for PDF download. Central inventory updated live.`,
         type: 'success',
       });
     } finally {
@@ -193,7 +274,6 @@ export const PharmacyPurchaseModal: React.FC<PharmacyPurchaseModalProps> = ({
     const invoiceId = completedOrder.invoiceId || 'INV-100201';
 
     try {
-      // Fetch binary PDF from backend endpoint
       const response = await api.get(`/pharmacy/invoices/${invoiceId}/pdf`, {
         responseType: 'blob',
       });
@@ -206,9 +286,8 @@ export const PharmacyPurchaseModal: React.FC<PharmacyPurchaseModalProps> = ({
       link.click();
       document.body.removeChild(link);
       window.URL.revokeObjectURL(url);
-      showToast({ title: 'PDF Downloaded', message: `Pharmacy_Invoice_${invoiceId}.pdf downloaded successfully.`, type: 'success' });
+      showToast({ title: 'PDF Downloaded', message: `Pharmacy_Invoice_${invoiceId}.pdf saved successfully.`, type: 'success' });
     } catch (err) {
-      // If pdfBase64 exists from API response
       if (completedOrder.pdfBase64) {
         const byteCharacters = atob(completedOrder.pdfBase64);
         const byteNumbers = new Array(byteCharacters.length);
@@ -238,12 +317,12 @@ export const PharmacyPurchaseModal: React.FC<PharmacyPurchaseModalProps> = ({
       printWindow.document.write(`
         <html>
           <head>
-            <title>MediCore 360 - Official Pharmacy & Devices Receipt ${completedOrder.invoiceId || completedOrder.orderId}</title>
+            <title>MedFlow Pharmacy Receipt - ${completedOrder.invoiceId || completedOrder.orderId}</title>
             <style>
               body { font-family: Arial, sans-serif; padding: 40px; color: #1e293b; max-width: 700px; margin: 0 auto; }
-              .header { border-bottom: 2px solid #059669; padding-bottom: 15px; margin-bottom: 20px; display: flex; justify-between; }
-              .title { font-size: 24px; font-weight: bold; color: #065f46; }
-              .box { background: #f0fdf4; padding: 20px; border-radius: 8px; border: 1px solid #bbf7d0; margin-bottom: 20px; }
+              .header { border-bottom: 2px solid #059669; padding-bottom: 15px; margin-bottom: 20px; display: flex; justify-content: space-between; }
+              .title { font-size: 22px; font-weight: bold; color: #065f46; }
+              .box { background: #f0fdf4; padding: 18px; border-radius: 8px; border: 1px solid #bbf7d0; margin-bottom: 20px; line-height: 1.6; }
               .item-table { width: 100%; border-collapse: collapse; margin-top: 15px; }
               .item-table th, .item-table td { padding: 10px; border-bottom: 1px solid #cbd5e1; text-align: left; font-size: 13px; }
               .total-row { font-size: 16px; font-weight: bold; color: #059669; text-align: right; margin-top: 15px; }
@@ -252,8 +331,8 @@ export const PharmacyPurchaseModal: React.FC<PharmacyPurchaseModalProps> = ({
           <body>
             <div class="header">
               <div>
-                <div class="title">MEDICORE 360 E-PHARMACY & MEDICAL DEVICES</div>
-                <div style="font-size: 12px; color: #64748b;">Licensed Hospital Pharmacy & Dispensary</div>
+                <div class="title">MEDFLOW HOSPITAL PHARMACY</div>
+                <div style="font-size: 12px; color: #64748b;">Certified Clinical Dispensary & Inventory Engine</div>
               </div>
               <div style="text-align: right;">
                 <div style="font-size: 14px; font-weight: bold;">${completedOrder.invoiceId || completedOrder.orderId}</div>
@@ -261,15 +340,15 @@ export const PharmacyPurchaseModal: React.FC<PharmacyPurchaseModalProps> = ({
               </div>
             </div>
             <div class="box">
-              <div><strong>Purchaser Name:</strong> ${completedOrder.purchaserName || purchaserName}</div>
               <div><strong>Purchaser Role:</strong> ${completedOrder.purchaserRole || purchaserRole}</div>
-              <div><strong>Billed Patient:</strong> ${completedOrder.customerName || patientNameInput}</div>
-              <div><strong>Email Notification:</strong> ${completedOrder.customerEmail || customerEmail}</div>
+              <div><strong>Purchaser Name:</strong> ${completedOrder.purchaserName || purchaserName}</div>
+              <div><strong>Recipient Patient:</strong> ${completedOrder.customerName || patientNameInput}</div>
+              <div><strong>Notification Email:</strong> ${completedOrder.customerEmail || customerEmail}</div>
             </div>
 
             <table class="item-table">
               <thead>
-                <tr><th>Item / Medical Device</th><th>Qty</th><th>Unit Price</th><th>Subtotal</th></tr>
+                <tr><th>Item / Medication Description</th><th>Qty</th><th>Unit Price</th><th>Subtotal</th></tr>
               </thead>
               <tbody>
                 ${(completedOrder.items || cart)
@@ -288,10 +367,10 @@ export const PharmacyPurchaseModal: React.FC<PharmacyPurchaseModalProps> = ({
             </table>
 
             <div class="total-row">
-              Total Amount Paid: ₹${(completedOrder.grandTotal || total).toFixed(2)}
+              Total Tax Paid: ₹${(completedOrder.grandTotal || total).toFixed(2)}
             </div>
             <div style="font-size: 11px; color: #94a3b8; text-align: center; margin-top: 30px;">
-              Thank you for purchasing from MediCore 360 Certified Pharmacy. A copy of this PDF tax receipt was emailed via SMTP.
+              Thank you for purchasing from MedFlow Pharmacy. Inventory has been automatically decremented in the central hospital database.
             </div>
             <script>window.print();</script>
           </body>
@@ -302,12 +381,12 @@ export const PharmacyPurchaseModal: React.FC<PharmacyPurchaseModalProps> = ({
   };
 
   return (
-    <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-slate-950/70 backdrop-blur-sm">
+    <div className="fixed inset-0 z-[999] flex items-center justify-center p-4 bg-slate-950/75 backdrop-blur-md">
       {/* Payment Gateway Sandbox Modal */}
       <PaymentModal
         isOpen={isPaymentOpen}
         onClose={() => setIsPaymentOpen(false)}
-        itemTitle={`Pharmacy & Digital Devices Order (${cart.length} Items)`}
+        itemTitle={`Pharmacy Order (${cart.length} Items)`}
         itemCategory={purchaserRole === 'PATIENT' ? 'PHARMACY' : 'HOSPITAL_SUPPLY'}
         amount={`₹${total.toFixed(2)}`}
         patientName={patientNameInput}
@@ -316,51 +395,53 @@ export const PharmacyPurchaseModal: React.FC<PharmacyPurchaseModalProps> = ({
       />
 
       <motion.div
-        initial={{ opacity: 0, scale: 0.94 }}
+        initial={{ opacity: 0, scale: 0.95 }}
         animate={{ opacity: 1, scale: 1 }}
-        exit={{ opacity: 0, scale: 0.94 }}
-        className="bg-white border border-slate-200 rounded-3xl max-w-3xl w-full p-6 sm:p-8 shadow-2xl space-y-6 max-h-[92vh] overflow-y-auto"
+        exit={{ opacity: 0, scale: 0.95 }}
+        className="bg-white border border-slate-200 rounded-3xl max-w-4xl w-full p-6 sm:p-8 shadow-2xl space-y-6 max-h-[94vh] overflow-y-auto"
       >
         {/* Topbar Header */}
         <div className="flex items-center justify-between border-b border-slate-100 pb-4">
           <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600">
+            <div className="w-10 h-10 rounded-2xl bg-emerald-50 border border-emerald-200 flex items-center justify-center text-emerald-600 shadow-sm">
               <ShoppingBag className="w-5 h-5" />
             </div>
             <div>
-              <h3 className="font-black text-base text-slate-900">Hospital Pharmacy & Medicine Purchase Studio</h3>
+              <h3 className="font-black text-base text-slate-900 flex items-center gap-2">
+                MedFlow Pharmacy Purchase & Real-Time Stock Engine
+              </h3>
               <p className="text-xs font-semibold text-slate-500">
-                Purchasing available for Patient, Lab Assistant, Nurse & Caregiver
+                Purchasing available for Patient, Nurse, Caregiver, Lab Technician & Pharmacist
               </p>
             </div>
           </div>
-          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 p-2 rounded-xl">
+          <button onClick={onClose} className="text-slate-400 hover:text-slate-600 p-2 rounded-xl cursor-pointer">
             <X className="w-5 h-5" />
           </button>
         </div>
 
         {completedOrder ? (
-          /* ORDER CONFIRMATION SCREEN */
+          /* ORDER CONFIRMATION & INVENTORY DEDUCTED SCREEN */
           <div className="space-y-6 text-center py-4">
             <div className="w-16 h-16 rounded-full bg-emerald-100 text-emerald-600 border border-emerald-300 flex items-center justify-center mx-auto animate-bounce">
               <CheckCircle2 className="w-8 h-8" />
             </div>
 
             <div>
-              <h4 className="text-xl font-black text-slate-900">Medicine Purchase Completed!</h4>
+              <h4 className="text-xl font-black text-slate-900">Pharmacy Purchase Completed!</h4>
               <p className="text-xs text-slate-500 font-medium mt-1">
-                Official Tax Invoice ID: <span className="font-bold text-emerald-700 tabular-nums">{completedOrder.invoiceId}</span>
+                Tax Invoice ID: <span className="font-bold text-emerald-700 tabular-nums">{completedOrder.invoiceId}</span>
               </p>
             </div>
 
-            {/* SMTP Mail Dispatched Callout Banner */}
-            <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-left space-y-2.5">
+            {/* Inventory Stock Decremented Badge */}
+            <div className="p-4 bg-emerald-50 border border-emerald-200 rounded-2xl text-left space-y-2">
               <div className="flex items-center gap-2 text-emerald-800 font-bold text-xs">
-                <Mail className="w-4 h-4 text-emerald-600 shrink-0" />
-                <span>SMTP Email & PDF Attachment Dispatched</span>
+                <Box className="w-4 h-4 text-emerald-600 shrink-0" />
+                <span>Central Pharmacy Inventory Real-Time Deducted</span>
               </div>
               <p className="text-xs text-slate-600 leading-relaxed pl-6">
-                An interactive, downloadable PDF invoice (<strong className="text-slate-900">Pharmacy_Invoice_{completedOrder.invoiceId}.pdf</strong>) has been generated and emailed to <strong className="text-slate-900">{completedOrder.customerEmail || customerEmail}</strong>.
+                Stock quantities for the purchased items have been subtracted from the main pharmacy inventory. Pharmacist and clinical dashboards updated live.
               </p>
             </div>
 
@@ -377,11 +458,11 @@ export const PharmacyPurchaseModal: React.FC<PharmacyPurchaseModalProps> = ({
                 <span className="text-slate-900 font-bold">{completedOrder.customerName || patientNameInput}</span>
               </div>
               <div className="flex justify-between border-b border-slate-200/60 pb-2">
-                <span className="text-slate-500">Items Purchased:</span>
+                <span className="text-slate-500">Items Purchased & Deducted:</span>
                 <span className="text-slate-900 font-bold">{(completedOrder.items || cart).length} Items</span>
               </div>
               <div className="flex justify-between pt-1">
-                <span className="text-slate-500">Total Grand Amount Paid:</span>
+                <span className="text-slate-500">Total Grand Amount Billed:</span>
                 <span className="text-emerald-600 font-black text-sm">₹{(completedOrder.grandTotal || total).toFixed(2)}</span>
               </div>
             </div>
@@ -401,18 +482,18 @@ export const PharmacyPurchaseModal: React.FC<PharmacyPurchaseModalProps> = ({
                 onClick={onClose}
                 className="w-full py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl cursor-pointer"
               >
-                Done & Return to Workspace
+                Done & Return to Dashboard
               </button>
             </div>
           </div>
         ) : (
           /* CART & PURCHASER FORM SELECTION */
           <div className="space-y-5">
-            {/* Purchasing Role & Recipient Info Setup */}
+            {/* Purchaser & Recipient Info Setup */}
             <div className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-3">
               <div className="flex items-center gap-2 text-xs font-black uppercase tracking-wider text-slate-800">
                 <UserCheck className="w-4 h-4 text-emerald-600" />
-                <span>Purchaser & Patient Metadata</span>
+                <span>Purchaser & Patient Profile</span>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
@@ -425,9 +506,9 @@ export const PharmacyPurchaseModal: React.FC<PharmacyPurchaseModalProps> = ({
                     className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl font-bold text-slate-800 outline-none focus:border-emerald-500"
                   >
                     <option value="PATIENT">Patient (Self Purchase)</option>
-                    <option value="LAB_ASSISTANT">Lab Assistant / Tech</option>
-                    <option value="NURSE">Nurse (Care Team)</option>
+                    <option value="NURSE">Nurse (Ward & Care Team)</option>
                     <option value="CAREGIVER">Caregiver / Family</option>
+                    <option value="LAB_ASSISTANT">Lab Technician / Assistant</option>
                     <option value="PHARMACIST">Pharmacist / Dispensary</option>
                   </select>
                 </div>
@@ -446,7 +527,7 @@ export const PharmacyPurchaseModal: React.FC<PharmacyPurchaseModalProps> = ({
 
                 {/* Patient Name */}
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Patient Name</label>
+                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Recipient Patient Name</label>
                   <input
                     type="text"
                     value={patientNameInput}
@@ -456,11 +537,9 @@ export const PharmacyPurchaseModal: React.FC<PharmacyPurchaseModalProps> = ({
                   />
                 </div>
 
-                {/* SMTP Email Target */}
+                {/* Email Notification */}
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-600 mb-1">
-                    SMTP Notification Email (PDF Delivery)
-                  </label>
+                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Invoice Notification Email</label>
                   <input
                     type="email"
                     value={customerEmail}
@@ -475,36 +554,66 @@ export const PharmacyPurchaseModal: React.FC<PharmacyPurchaseModalProps> = ({
             {/* Catalog Filter Tabs & Search */}
             <div className="space-y-3 p-4 bg-slate-50 border border-slate-200 rounded-2xl">
               <div className="flex items-center justify-between gap-2 flex-wrap">
-                <span className="text-xs font-black uppercase tracking-wider text-slate-800">
-                  Browse Catalog
+                <span className="text-xs font-black uppercase tracking-wider text-slate-800 flex items-center gap-1.5">
+                  <Pill className="w-4 h-4 text-emerald-600" /> Browse Pharmacy Catalog ({catalog.length} SKUs)
                 </span>
 
-                <div className="flex items-center gap-1 overflow-x-auto pb-1 scrollbar-none">
+                <div className="flex items-center gap-1 overflow-x-auto pb-1 max-w-full scrollbar-none">
                   <button
                     type="button"
                     onClick={() => setActiveCategory('ALL')}
-                    className={`px-3 py-1 rounded-lg text-xs font-bold ${
-                      activeCategory === 'ALL' ? 'bg-emerald-600 text-white' : 'bg-white text-slate-700 border border-slate-200'
+                    className={`px-3 py-1 rounded-lg text-xs font-bold whitespace-nowrap transition-all ${
+                      activeCategory === 'ALL' ? 'bg-emerald-600 text-white shadow-sm' : 'bg-white text-slate-700 border border-slate-200'
                     }`}
                   >
-                    All Items
+                    All Catalog
                   </button>
 
                   <button
                     type="button"
-                    onClick={() => setActiveCategory('DIGITAL_DEVICE')}
-                    className={`px-3 py-1 rounded-lg text-xs font-bold ${
-                      activeCategory === 'DIGITAL_DEVICE' ? 'bg-emerald-600 text-white' : 'bg-white text-slate-700 border border-slate-200'
+                    onClick={() => setActiveCategory('TABLET_CAPSULE')}
+                    className={`px-3 py-1 rounded-lg text-xs font-bold whitespace-nowrap transition-all ${
+                      activeCategory === 'TABLET_CAPSULE' ? 'bg-emerald-600 text-white shadow-sm' : 'bg-white text-slate-700 border border-slate-200'
                     }`}
                   >
-                    ⚡ Digital Devices & Mobility
+                    💊 Tablets & Capsules
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setActiveCategory('SYRUP_LIQUID')}
+                    className={`px-3 py-1 rounded-lg text-xs font-bold whitespace-nowrap transition-all ${
+                      activeCategory === 'SYRUP_LIQUID' ? 'bg-emerald-600 text-white shadow-sm' : 'bg-white text-slate-700 border border-slate-200'
+                    }`}
+                  >
+                    🥤 Syrups & Liquids
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setActiveCategory('INJECTION_VACCINE')}
+                    className={`px-3 py-1 rounded-lg text-xs font-bold whitespace-nowrap transition-all ${
+                      activeCategory === 'INJECTION_VACCINE' ? 'bg-emerald-600 text-white shadow-sm' : 'bg-white text-slate-700 border border-slate-200'
+                    }`}
+                  >
+                    💉 Injections & Vaccines
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setActiveCategory('SYRUP_DROPPER')}
+                    className={`px-3 py-1 rounded-lg text-xs font-bold whitespace-nowrap transition-all ${
+                      activeCategory === 'SYRUP_DROPPER' ? 'bg-emerald-600 text-white shadow-sm' : 'bg-white text-slate-700 border border-slate-200'
+                    }`}
+                  >
+                    💧 Eye/Ear Droppers
                   </button>
 
                   <button
                     type="button"
                     onClick={() => setActiveCategory('SPECIALTY_MEDICINE')}
-                    className={`px-3 py-1 rounded-lg text-xs font-bold ${
-                      activeCategory === 'SPECIALTY_MEDICINE' ? 'bg-emerald-600 text-white' : 'bg-white text-slate-700 border border-slate-200'
+                    className={`px-3 py-1 rounded-lg text-xs font-bold whitespace-nowrap transition-all ${
+                      activeCategory === 'SPECIALTY_MEDICINE' ? 'bg-emerald-600 text-white shadow-sm' : 'bg-white text-slate-700 border border-slate-200'
                     }`}
                   >
                     Specialty Rx
@@ -512,12 +621,32 @@ export const PharmacyPurchaseModal: React.FC<PharmacyPurchaseModalProps> = ({
 
                   <button
                     type="button"
-                    onClick={() => setActiveCategory('GENERAL_MEDICINE')}
-                    className={`px-3 py-1 rounded-lg text-xs font-bold ${
-                      activeCategory === 'GENERAL_MEDICINE' ? 'bg-emerald-600 text-white' : 'bg-white text-slate-700 border border-slate-200'
+                    onClick={() => setActiveCategory('SURGICAL_SUPPLY')}
+                    className={`px-3 py-1 rounded-lg text-xs font-bold whitespace-nowrap transition-all ${
+                      activeCategory === 'SURGICAL_SUPPLY' ? 'bg-emerald-600 text-white shadow-sm' : 'bg-white text-slate-700 border border-slate-200'
                     }`}
                   >
-                    General Common
+                    ✂️ Surgical Supplies
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setActiveCategory('LAB_REAGENT')}
+                    className={`px-3 py-1 rounded-lg text-xs font-bold whitespace-nowrap transition-all ${
+                      activeCategory === 'LAB_REAGENT' ? 'bg-emerald-600 text-white shadow-sm' : 'bg-white text-slate-700 border border-slate-200'
+                    }`}
+                  >
+                    🧪 Lab Reagents
+                  </button>
+
+                  <button
+                    type="button"
+                    onClick={() => setActiveCategory('DIGITAL_DEVICE')}
+                    className={`px-3 py-1 rounded-lg text-xs font-bold whitespace-nowrap transition-all ${
+                      activeCategory === 'DIGITAL_DEVICE' ? 'bg-emerald-600 text-white shadow-sm' : 'bg-white text-slate-700 border border-slate-200'
+                    }`}
+                  >
+                    ⚡ Devices & Gear
                   </button>
                 </div>
               </div>
@@ -528,54 +657,116 @@ export const PharmacyPurchaseModal: React.FC<PharmacyPurchaseModalProps> = ({
                   type="text"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
-                  placeholder="Search glucometer, paracetamol, wheelchair, amoxicillin..."
-                  className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 outline-none"
+                  placeholder="Search tablets, syrups, injections, insulin, paracetamol, reagents..."
+                  className="w-full pl-10 pr-4 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 outline-none focus:border-emerald-500"
                 />
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-40 overflow-y-auto p-1 bg-white border border-slate-200 rounded-xl">
-                {filteredCatalog.map((item) => (
-                  <div key={item.id} className="p-2 border border-slate-100 rounded-lg flex items-center justify-between text-xs">
-                    <div>
-                      <span className="font-bold text-slate-900 block truncate max-w-[200px]">{item.name}</span>
-                      <span className="text-[10px] text-slate-500 font-medium block truncate max-w-[200px]">{item.description}</span>
-                      <span className="text-emerald-600 font-black">₹{item.price}</span>
-                    </div>
-                    <button
-                      onClick={() => handleAddToCart(item)}
-                      className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold rounded-lg text-[11px] flex items-center gap-1 cursor-pointer shrink-0"
+              {/* Items Catalog List Grid */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-2 max-h-52 overflow-y-auto p-1 bg-white border border-slate-200 rounded-xl">
+                {filteredCatalog.map((item) => {
+                  const isOutOfStock = item.stock <= 0;
+                  const isLowStock = item.stock > 0 && item.stock <= 50;
+
+                  return (
+                    <div
+                      key={item.id}
+                      className={`p-2.5 border rounded-xl flex items-center justify-between text-xs transition-all ${
+                        isOutOfStock
+                          ? 'bg-rose-50/50 border-rose-200 opacity-75'
+                          : isLowStock
+                          ? 'bg-amber-50/40 border-amber-200'
+                          : 'bg-white border-slate-100 hover:border-emerald-300'
+                      }`}
                     >
-                      <Plus className="w-3 h-3" /> Add
-                    </button>
+                      <div className="pr-2 space-y-0.5">
+                        <span className="font-bold text-slate-900 block truncate max-w-[210px]">{item.name}</span>
+                        <span className="text-[10px] text-slate-500 font-medium block truncate max-w-[210px]">
+                          {item.description}
+                        </span>
+
+                        <div className="flex items-center gap-2 pt-0.5">
+                          <span className="text-emerald-600 font-black">₹{item.price}</span>
+                          <span className="text-[10px] text-slate-400 font-bold">• {item.unit}</span>
+
+                          {/* Live Inventory Stock Badge */}
+                          <span
+                            className={`text-[9px] font-black uppercase px-1.5 py-0.5 rounded-full ${
+                              isOutOfStock
+                                ? 'bg-rose-100 text-rose-800 border border-rose-300'
+                                : isLowStock
+                                ? 'bg-amber-100 text-amber-800 border border-amber-300'
+                                : 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                            }`}
+                          >
+                            {isOutOfStock ? 'OUT OF STOCK' : `Stock: ${item.stock}`}
+                          </span>
+                        </div>
+                      </div>
+
+                      <button
+                        disabled={isOutOfStock}
+                        onClick={() => handleAddToCart(item)}
+                        className={`px-3 py-1.5 font-bold rounded-xl text-[11px] flex items-center gap-1 cursor-pointer shrink-0 transition-all ${
+                          isOutOfStock
+                            ? 'bg-slate-200 text-slate-400 cursor-not-allowed'
+                            : 'bg-emerald-600 hover:bg-emerald-500 text-white shadow-sm shadow-emerald-600/20'
+                        }`}
+                      >
+                        <Plus className="w-3 h-3" /> Add
+                      </button>
+                    </div>
+                  );
+                })}
+
+                {filteredCatalog.length === 0 && (
+                  <div className="col-span-2 p-6 text-center text-slate-400 font-bold text-xs">
+                    No medications found matching "{searchQuery}".
                   </div>
-                ))}
+                )}
               </div>
             </div>
 
-            {/* Cart Items */}
+            {/* Selected Cart Items */}
             <div className="space-y-3">
-              <span className="text-xs font-black uppercase tracking-wider text-slate-700 block">
-                Selected Pharmacy & Device Cart Items ({cart.length})
+              <span className="text-xs font-black uppercase tracking-wider text-slate-700 flex items-center justify-between">
+                <span>Selected Pharmacy Cart Items ({cart.length})</span>
+                <span className="text-[11px] text-slate-500 font-normal">Real-time stock reservation</span>
               </span>
 
               {cart.map((item) => (
                 <div key={item.id} className="p-3 bg-slate-50 border border-slate-200 rounded-xl flex items-center justify-between text-xs">
                   <div>
                     <span className="font-bold text-slate-900 block">{item.name}</span>
-                    <span className="text-slate-500 font-semibold">₹{item.price} each</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-slate-500 font-semibold">₹{item.price} each</span>
+                      {item.batch && <span className="text-[10px] font-bold text-amber-700">Batch: {item.batch}</span>}
+                    </div>
                   </div>
 
                   <div className="flex items-center gap-2">
-                    <button onClick={() => handleQuantityChange(item.id, -1)} className="w-6 h-6 rounded-lg bg-slate-200 font-black flex items-center justify-center">
+                    <button
+                      onClick={() => handleQuantityChange(item.id, -1)}
+                      className="w-6 h-6 rounded-lg bg-slate-200 hover:bg-slate-300 font-black flex items-center justify-center text-slate-700 cursor-pointer"
+                    >
                       -
                     </button>
                     <span className="font-black text-slate-900 tabular-nums px-1">{item.qty}</span>
-                    <button onClick={() => handleQuantityChange(item.id, 1)} className="w-6 h-6 rounded-lg bg-slate-200 font-black flex items-center justify-center">
+                    <button
+                      onClick={() => handleQuantityChange(item.id, 1)}
+                      className="w-6 h-6 rounded-lg bg-slate-200 hover:bg-slate-300 font-black flex items-center justify-center text-slate-700 cursor-pointer"
+                    >
                       +
                     </button>
-                    <span className="font-black text-blue-600 tabular-nums w-16 text-right">
+                    <span className="font-black text-emerald-700 tabular-nums w-16 text-right">
                       ₹{(item.price * item.qty).toFixed(2)}
                     </span>
+                    <button
+                      onClick={() => setCart(cart.filter((c) => c.id !== item.id))}
+                      className="text-slate-400 hover:text-rose-600 p-1 rounded-lg transition-colors cursor-pointer"
+                    >
+                      <Trash2 className="w-3.5 h-3.5" />
+                    </button>
                   </div>
                 </div>
               ))}
@@ -599,19 +790,19 @@ export const PharmacyPurchaseModal: React.FC<PharmacyPurchaseModalProps> = ({
 
             <button
               type="button"
-              disabled={isSubmittingCheckout}
+              disabled={isSubmittingCheckout || cart.length === 0}
               onClick={handleCheckoutTrigger}
-              className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs rounded-xl shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+              className="w-full py-3.5 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs rounded-xl shadow-lg shadow-emerald-600/20 flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 transition-all"
             >
               {isSubmittingCheckout ? (
                 <>
                   <Loader2 className="w-4 h-4 animate-spin" />
-                  <span>Processing Checkout & Generating PDF...</span>
+                  <span>Deducting Stock & Processing Checkout...</span>
                 </>
               ) : (
                 <>
                   <CreditCard className="w-4 h-4" />
-                  <span>Proceed to Checkout & Dispatch PDF Email (₹{total.toFixed(2)})</span>
+                  <span>Proceed to Checkout & Deduct Inventory (₹{total.toFixed(2)})</span>
                 </>
               )}
             </button>

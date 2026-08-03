@@ -136,7 +136,7 @@ export const AmbulanceTrackerModal: React.FC<AmbulanceTrackerModalProps> = ({
   const [distanceKm, setDistanceKm] = useState(2.4);
   const [vehicleSpeed, setVehicleSpeed] = useState(52);
   const [isSimulationFinished, setIsSimulationFinished] = useState(false);
-  const [simSpeedMultiplier, setSimSpeedMultiplier] = useState<1 | 2>(1); // 1x vs 2x speed
+  const [simSpeedMultiplier, setSimSpeedMultiplier] = useState<1 | 2 | 3>(1); // 1x vs 2x vs 3x speed multiplier
 
   // Map View Mode: 'STREET' | 'SATELLITE'
   const [mapType, setMapType] = useState<'STREET' | 'SATELLITE'>('STREET');
@@ -291,7 +291,7 @@ export const AmbulanceTrackerModal: React.FC<AmbulanceTrackerModalProps> = ({
   useEffect(() => {
     if (!isOpen || step !== 'LIVE_TRACKING' || isSimulationFinished) return;
 
-    const intervalTimeMs = simSpeedMultiplier === 2 ? 500 : 1000;
+    const intervalTimeMs = simSpeedMultiplier === 3 ? 100 : simSpeedMultiplier === 2 ? 400 : 1000;
 
     const interval = setInterval(() => {
       setEtaSeconds((prev) => {
@@ -304,10 +304,22 @@ export const AmbulanceTrackerModal: React.FC<AmbulanceTrackerModalProps> = ({
           setVehicleSpeed(0);
 
           showToast({
-            title: '🎉 Job Finished in 2 Minutes! Patient Admitted to ER',
+            title: '🎉 Job Finished! Patient Admitted to ER',
             message: `Ambulance ${assignedDriver.plate} has successfully arrived at MediCore Hospital ER. Patient safely admitted.`,
             type: 'success',
           });
+
+          if (typeof window !== 'undefined') {
+            window.dispatchEvent(
+              new CustomEvent('medflow_ambulance_pickup_drop_completed', {
+                detail: {
+                  vehiclePlate: assignedDriver.plate,
+                  driverName: assignedDriver.name,
+                  timestamp: Date.now(),
+                },
+              })
+            );
+          }
           return 0;
         }
 
@@ -410,6 +422,33 @@ export const AmbulanceTrackerModal: React.FC<AmbulanceTrackerModalProps> = ({
       message: `Connecting to ${assignedDriver.phone}...`,
       type: 'info',
     });
+  };
+
+  const handleFastSimulateComplete = () => {
+    setIsSimulationFinished(true);
+    setCurrentStage(4);
+    setProgressPercent(100);
+    setDistanceKm(0.0);
+    setVehicleSpeed(0);
+    setEtaSeconds(0);
+
+    showToast({
+      title: '⚡ Fast Simulated Pickup & Drop Completed!',
+      message: `Ambulance ${assignedDriver.plate} has delivered patient to MediCore Hospital ER. Fleet updated.`,
+      type: 'success',
+    });
+
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(
+        new CustomEvent('medflow_ambulance_pickup_drop_completed', {
+          detail: {
+            vehiclePlate: assignedDriver.plate,
+            driverName: assignedDriver.name,
+            timestamp: Date.now(),
+          },
+        })
+      );
+    }
   };
 
   const handleSimulatePickup = () => {
@@ -681,7 +720,7 @@ export const AmbulanceTrackerModal: React.FC<AmbulanceTrackerModalProps> = ({
               </div>
 
               {/* Floating Top Status Header */}
-              <div className="relative z-10 flex items-center justify-between pointer-events-auto">
+              <div className="relative z-10 flex items-center justify-between pointer-events-auto flex-wrap gap-2">
                 <span
                   className={`px-3.5 py-1 text-white font-black text-[11px] rounded-full shadow-lg flex items-center gap-1.5 ${
                     isSimulationFinished
@@ -701,19 +740,35 @@ export const AmbulanceTrackerModal: React.FC<AmbulanceTrackerModalProps> = ({
                   </span>
                 </span>
 
-                <div className="flex items-center gap-2">
+                <div className="flex items-center gap-2 flex-wrap">
+                  {/* Speed Multiplier (1x, 2x, 3x Turbo) */}
                   <button
                     type="button"
-                    onClick={() => setSimSpeedMultiplier(simSpeedMultiplier === 1 ? 2 : 1)}
+                    onClick={() => setSimSpeedMultiplier((prev) => (prev === 1 ? 2 : prev === 2 ? 3 : 1))}
                     className={`px-2.5 py-1 text-xs font-black rounded-xl border shadow-md flex items-center gap-1 cursor-pointer transition-all ${
-                      simSpeedMultiplier === 2
-                        ? 'bg-amber-400 text-slate-900 border-amber-500'
+                      simSpeedMultiplier === 3
+                        ? 'bg-rose-500 text-white border-rose-400 font-black animate-pulse shadow-rose-500/40'
+                        : simSpeedMultiplier === 2
+                        ? 'bg-amber-400 text-slate-900 border-amber-500 font-black'
                         : 'bg-slate-800/90 text-slate-200 border-slate-700'
                     }`}
-                    title="Toggle 2x Speed Fast-Forward"
+                    title="Toggle Speed Multiplier (1x, 2x, 3x Turbo Mode)"
                   >
                     <span>⚡ {simSpeedMultiplier}x Speed</span>
                   </button>
+
+                  {/* Fast Simulated Pickup & Drop Button */}
+                  {!isSimulationFinished && (
+                    <button
+                      type="button"
+                      onClick={handleFastSimulateComplete}
+                      className="px-3 py-1 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs rounded-xl shadow-md flex items-center gap-1 cursor-pointer transition-all hover:scale-105"
+                      title="Instant Fast-Forward Simulated Pickup & ER Drop"
+                    >
+                      <Sparkles className="w-3.5 h-3.5" />
+                      <span>Fast Complete Trip</span>
+                    </button>
+                  )}
 
                   <button
                     type="button"

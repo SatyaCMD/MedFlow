@@ -1,7 +1,7 @@
 'use client';
 
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars */
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import {
   Siren,
@@ -165,6 +165,45 @@ export const AmbulanceManagementModule: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'DISPATCH' | 'FLEET' | 'DRIVER' | 'MAINTENANCE'>('DISPATCH');
   const [fleet, setFleet] = useState<AmbulanceVehicle[]>(INITIAL_FLEET);
   const [patientBookedAmbulance, setPatientBookedAmbulance] = useState<AmbulanceVehicle | null>(INITIAL_FLEET[0]);
+  const [isBookingCompleted, setIsBookingCompleted] = useState(false);
+
+  useEffect(() => {
+    const handlePickupDropCompleted = (e: any) => {
+      setIsBookingCompleted(true);
+      const vehiclePlate = e.detail?.vehiclePlate || 'MH-02-EQ-9912';
+
+      setFleet((prev) =>
+        prev.map((v) =>
+          v.vehiclePlate === vehiclePlate
+            ? {
+                ...v,
+                status: 'Available',
+                currentSpeed: 0,
+                lastLocation: 'MediCore Main ER Base Station',
+              }
+            : v
+        )
+      );
+
+      setPatientBookedAmbulance((prev) =>
+        prev && prev.vehiclePlate === vehiclePlate
+          ? {
+              ...prev,
+              status: 'Available',
+              currentSpeed: 0,
+              lastLocation: 'MediCore Hospital ER Ward (Drop Completed)',
+            }
+          : prev
+      );
+    };
+
+    if (typeof window !== 'undefined') {
+      window.addEventListener('medflow_ambulance_pickup_drop_completed', handlePickupDropCompleted);
+      return () => {
+        window.removeEventListener('medflow_ambulance_pickup_drop_completed', handlePickupDropCompleted);
+      };
+    }
+  }, []);
   const [maintenance, setMaintenance] = useState<MaintenanceRecord[]>(INITIAL_MAINTENANCE);
   const [fuelLogs, setFuelLogs] = useState<FuelRecord[]>(INITIAL_FUEL);
 
@@ -709,6 +748,32 @@ export const AmbulanceManagementModule: React.FC = () => {
                   </span>
                 </div>
 
+                {isBookingCompleted && (
+                  <div className="p-4 bg-emerald-50 border border-emerald-300 rounded-2xl flex items-center justify-between gap-3 text-xs">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-xl bg-emerald-600 text-white font-black flex items-center justify-center text-base shrink-0">
+                        ✓
+                      </div>
+                      <div>
+                        <h4 className="font-black text-sm text-emerald-950">Pickup & Drop Mission Completed!</h4>
+                        <p className="text-xs text-emerald-800 font-medium">
+                          Patient delivered safely to MediCore ER Trauma Center. Vehicle released back to active fleet.
+                        </p>
+                      </div>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => {
+                        setTrackerInitialStep('REQUEST_FORM');
+                        setIsTrackerOpen(true);
+                      }}
+                      className="px-4 py-2 bg-emerald-700 hover:bg-emerald-600 text-white font-black text-xs rounded-xl shadow-xs shrink-0 cursor-pointer"
+                    >
+                      Book Another Ambulance
+                    </button>
+                  </div>
+                )}
+
                 {patientBookedAmbulance ? (
                   <div className="p-6 bg-white border-2 border-rose-300 rounded-3xl shadow-md max-w-xl space-y-4">
                     <div className="flex items-center justify-between">
@@ -782,6 +847,117 @@ export const AmbulanceManagementModule: React.FC = () => {
                     </button>
                   </div>
                 )}
+
+                {/* CATEGORIZED REAL-TIME FLEET STATUS OVERVIEW (Available, Busy, Under Maintenance) */}
+                <div className="space-y-4 pt-6 border-t border-slate-200">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
+                    <div>
+                      <h4 className="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
+                        <Truck className="w-4 h-4 text-rose-600" />
+                        <span>Categorized Fleet Status & Available Vehicles Overview</span>
+                      </h4>
+                      <p className="text-xs text-slate-500 font-medium">
+                        Live status classification of all emergency ambulance units
+                      </p>
+                    </div>
+
+                    <div className="flex items-center gap-2 flex-wrap">
+                      <span className="px-2.5 py-1 bg-emerald-100 border border-emerald-300 text-emerald-900 text-xs font-black rounded-xl flex items-center gap-1">
+                        <span className="w-2 h-2 rounded-full bg-emerald-500" />
+                        {fleet.filter((v) => v.status === 'Available').length} Available
+                      </span>
+                      <span className="px-2.5 py-1 bg-rose-100 border border-rose-300 text-rose-900 text-xs font-black rounded-xl flex items-center gap-1">
+                        <span className="w-2 h-2 rounded-full bg-rose-600 animate-ping" />
+                        {fleet.filter((v) => v.status !== 'Available' && v.status !== 'Maintenance').length} Busy
+                      </span>
+                      <span className="px-2.5 py-1 bg-amber-100 border border-amber-300 text-amber-900 text-xs font-black rounded-xl flex items-center gap-1">
+                        <span className="w-2 h-2 rounded-full bg-amber-500" />
+                        {fleet.filter((v) => v.status === 'Maintenance').length} Maintenance
+                      </span>
+                    </div>
+                  </div>
+
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                    {/* 1. AVAILABLE AMBULANCES */}
+                    <div className="p-4 bg-emerald-50/60 border border-emerald-200 rounded-2xl space-y-3">
+                      <div className="flex items-center justify-between border-b border-emerald-200/60 pb-2">
+                        <span className="text-xs font-black text-emerald-900 uppercase tracking-wider flex items-center gap-1.5">
+                          <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+                          🟢 Available ({fleet.filter((v) => v.status === 'Available').length})
+                        </span>
+                      </div>
+
+                      <div className="space-y-2.5">
+                        {fleet.filter((v) => v.status === 'Available').map((item) => (
+                          <div key={item.id} className="p-3 bg-white border border-emerald-200 rounded-xl space-y-1.5 text-xs shadow-2xs">
+                            <div className="flex justify-between items-center">
+                              <span className="font-mono font-black text-slate-900">{item.vehiclePlate}</span>
+                              <span className="text-[10px] font-bold text-blue-700 bg-blue-50 px-1.5 py-0.5 rounded border border-blue-200">{item.unitType} ICU</span>
+                            </div>
+                            <div className="font-semibold text-slate-800">Driver: {item.driverName}</div>
+                            <div className="text-[10px] text-slate-500 font-medium truncate">Location: {item.lastLocation}</div>
+                            <button
+                              onClick={() => {
+                                setSelectedPickupAddress(item.lastLocation);
+                                setTrackerInitialStep('REQUEST_FORM');
+                                setIsTrackerOpen(true);
+                              }}
+                              className="w-full mt-1 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] rounded-lg cursor-pointer transition-all"
+                            >
+                              Dispatch Vehicle
+                            </button>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* 2. BUSY / ACTIVE AMBULANCES */}
+                    <div className="p-4 bg-rose-50/60 border border-rose-200 rounded-2xl space-y-3">
+                      <div className="flex items-center justify-between border-b border-rose-200/60 pb-2">
+                        <span className="text-xs font-black text-rose-900 uppercase tracking-wider flex items-center gap-1.5">
+                          <Siren className="w-4 h-4 text-rose-600 animate-pulse" />
+                          🔴 Busy / En Route ({fleet.filter((v) => v.status !== 'Available' && v.status !== 'Maintenance').length})
+                        </span>
+                      </div>
+
+                      <div className="space-y-2.5">
+                        {fleet.filter((v) => v.status !== 'Available' && v.status !== 'Maintenance').map((item) => (
+                          <div key={item.id} className="p-3 bg-white border border-rose-200 rounded-xl space-y-1 text-xs shadow-2xs">
+                            <div className="flex justify-between items-center">
+                              <span className="font-mono font-black text-slate-900">{item.vehiclePlate}</span>
+                              <span className="text-[10px] font-bold text-rose-700 bg-rose-50 px-1.5 py-0.5 rounded border border-rose-200 animate-pulse">{item.status}</span>
+                            </div>
+                            <div className="font-semibold text-slate-800">Driver: {item.driverName}</div>
+                            <div className="text-[10px] text-slate-500 font-medium truncate">Speed: {item.currentSpeed} km/h • {item.lastLocation}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* 3. UNDER MAINTENANCE AMBULANCES */}
+                    <div className="p-4 bg-amber-50/60 border border-amber-200 rounded-2xl space-y-3">
+                      <div className="flex items-center justify-between border-b border-amber-200/60 pb-2">
+                        <span className="text-xs font-black text-amber-900 uppercase tracking-wider flex items-center gap-1.5">
+                          <Wrench className="w-4 h-4 text-amber-600" />
+                          🟡 Maintenance ({fleet.filter((v) => v.status === 'Maintenance').length})
+                        </span>
+                      </div>
+
+                      <div className="space-y-2.5">
+                        {fleet.filter((v) => v.status === 'Maintenance').map((item) => (
+                          <div key={item.id} className="p-3 bg-white border border-amber-200 rounded-xl space-y-1 text-xs shadow-2xs">
+                            <div className="flex justify-between items-center">
+                              <span className="font-mono font-black text-slate-900">{item.vehiclePlate}</span>
+                              <span className="text-[10px] font-bold text-amber-800 bg-amber-50 px-1.5 py-0.5 rounded border border-amber-200">WORKSHOP BAY</span>
+                            </div>
+                            <div className="font-semibold text-slate-800">Driver: {item.driverName}</div>
+                            <div className="text-[10px] text-slate-500 font-medium truncate">Location: {item.lastLocation}</div>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
               </div>
             ) : (
               /* STAFF / ADMIN VIEW: Multi-Card Fleet Queue Grid */
