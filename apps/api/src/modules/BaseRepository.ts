@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any, @typescript-eslint/no-unused-vars, @typescript-eslint/no-non-null-assertion */
-import { Model, Document, FilterQuery, UpdateQuery } from 'mongoose';
+import mongoose, { Model, Document, FilterQuery, UpdateQuery } from 'mongoose';
 
 export interface PaginationOptions {
   page?: number;
@@ -31,6 +31,9 @@ export abstract class BaseRepository<T extends Document> {
   }
 
   async findById(id: string, hospitalId: string): Promise<T | null> {
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return null;
+    }
     const filter = this.scopeQuery({ _id: id } as FilterQuery<T>, hospitalId);
     return this.model.findOne(filter).lean().exec() as Promise<T | null>;
   }
@@ -47,11 +50,17 @@ export abstract class BaseRepository<T extends Document> {
   }
 
   async update(id: string, data: UpdateQuery<T>, hospitalId: string): Promise<T | null> {
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return null;
+    }
     const filter = this.scopeQuery({ _id: id } as FilterQuery<T>, hospitalId);
     return this.model.findOneAndUpdate(filter, data, { new: true }).lean().exec() as Promise<T | null>;
   }
 
   async softDelete(id: string, hospitalId: string): Promise<T | null> {
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return null;
+    }
     const filter = this.scopeQuery({ _id: id } as FilterQuery<T>, hospitalId);
     const updateData = { deletedAt: new Date() } as unknown as UpdateQuery<T>;
     return this.model.findOneAndUpdate(filter, updateData, { new: true }).lean().exec() as Promise<T | null>;

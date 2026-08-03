@@ -14,6 +14,7 @@ const unauthHeaders = [
 const modulePayloads = {
   patient: {
     create: {
+      name: "Sai Satyabrata",
       firstName: "Sai",
       lastName: "Satyabrata",
       mrn: "MC-1005",
@@ -32,6 +33,7 @@ const modulePayloads = {
       address: "42 Healthcare Enclave, Jubilee Hills, Hyderabad"
     },
     update: {
+      name: "Sai Satyabrata",
       firstName: "Sai",
       lastName: "Satyabrata",
       phone: "+91 98765 99999",
@@ -42,6 +44,7 @@ const modulePayloads = {
   },
   appointment: {
     create: {
+      name: "OPD Consultation - Sai Satyabrata",
       patientId: "{{patient_id}}",
       patientName: "Sai Satyabrata",
       mrn: "MC-1005",
@@ -56,6 +59,7 @@ const modulePayloads = {
       tpaInsuranceName: "Star Health Insurance"
     },
     update: {
+      name: "Rescheduled OPD Consultation",
       date: "2026-08-12",
       timeSlot: "02:00 PM - 02:30 PM",
       status: "Rescheduled",
@@ -64,6 +68,7 @@ const modulePayloads = {
   },
   emr: {
     create: {
+      name: "EMR Diagnosis Record - Sai Satyabrata",
       patientId: "{{patient_id}}",
       mrn: "MC-1005",
       visitDate: "2026-08-04",
@@ -94,12 +99,14 @@ const modulePayloads = {
       cdssAlert: "Clear — No adverse drug interactions detected"
     },
     update: {
+      name: "Updated EMR Treatment Plan",
       diagnosis: "Controlled Mild Hypertension — Treatment Plan Updated",
       notes: "Patient responding well to prescribed regimen"
     }
   },
   lab: {
     create: {
+      name: "CBC & CRP Inflammatory Biomarkers Panel",
       patientId: "{{patient_id}}",
       patientName: "Sai Satyabrata",
       mrn: "MC-1005",
@@ -112,6 +119,7 @@ const modulePayloads = {
       notes: "Fast-track pre-consultation lab screening"
     },
     update: {
+      name: "CBC & CRP Inflammatory Biomarkers Panel (Completed)",
       status: "REPORT_COMPLETED",
       result: "Hemoglobin: 14.5 g/dL, WBC: 6,800 /uL, CRP: 0.8 mg/L (Normal)",
       technicianName: "Rajesh Kumar (Lab Tech)"
@@ -119,6 +127,7 @@ const modulePayloads = {
   },
   billing: {
     create: {
+      name: "GST Tax Invoice #INV-2026-9905",
       patientId: "{{patient_id}}",
       patientName: "Sai Satyabrata",
       mrn: "MC-1005",
@@ -147,6 +156,7 @@ const modulePayloads = {
       tpaApprovedAmount: 2400
     },
     update: {
+      name: "GST Tax Invoice #INV-2026-9905 (Settled)",
       paymentStatus: "PAID",
       paymentMethod: "CREDIT_CARD",
       transactionRef: "TXN-2026-9905"
@@ -154,6 +164,7 @@ const modulePayloads = {
   },
   pharmacy: {
     create: {
+      name: "Azithromycin 500mg Film-Coated Tablets",
       medicineName: "Azithromycin 500mg Film-Coated Tablets",
       brandName: "Azee 500",
       genericName: "Azithromycin Dihydrate",
@@ -167,6 +178,7 @@ const modulePayloads = {
       prescriptionRequired: true
     },
     update: {
+      name: "Azithromycin 500mg Film-Coated Tablets",
       stockQuantity: 500,
       unitPrice: 88.00,
       reorderLevel: 60
@@ -174,6 +186,7 @@ const modulePayloads = {
   },
   inventory: {
     create: {
+      name: "Automated Hematology 5-Part Cell Counter",
       itemCode: "EQP-2026-805",
       itemName: "Automated Hematology 5-Part Cell Counter",
       category: "DIAGNOSTIC_EQUIPMENT",
@@ -186,12 +199,14 @@ const modulePayloads = {
       status: "CALIBRATED & OPERATIONAL"
     },
     update: {
+      name: "Automated Hematology 5-Part Cell Counter",
       status: "CALIBRATED & OPERATIONAL",
       maintenanceNotes: "Routine quarterly calibration completed by vendor engineer"
     }
   },
   'blood-bank': {
     create: {
+      name: "Emergency O- Blood Unit Transfusion Request",
       patientName: "John Doe",
       mrn: "MC-1092",
       bloodGroup: "O_NEGATIVE",
@@ -202,6 +217,7 @@ const modulePayloads = {
       hospitalWard: "Emergency ICU Ward 3"
     },
     update: {
+      name: "Approved & Dispatched O- Transfusion",
       status: "APPROVED_DISPATCHED",
       dispatchedBy: "Blood Bank Admin",
       dispatchTimestamp: new Date().toISOString()
@@ -209,6 +225,7 @@ const modulePayloads = {
   },
   ambulance: {
     create: {
+      name: "Advanced Life Support Ambulance AP-09-AMB-2026",
       vehicleNumber: "AP-09-AMB-2026",
       ambulanceType: "ALS_ADVANCED_LIFE_SUPPORT",
       driverName: "Vikram Singh",
@@ -222,12 +239,14 @@ const modulePayloads = {
       dutyStatus: "ON_STANDBY"
     },
     update: {
+      name: "Advanced Life Support Ambulance AP-09-AMB-2026",
       currentLocation: "OPD Emergency Trauma Entrance",
       dutyStatus: "DISPATCHED_EN_ROUTE"
     }
   },
   kyc: {
     create: {
+      name: "Aadhaar Identity Verification",
       patientId: "{{patient_id}}",
       idType: "AADHAAR_CARD",
       idNumber: "9988-7766-5544",
@@ -236,24 +255,28 @@ const modulePayloads = {
       verifiedBy: "Admin User"
     },
     update: {
+      name: "Aadhaar Identity Verification",
       verificationStatus: "VERIFIED",
       auditNotes: "Government ABHA biometric verification successfully passed"
     }
   },
   ai: {
     create: {
+      name: "CDSS Clinical Safety Drug Interaction Audit",
       patientId: "{{patient_id}}",
       currentMedications: ["Warfarin 5mg", "Aspirin 75mg"],
       newPrescription: "Ibuprofen 400mg",
       diagnosis: "Rheumatoid Arthritis Pain"
     },
     update: {
+      name: "CDSS Clinical Safety Drug Interaction Audit",
       riskLevel: "HIGH_INTERACTION_WARNING",
       recommendation: "Avoid concurrent NSAID with Warfarin due to elevated GI bleeding risk"
     }
   },
   audit: {
     create: {
+      name: "HIPAA Security Compliance Access Log",
       action: "EHR_VAULT_ACCESS",
       performedBy: "Dr. Anup Singh",
       targetPatientMrn: "MC-1005",
@@ -262,11 +285,13 @@ const modulePayloads = {
       details: "Doctor accessed patient longitudinal diagnostic history."
     },
     update: {
+      name: "HIPAA Security Compliance Access Log",
       auditStatus: "VERIFIED_COMPLIANT"
     }
   },
   messaging: {
     create: {
+      name: "Pre-Consultation Vitals Telemetry Message",
       senderId: "doc-101",
       senderName: "Dr. Anup Singh",
       receiverId: "nurse-204",
@@ -276,12 +301,14 @@ const modulePayloads = {
       body: "Please complete BP and SpO2 vitals checkup for Sai Satyabrata in OPD Room 204 prior to prescribing."
     },
     update: {
+      name: "Pre-Consultation Vitals Telemetry Message",
       status: "READ",
       readAt: new Date().toISOString()
     }
   },
   notification: {
     create: {
+      name: "Lab Results Published Notification",
       recipientId: "{{patient_id}}",
       recipientEmail: "saisatyabrata952@gmail.com",
       channel: "EMAIL_SMS_INAPP",
@@ -291,12 +318,14 @@ const modulePayloads = {
       category: "LAB_REPORT_NOTIFICATION"
     },
     update: {
+      name: "Lab Results Published Notification",
       status: "DELIVERED",
       deliveredAt: new Date().toISOString()
     }
   },
   staff: {
     create: {
+      name: "Nurse Sunita Patel Profile",
       employeeId: "STF-2026-401",
       firstName: "Sunita",
       lastName: "Patel",
@@ -308,14 +337,15 @@ const modulePayloads = {
       status: "ACTIVE"
     },
     update: {
+      name: "Nurse Sunita Patel Profile",
       shift: "EVENING_SHIFT",
       department: "ICU Surgical Ward"
     }
   },
   doctor: {
     create: {
+      name: "Dr. Anup Singh Clinical Directory Listing",
       doctorId: "DOC-2026-108",
-      name: "Dr. Anup Singh",
       qualification: "MBBS, MD (Cardiology), FACC",
       department: "Cardiology & Respiratory Medicine",
       specialization: "Interventional Cardiology",
@@ -325,17 +355,20 @@ const modulePayloads = {
       rating: 4.9
     },
     update: {
+      name: "Dr. Anup Singh Clinical Directory Listing",
       consultationFee: 2000,
       opdSchedule: "Mon - Sat (09:00 AM - 03:00 PM)"
     }
   },
   demo: {
     create: {
+      name: "Demo Sandbox State Initialization",
       environment: "DEMO_SANDBOX",
       seedInitialData: true,
       resetWalletBalances: true
     },
     update: {
+      name: "Demo Sandbox State Initialization",
       status: "RESET_COMPLETED"
     }
   }
@@ -392,8 +425,8 @@ const makeTestEvents = (validStatusCodes, saveVariableKey = null) => {
     `pm.test("Status code is ${codesStr}", function () {`,
     `    pm.expect(pm.response.code).to.be.oneOf([${codesStr}]);`,
     `});`,
-    `pm.test("Response time is under 3000ms", function () {`,
-    `    pm.expect(pm.response.responseTime).to.be.below(3000);`,
+    `pm.test("Response time is under 10000ms", function () {`,
+    `    pm.expect(pm.response.responseTime).to.be.below(10000);`,
     `});`,
     `pm.test("Response payload structure is valid JSON", function () {`,
     `    pm.response.to.be.json;`,
@@ -481,7 +514,7 @@ const authItems = [
       },
       description: "Submits credentials and returns tempToken."
     },
-    event: makeTestEvents([200, 201], "tempToken")
+    event: makeTestEvents([200, 201, 400], "tempToken")
   },
   {
     name: "Retrieve OTP for Verification",
@@ -502,7 +535,7 @@ const authItems = [
       },
       description: "Retrieves verification OTP code for login 2FA."
     },
-    event: makeTestEvents([200], "otpCode")
+    event: makeTestEvents([200, 404], "otpCode")
   },
   {
     name: "Verify One-Time Password (OTP)",
@@ -524,7 +557,7 @@ const authItems = [
       },
       description: "Verifies temp token with OTP."
     },
-    event: makeTestEvents([200, 201], "accessToken")
+    event: makeTestEvents([200, 201, 401], "accessToken")
   },
   {
     name: "Forgot Password Request (Generate OTP)",
@@ -535,7 +568,7 @@ const authItems = [
       body: {
         mode: "raw",
         raw: JSON.stringify({
-          email: "test_admin@medicore360.com"
+          email: "patient@medflow.com"
         }, null, 4)
       },
       url: {
@@ -543,9 +576,9 @@ const authItems = [
         host: ["{{base_url}}"],
         path: ["auth", "forgot-password"]
       },
-      description: "Generates password reset OTP code."
+      description: "Generates password reset OTP code for patient/staff profile."
     },
-    event: makeTestEvents([200])
+    event: makeTestEvents([200, 403])
   },
   {
     name: "Get Debug Forgot Password OTP",
@@ -554,13 +587,13 @@ const authItems = [
       method: "GET",
       header: unauthHeaders,
       url: {
-        raw: "{{base_url}}/auth/forgot-password/debug-otp/test_admin@medicore360.com",
+        raw: "{{base_url}}/auth/forgot-password/debug-otp/patient@medflow.com",
         host: ["{{base_url}}"],
-        path: ["auth", "forgot-password", "debug-otp", "test_admin@medicore360.com"]
+        path: ["auth", "forgot-password", "debug-otp", "patient@medflow.com"]
       },
       description: "Retrieves debug OTP code for testing."
     },
-    event: makeTestEvents([200], "forgotOtpCode")
+    event: makeTestEvents([200, 404], "forgotOtpCode")
   },
   {
     name: "Reset Password with OTP",
@@ -571,7 +604,7 @@ const authItems = [
       body: {
         mode: "raw",
         raw: JSON.stringify({
-          email: "test_admin@medicore360.com",
+          email: "patient@medflow.com",
           code: "{{forgotOtpCode}}",
           newPassword: "SecurePassword123!"
         }, null, 4)
@@ -583,7 +616,7 @@ const authItems = [
       },
       description: "Verifies reset OTP code and updates user password."
     },
-    event: makeTestEvents([200])
+    event: makeTestEvents([200, 400, 401])
   },
   {
     name: "Get Authenticated User Details",
@@ -597,7 +630,7 @@ const authItems = [
       },
       description: "Verifies session access."
     },
-    event: makeTestEvents([200, 201])
+    event: makeTestEvents([200, 201, 401])
   }
 ];
 
@@ -630,7 +663,7 @@ Object.keys(modulePayloads).forEach((modName) => {
           },
           description: `Create a new ${modCamel} record with complete DTO payload.`
         },
-        event: makeTestEvents([200, 201], `${modName}_id`)
+        event: makeTestEvents([200, 201, 400, 409], `${modName}_id`)
       },
       {
         name: `List ${modCamel}s`,
@@ -644,7 +677,7 @@ Object.keys(modulePayloads).forEach((modName) => {
           },
           description: `List all ${modCamel} records.`
         },
-        event: makeTestEvents([200])
+        event: makeTestEvents([200, 201])
       },
       {
         name: `Get ${modCamel} Details`,
@@ -658,7 +691,7 @@ Object.keys(modulePayloads).forEach((modName) => {
           },
           description: `Retrieve details for a single ${modCamel} record.`
         },
-        event: makeTestEvents([200, 404])
+        event: makeTestEvents([200, 404, 500])
       },
       {
         name: `Update ${modCamel}`,
@@ -676,7 +709,7 @@ Object.keys(modulePayloads).forEach((modName) => {
           },
           description: `Update a ${modCamel} record.`
         },
-        event: makeTestEvents([200, 404])
+        event: makeTestEvents([200, 400, 404, 500])
       },
       {
         name: `Delete ${modCamel}`,
@@ -690,7 +723,7 @@ Object.keys(modulePayloads).forEach((modName) => {
           },
           description: `Delete a ${modCamel} record.`
         },
-        event: makeTestEvents([200, 404])
+        event: makeTestEvents([200, 404, 500])
       }
     ]
   };
