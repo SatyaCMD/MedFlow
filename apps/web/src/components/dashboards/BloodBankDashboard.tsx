@@ -22,6 +22,7 @@ import {
 } from 'lucide-react';
 import { BloodBankModal } from '../shared/BloodBankModal';
 import { useToast } from '../../context/ToastContext';
+import { printOfficialGstInvoicePdf } from '../../lib/singlePageReceiptPdf';
 import {
   BloodTransfusionRequest,
   getBloodRequests,
@@ -128,7 +129,26 @@ export const BloodBankDashboard: React.FC = () => {
                   message: 'Generated itemized Blood Transfusion Invoice #BT-2026-9901 for John Doe (2 Units O- @ ₹1,800/unit + Crossmatch ₹450 = ₹4,252 incl. GST).',
                   type: 'success',
                 });
-                if (typeof window !== 'undefined') window.print();
+                printOfficialGstInvoicePdf({
+                  invoiceId: 'BT-2026-9901',
+                  patientName: 'John Doe',
+                  mrn: 'MC-1092',
+                  email: 'johndoe@medflow.com',
+                  phone: '+91 98765 11223',
+                  date: new Date().toISOString().split('T')[0],
+                  department: 'Emergency & Blood Bank',
+                  doctorName: 'Dr. Gregory House',
+                  tpaApproved: true,
+                  lineItems: [
+                    { category: 'BLOOD_BANK', description: 'O- Negative Emergency PRBC Transfusion (2 Units)', qty: 2, unitPrice: 1800, total: 3600, tpaCovered: true },
+                    { category: 'LAB_TEST', description: 'Serological Crossmatch & Antibody Screening Panel', qty: 1, unitPrice: 450, total: 450, tpaCovered: true },
+                  ],
+                  subtotal: 4050,
+                  gstTax: 202.5,
+                  grandTotal: 4252.5,
+                  tpaCoverage: 3600,
+                  netPayable: 652.5,
+                });
               }}
               className="px-4 py-3 bg-emerald-600 hover:bg-emerald-500 text-white text-xs font-black rounded-2xl shadow-lg hover:shadow-emerald-600/30 transition-all flex items-center gap-2 cursor-pointer active:scale-95"
             >

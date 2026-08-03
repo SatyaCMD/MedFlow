@@ -15,6 +15,7 @@ import {
   PatientInvoice,
   BillingLineItem,
 } from '../../data/patientBillingStore';
+import { printOfficialGstInvoicePdf } from '../../lib/singlePageReceiptPdf';
 import {
   CreditCard,
   Building2,
@@ -171,9 +172,30 @@ export default function BillingPage() {
       message: `Exporting official tax invoice #${selectedInvoice.invoiceCode} for ${selectedInvoice.patientName}...`,
       type: 'success',
     });
-    if (typeof window !== 'undefined') {
-      window.print();
-    }
+    printOfficialGstInvoicePdf({
+      invoiceId: selectedInvoice.invoiceCode,
+      patientName: selectedInvoice.patientName,
+      mrn: selectedInvoice.mrn,
+      email: selectedInvoice.email || 'saisatyabrata952@gmail.com',
+      phone: selectedInvoice.phone || '+91 98765 12345',
+      date: selectedInvoice.date,
+      department: selectedInvoice.department || 'Cardiology & Respiratory Medicine',
+      doctorName: selectedInvoice.attendingDoctor || 'Dr. Anup Singh',
+      tpaApproved: selectedInvoice.tpaStatus.includes('TPA'),
+      lineItems: selectedInvoice.lineItems.map((item) => ({
+        category: item.category,
+        description: item.description,
+        qty: item.qty,
+        unitPrice: item.unitPrice,
+        total: item.amount,
+        tpaCovered: item.tpaCovered,
+      })),
+      subtotal: selectedInvoice.subtotal,
+      gstTax: selectedInvoice.gstAmount,
+      grandTotal: selectedInvoice.totalAmount,
+      tpaCoverage: selectedInvoice.tpaApprovedAmount || 0,
+      netPayable: selectedInvoice.netPatientPayable,
+    });
   };
 
   const columns = [

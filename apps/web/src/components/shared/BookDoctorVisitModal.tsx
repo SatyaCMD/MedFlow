@@ -28,6 +28,7 @@ import {
 } from 'lucide-react';
 import { useToast } from '../../context/ToastContext';
 import { useAuth, getResolvedPatientProfile } from '../../hooks/useAuth';
+import { CustomSelect } from './CustomSelect';
 import { REAL_DOCTORS_DATASET, DoctorProfile } from '../../data/medicalCatalog';
 import { saveSharedAppointment } from '../../data/appointmentStore';
 import { api } from '../../lib/axios';
@@ -527,43 +528,39 @@ export const BookDoctorVisitModal: React.FC<BookDoctorVisitModalProps> = ({
                 <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                   {/* Allowed Relation Selection */}
                   <div>
-                    <label className="block text-[11px] font-extrabold text-purple-900 mb-1">
-                      Relationship <span className="text-rose-600">*</span>
-                    </label>
-                    <select
+                    <CustomSelect
+                      label="Relationship *"
                       value={relativeRelation}
-                      onChange={(e) => setRelativeRelation(e.target.value)}
-                      className="w-full px-3 py-2 bg-white border border-purple-200 rounded-xl text-xs font-bold text-slate-900 outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 cursor-pointer"
-                    >
-                      <option value="father">Father</option>
-                      <option value="mother">Mother</option>
-                      <option value="son">Son</option>
-                      <option value="daughter">Daughter</option>
-                      <option value="son in law">Son in Law</option>
-                      <option value="daughter in law">Daughter in Law</option>
-                      <option value="father in law">Father in Law</option>
-                      <option value="mother in law">Mother in Law</option>
-                      <option value="uncle">Uncle</option>
-                      <option value="aunty">Aunty</option>
-                    </select>
+                      onChange={(val) => setRelativeRelation(val)}
+                      options={[
+                        { value: 'father', label: 'Father' },
+                        { value: 'mother', label: 'Mother' },
+                        { value: 'son', label: 'Son' },
+                        { value: 'daughter', label: 'Daughter' },
+                        { value: 'son in law', label: 'Son in Law' },
+                        { value: 'daughter in law', label: 'Daughter in Law' },
+                        { value: 'father in law', label: 'Father in Law' },
+                        { value: 'mother in law', label: 'Mother in Law' },
+                        { value: 'uncle', label: 'Uncle' },
+                        { value: 'aunty', label: 'Aunty' },
+                      ]}
+                    />
                   </div>
 
                   {/* Govt ID Type */}
                   <div>
-                    <label className="block text-[11px] font-extrabold text-purple-900 mb-1">
-                      Government ID Type <span className="text-rose-600">*</span>
-                    </label>
-                    <select
+                    <CustomSelect
+                      label="Government ID Type *"
                       value={govtIdType}
-                      onChange={(e) => setGovtIdType(e.target.value)}
-                      className="w-full px-3 py-2 bg-white border border-purple-200 rounded-xl text-xs font-bold text-slate-900 outline-none focus:border-purple-500 focus:ring-2 focus:ring-purple-500/20 cursor-pointer"
-                    >
-                      <option value="Aadhaar Card">Aadhaar Card</option>
-                      <option value="PAN Card">PAN Card</option>
-                      <option value="Passport">Passport</option>
-                      <option value="Voter ID">Voter ID</option>
-                      <option value="Driving License">Driving License</option>
-                    </select>
+                      onChange={(val) => setGovtIdType(val)}
+                      options={[
+                        { value: 'Aadhaar Card', label: 'Aadhaar Card' },
+                        { value: 'PAN Card', label: 'PAN Card' },
+                        { value: 'Passport', label: 'Passport' },
+                        { value: 'Voter ID', label: 'Voter ID' },
+                        { value: 'Driving License', label: 'Driving License' },
+                      ]}
+                    />
                   </div>
 
                   {/* Govt ID Number */}
@@ -633,18 +630,16 @@ export const BookDoctorVisitModal: React.FC<BookDoctorVisitModalProps> = ({
 
               {/* Patient Gender */}
               <div>
-                <label className="block text-[11px] font-extrabold text-slate-700 mb-1">
-                  Gender <span className="text-rose-500">*</span>
-                </label>
-                <select
+                <CustomSelect
+                  label="Gender *"
                   value={patientGender}
-                  onChange={(e: any) => setPatientGender(e.target.value)}
-                  className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-500/20 transition-all cursor-pointer"
-                >
-                  <option value="Male">Male</option>
-                  <option value="Female">Female</option>
-                  <option value="Other">Other</option>
-                </select>
+                  onChange={(val) => setPatientGender(val as any)}
+                  options={[
+                    { value: 'Male', label: 'Male' },
+                    { value: 'Female', label: 'Female' },
+                    { value: 'Other', label: 'Other' },
+                  ]}
+                />
               </div>
 
               {/* Phone Number */}

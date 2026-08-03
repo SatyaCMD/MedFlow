@@ -28,6 +28,7 @@ import {
   Thermometer,
 } from 'lucide-react';
 import { useToast } from '../../context/ToastContext';
+import { CustomSelect } from './CustomSelect';
 import { PaymentModal } from './PaymentModal';
 import { PharmacyItem } from '../../data/pharmacyCatalog';
 import {
@@ -499,18 +500,18 @@ export const PharmacyPurchaseModal: React.FC<PharmacyPurchaseModalProps> = ({
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 text-xs">
                 {/* Role Selector */}
                 <div>
-                  <label className="block text-[11px] font-bold text-slate-600 mb-1">Purchaser Role</label>
-                  <select
+                  <CustomSelect
+                    label="Purchaser Role"
                     value={purchaserRole}
-                    onChange={(e) => setPurchaserRole(e.target.value)}
-                    className="w-full px-3 py-2 bg-white border border-slate-200 rounded-xl font-bold text-slate-800 outline-none focus:border-emerald-500"
-                  >
-                    <option value="PATIENT">Patient (Self Purchase)</option>
-                    <option value="NURSE">Nurse (Ward & Care Team)</option>
-                    <option value="CAREGIVER">Caregiver / Family</option>
-                    <option value="LAB_ASSISTANT">Lab Technician / Assistant</option>
-                    <option value="PHARMACIST">Pharmacist / Dispensary</option>
-                  </select>
+                    onChange={(val) => setPurchaserRole(val)}
+                    options={[
+                      { value: 'PATIENT', label: 'Patient (Self Purchase)' },
+                      { value: 'NURSE', label: 'Nurse (Ward & Care Team)' },
+                      { value: 'CAREGIVER', label: 'Caregiver / Family' },
+                      { value: 'LAB_ASSISTANT', label: 'Lab Technician / Assistant' },
+                      { value: 'PHARMACIST', label: 'Pharmacist / Dispensary' },
+                    ]}
+                  />
                 </div>
 
                 {/* Purchaser Name */}

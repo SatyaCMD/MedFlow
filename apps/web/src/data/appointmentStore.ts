@@ -32,7 +32,7 @@ export interface SharedAppointment {
   isFollowUp?: boolean;
   discountPercent?: number;
   patientEmail?: string;
-  patientPhone?: string;
+  vitalsDone?: boolean;
   vitals?: {
     bp: string;
     hr: string;

@@ -5,6 +5,7 @@ import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { ShieldCheck, FileUp, Sparkles, AlertCircle, CheckCircle2, User, Building2, CreditCard, X } from 'lucide-react';
 import { useToast } from '../../context/ToastContext';
+import { CustomSelect } from './CustomSelect';
 
 interface KycModalProps {
   isOpen: boolean;
@@ -139,22 +140,18 @@ export const KycModal: React.FC<KycModalProps> = ({
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-4">
-          <div>
-            <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">
-              Government Photo ID Type
-            </label>
-            <select
-              value={docType}
-              onChange={(e) => setDocType(e.target.value)}
-              className="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 outline-none"
-            >
-              <option value="Aadhaar Card">Aadhaar Card (India 12-Digit)</option>
-              <option value="PAN Card">PAN Card (Income Tax)</option>
-              <option value="Passport">International Passport</option>
-              <option value="Driving License">State Driving License</option>
-              <option value="Voter ID">Voter Identity Card</option>
-            </select>
-          </div>
+          <CustomSelect
+            label="Government Photo ID Type"
+            value={docType}
+            onChange={(val) => setDocType(val)}
+            options={[
+              { value: 'Aadhaar Card', label: 'Aadhaar Card (India 12-Digit)' },
+              { value: 'PAN Card', label: 'PAN Card (Income Tax)' },
+              { value: 'Passport', label: 'International Passport' },
+              { value: 'Driving License', label: 'State Driving License' },
+              { value: 'Voter ID', label: 'Voter Identity Card' },
+            ]}
+          />
 
           <div>
             <label className="block text-xs font-bold uppercase tracking-wider text-slate-600 mb-1.5">

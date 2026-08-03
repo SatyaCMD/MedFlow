@@ -31,6 +31,7 @@ import {
   Wifi
 } from 'lucide-react';
 import { useToast } from '../../context/ToastContext';
+import { CustomSelect } from './CustomSelect';
 import { printSinglePageReceipt } from '../../lib/singlePageReceiptPdf';
 import { getPatientWallet, debitPatientWallet } from '../../data/patientWalletStore';
 import { useAuth, getResolvedPatientProfile } from '../../hooks/useAuth';
@@ -585,21 +586,18 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
               {/* Method 3: Razorpay NetBanking */}
               {selectedMethod === 'RAZORPAY_NETBANKING' && (
                 <div className="space-y-4 p-4 bg-slate-50 border border-slate-200 rounded-2xl">
-                  <span className="text-xs font-black text-slate-900 flex items-center gap-1.5">
-                    <Landmark className="w-4 h-4 text-blue-600" />
-                    Select NetBanking Bank
-                  </span>
-                  <select
+                  <CustomSelect
+                    label="Select NetBanking Bank"
                     value={selectedBank}
-                    onChange={(e) => setSelectedBank(e.target.value)}
-                    className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 outline-none"
-                  >
-                    <option value="HDFC Bank">HDFC Bank</option>
-                    <option value="ICICI Bank">ICICI Bank</option>
-                    <option value="State Bank of India">State Bank of India (SBI)</option>
-                    <option value="Axis Bank">Axis Bank</option>
-                    <option value="Kotak Mahindra Bank">Kotak Mahindra Bank</option>
-                  </select>
+                    onChange={(val) => setSelectedBank(val)}
+                    options={[
+                      { value: 'HDFC Bank', label: 'HDFC Bank' },
+                      { value: 'ICICI Bank', label: 'ICICI Bank' },
+                      { value: 'State Bank of India', label: 'State Bank of India (SBI)' },
+                      { value: 'Axis Bank', label: 'Axis Bank' },
+                      { value: 'Kotak Mahindra Bank', label: 'Kotak Mahindra Bank' },
+                    ]}
+                  />
                 </div>
               )}
 

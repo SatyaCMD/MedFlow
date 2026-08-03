@@ -190,7 +190,10 @@ export const DoctorDashboard: React.FC = () => {
   };
 
   const isTabLocked = (row: SharedAppointment) => {
-    return (row.status === 'PENDING NURSE VITALS' || row.status === 'PENDING DOCTOR APPROVAL') && !row.vitals;
+    if (row.vitalsDone || (row.vitals && (row.vitals.bp || row.vitals.hr || row.vitals.recordedAt))) {
+      return false;
+    }
+    return true;
   };
 
   const openPrescribeStudio = (row: SharedAppointment) => {

@@ -6,9 +6,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { AppShell } from '../../components/shared/AppShell';
 import { StatCard } from '../../components/shared/StatCard';
 import { DataTable } from '../../components/shared/DataTable';
-import { PrescriptionPdfModal } from '../../components/shared/PrescriptionPdfModal';
+import { PrescriptionPdfModal, PrescriptionData } from '../../components/shared/PrescriptionPdfModal';
 import { TelemedicineConsultationModal } from '../../components/shared/TelemedicineConsultationModal';
 import { useToast } from '../../context/ToastContext';
+import { printOfficialGstInvoicePdf } from '../../lib/singlePageReceiptPdf';
 import { useAuth } from '../../hooks/useAuth';
 import { useRouter } from 'next/navigation';
 import {
@@ -291,9 +292,24 @@ export default function EmrPage() {
   const [isRecordModalOpen, setIsRecordModalOpen] = useState(false);
   const [isVideoConsultOpen, setIsVideoConsultOpen] = useState(false);
 
+  const [selectedRxData, setSelectedRxData] = useState<any>(undefined);
+  const [isRxPdfOpen, setIsRxPdfOpen] = useState(false);
+
   const isPatientRole = user?.role === 'PATIENT';
   const currentRole = user?.role || 'DOCTOR';
   const fullName = user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : 'Patient Account';
+
+  const canLaunchVideoConsult = (currentRole as string) === 'DOCTOR' || (currentRole as string) === 'PHYSICIAN' || isPatientRole;
+  const isKpiCardRole = [
+    'DOCTOR',
+    'ADMIN',
+    'SUPER_ADMIN',
+    'HOSPITAL_ADMIN',
+    'AMBULANCE_ADMIN',
+    'BLOOD_BANK',
+    'BLOODBANK_ADMIN',
+    'PATIENT',
+  ].includes(currentRole as string);
 
   useEffect(() => {
     if (!loading && !user) {
@@ -341,14 +357,33 @@ export default function EmrPage() {
     setIsRecordModalOpen(true);
   };
 
-  const handlePrintEmr = () => {
+  const handlePrintRecord = () => {
     if (!selectedRecord) return;
     showToast({
       title: 'Generating Signed EMR PDF 🖨️',
       message: `Exporting certified electronic medical record for ${selectedPatient.patientName}...`,
       type: 'success',
     });
-    if (typeof window !== 'undefined') window.print();
+    printOfficialGstInvoicePdf({
+      invoiceId: selectedRecord.id || 'EMR-2026-9905',
+      patientName: selectedPatient.patientName,
+      mrn: selectedPatient.mrn,
+      email: (selectedPatient as any).email || 'saisatyabrata952@gmail.com',
+      phone: (selectedPatient as any).phone || '+91 98765 12345',
+      date: selectedRecord.visitDate || '2026-07-30',
+      department: selectedRecord.department || 'Individual Patient Longitudinal EMR File',
+      doctorName: selectedRecord.attendingDoctor || 'Dr. Anup Singh',
+      tpaApproved: true,
+      lineItems: [
+        { category: 'EMR_FILE', description: selectedRecord.diagnosis || 'Clinical Evaluation & Diagnosis Record', qty: 1, unitPrice: 0, total: 0, tpaCovered: true },
+        { category: 'CDSS_AUDIT', description: selectedRecord.cdssAlert || 'AI Safety Check & Drug Interaction Screening Passed', qty: 1, unitPrice: 0, total: 0, tpaCovered: true },
+      ],
+      subtotal: 0,
+      gstTax: 0,
+      grandTotal: 0,
+      tpaCoverage: 0,
+      netPayable: 0,
+    });
   };
 
   const handleLaunchVideoConsult = () => {
@@ -397,21 +432,25 @@ export default function EmrPage() {
             </p>
           </div>
 
-          <button
-            onClick={handleLaunchVideoConsult}
-            className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-md flex items-center gap-2 cursor-pointer transition-all shrink-0"
-          >
-            <Video className="w-4 h-4 text-emerald-200" />
-            <span>Launch Video Consult ({selectedPatient.patientName})</span>
-          </button>
+          {canLaunchVideoConsult && (
+            <button
+              onClick={handleLaunchVideoConsult}
+              className="px-4 py-2.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-md flex items-center gap-2 cursor-pointer transition-all shrink-0"
+            >
+              <Video className="w-4 h-4 text-emerald-200" />
+              <span>Launch Video Consult</span>
+            </button>
+          )}
         </div>
 
         {/* KPI Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
-          <StatCard title="Total EMR Archives" value="14,820 Records" change={100.0} changeLabel="SHA-256 encrypted" icon={FileText} />
-          <StatCard title="CDSS AI Safety Index" value="99.9% Clean" change={0.0} changeLabel="drug interaction engine" icon={Sparkles} />
-          <StatCard title="Telemedicine Consults" value="48 Today" change={14.0} changeLabel="HD Video WebRTC" icon={Video} />
-        </div>
+        {isKpiCardRole && (
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
+            <StatCard title="Total EMR Archives" value="14,820 Records" change={100.0} changeLabel="SHA-256 encrypted" icon={FileText} />
+            <StatCard title="CDSS AI Safety Index" value="99.9% Clean" change={0.0} changeLabel="drug interaction engine" icon={Sparkles} />
+            <StatCard title="Telemedicine Consults" value="48 Today" change={14.0} changeLabel="HD Video WebRTC" icon={Video} />
+          </div>
+        )}
 
         {/* EMR Profile Directory */}
         <div className="space-y-6 bg-white p-6 sm:p-8 rounded-3xl border border-slate-200/90 shadow-sm">
@@ -538,6 +577,43 @@ export default function EmrPage() {
                       }`}>
                         {rec.cdssAlert}
                       </span>
+
+                      <button
+                        onClick={() => {
+                          const rxData: PrescriptionData = {
+                            rxNumber: `RX-2026-${rec.id.replace(/\D/g, '') || '9901'}`,
+                            patientName: selectedPatient.patientName,
+                            mrn: selectedPatient.mrn,
+                            age: selectedPatient.ageGender.split('/')[0] || '32 Yrs',
+                            gender: selectedPatient.ageGender.split('/')[1] || 'Female',
+                            bloodGroup: selectedPatient.bloodGroup,
+                            doctorName: rec.attendingDoctor,
+                            department: rec.department,
+                            date: rec.visitDate,
+                            diagnosis: rec.diagnosis,
+                            medications: rec.medications.map((m) => ({
+                              name: m.name,
+                              dosage: m.dosage,
+                              instructions: m.frequency,
+                            })),
+                            labTests: rec.labOrders?.map((l) => ({
+                              name: l.testName,
+                              category: 'Diagnostics',
+                              specimen: 'Blood Specimen',
+                              instructions: l.findings,
+                            })),
+                            signatureHash: rec.sha256Hash,
+                          };
+                          setSelectedRxData(rxData);
+                          setIsRxPdfOpen(true);
+                        }}
+                        className="px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 font-bold text-xs rounded-xl shadow-2xs flex items-center gap-1.5 cursor-pointer transition-colors"
+                        title="View Official Doctor Prescription Copy"
+                      >
+                        <FileText className="w-3.5 h-3.5 text-amber-600" />
+                        <span>View Prescription PDF</span>
+                      </button>
+
                       <button
                         onClick={() => handleOpenRecordModal(rec)}
                         className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl shadow-2xs flex items-center gap-1.5 cursor-pointer transition-colors"
@@ -695,7 +771,7 @@ export default function EmrPage() {
                   <button onClick={() => setIsRecordModalOpen(false)} className="px-5 py-2.5 bg-slate-200 hover:bg-slate-300 text-slate-800 font-bold text-xs rounded-xl cursor-pointer">
                     Close
                   </button>
-                  <button onClick={handlePrintEmr} className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl shadow-lg flex items-center gap-2 cursor-pointer">
+                  <button onClick={handlePrintRecord} className="px-5 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl shadow-lg flex items-center gap-2 cursor-pointer">
                     <Printer className="w-4 h-4" />
                     <span>Print Signed EMR PDF</span>
                   </button>
@@ -705,6 +781,13 @@ export default function EmrPage() {
           </div>
         )}
       </AnimatePresence>
+
+      {/* Official Prescription PDF Modal */}
+      <PrescriptionPdfModal
+        isOpen={isRxPdfOpen}
+        onClose={() => setIsRxPdfOpen(false)}
+        prescriptionData={selectedRxData}
+      />
     </AppShell>
   );
 }

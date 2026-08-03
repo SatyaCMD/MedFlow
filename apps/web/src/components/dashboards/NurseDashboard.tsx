@@ -7,6 +7,7 @@ import { PharmacyPurchaseModal } from '../shared/PharmacyPurchaseModal';
 import { useToast } from '../../context/ToastContext';
 import { getSharedAppointments, updateSharedAppointmentVitals, SharedAppointment } from '../../data/appointmentStore';
 import { getNurseSupplyInvoices } from '../../data/patientBillingStore';
+import { printWardSupplyInvoicePdf } from '../../lib/singlePageReceiptPdf';
 import {
   Heart,
   Activity,
@@ -262,7 +263,16 @@ export const NurseDashboard: React.FC = () => {
                     message: `Generating vendor invoice #${inv.invoiceNo}...`,
                     type: 'info',
                   });
-                  if (typeof window !== 'undefined') window.print();
+                  printWardSupplyInvoicePdf({
+                    supplyCode: inv.invoiceNo,
+                    itemTitle: inv.itemName,
+                    supplierName: inv.supplierName,
+                    ward: inv.allocatedWard,
+                    qty: `${inv.quantity} Units`,
+                    date: inv.purchaseDate,
+                    totalBilling: `₹${inv.totalAmount.toLocaleString('en-IN')}`,
+                    status: inv.paymentStatus,
+                  });
                 }}
                 className="w-full py-1.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
               >

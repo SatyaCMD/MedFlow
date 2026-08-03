@@ -33,7 +33,8 @@ import {
   HeartPulse,
   Building2,
   ShoppingBag,
-  Home
+  Home,
+  Box,
 } from 'lucide-react';
 import { Logo } from './Logo';
 import { useAuth } from '../../hooks/useAuth';
@@ -260,6 +261,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children, userRole = 'DOCTOR
           badgeBg: 'bg-amber-100 text-amber-800 border-amber-300',
           items: [
             { label: 'Pharmacy Stock Master', href: '/', icon: Pill },
+            { label: 'Pharmacy Inventory Search', href: '/inventory', icon: Box },
             { label: 'Patient Prescriptions', href: '/patients', icon: Users },
             { label: 'Dispensary Orders', href: '/appointments', icon: Calendar },
             { label: 'Prescription Audit Vault', href: '/emr', icon: FileText },

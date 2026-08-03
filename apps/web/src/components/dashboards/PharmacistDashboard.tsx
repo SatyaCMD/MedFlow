@@ -10,7 +10,10 @@ import {
   getPharmacySales,
   savePharmacySale,
   PharmacySaleRecord,
+  getClinicalRecords,
+  ClinicalRecord,
 } from '../../data/medicalHistoryStore';
+import { PrescriptionPdfModal, PrescriptionData } from '../shared/PrescriptionPdfModal';
 import {
   PharmacyItem,
 } from '../../data/pharmacyCatalog';
@@ -40,6 +43,7 @@ import {
   ShieldCheck,
   Syringe,
   FlaskConical,
+  FileText,
 } from 'lucide-react';
 
 export const PharmacistDashboard: React.FC = () => {
@@ -67,6 +71,24 @@ export const PharmacistDashboard: React.FC = () => {
 
   // Reactive Pharmacy Inventory Data
   const [inventory, setInventory] = useState<PharmacyItem[]>([]);
+
+  // Doctor-Issued Clinical Prescriptions Stream
+  const [clinicalRecords, setClinicalRecords] = useState<ClinicalRecord[]>([]);
+  const [selectedRxData, setSelectedRxData] = useState<PrescriptionData | undefined>(undefined);
+  const [isRxPdfOpen, setIsRxPdfOpen] = useState(false);
+
+  useEffect(() => {
+    setClinicalRecords(getClinicalRecords());
+
+    const handleClinicalUpdate = () => {
+      setClinicalRecords(getClinicalRecords());
+    };
+
+    window.addEventListener('medflow-clinical-records-updated', handleClinicalUpdate);
+    return () => {
+      window.removeEventListener('medflow-clinical-records-updated', handleClinicalUpdate);
+    };
+  }, []);
 
   // Synchronize inventory with pharmacyInventoryStore & custom window events
   useEffect(() => {
@@ -300,6 +322,122 @@ export const PharmacistDashboard: React.FC = () => {
         <StatCard title="Low Stock Alerts (<50)" value={`${lowStockItems.length} Items`} change={-1.0} changeLabel="reorder required" icon={AlertTriangle} />
         <StatCard title="Dispensary Sales Fulfilled" value={`${salesRecords.length} Sales`} change={14.0} changeLabel="audit verified" icon={CheckCircle2} />
         <StatCard title="Out of Stock Alerts" value={`${outOfStockItems.length} Items`} change={0.0} changeLabel="requires restocking" icon={Box} />
+      </div>
+
+      {/* LIVE DOCTOR-ISSUED PRESCRIPTIONS QUEUE FOR PHARMACIST */}
+      <div className="p-6 bg-white border border-slate-200 rounded-3xl space-y-4 shadow-sm">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+          <div>
+            <h2 className="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
+              <Pill className="w-4 h-4 text-amber-600 animate-bounce" />
+              Live Doctor-Issued Prescriptions Stream ({clinicalRecords.length} Received)
+            </h2>
+            <p className="text-xs text-slate-500 font-semibold mt-0.5">
+              Prescriptions signed by attending doctors automatically synced live to the pharmacy queue
+            </p>
+          </div>
+          <span className="px-2.5 py-1 bg-emerald-100 border border-emerald-300 text-emerald-800 text-[10px] font-black rounded-full uppercase">
+            🟢 LIVE DOCTOR SYNCHRONIZATION ACTIVE
+          </span>
+        </div>
+
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {clinicalRecords.slice(0, 4).map((rec) => (
+            <div key={rec.id} className="p-4 bg-slate-50 border border-slate-200 rounded-2xl space-y-3 text-xs">
+              <div className="flex items-center justify-between border-b border-slate-200 pb-2">
+                <div>
+                  <span className="font-mono font-black text-amber-700 block text-xs">{rec.rxNumber}</span>
+                  <span className="font-black text-slate-900 block text-sm">{rec.patientName} ({rec.mrn})</span>
+                </div>
+                <div className="text-right">
+                  <span className="text-[10px] font-semibold text-slate-500 block">{rec.date}</span>
+                  <span className="text-blue-700 font-bold block text-[11px]">{rec.doctorName}</span>
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <span className="text-[10px] font-bold text-slate-400 uppercase">Diagnosis & Prescribed Dosage</span>
+                <p className="font-semibold text-slate-800 text-xs truncate" title={rec.diagnosis}>{rec.diagnosis}</p>
+                <div className="flex flex-wrap gap-1.5 pt-1">
+                  {rec.medications.map((m, idx) => (
+                    <span key={idx} className="px-2 py-0.5 bg-white border border-slate-200 rounded-md text-[10px] font-bold text-slate-700">
+                      💊 {m.name} ({m.dosage})
+                    </span>
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between pt-2 border-t border-slate-200">
+                <button
+                  type="button"
+                  onClick={() => {
+                    const rxData: PrescriptionData = {
+                      rxNumber: rec.rxNumber,
+                      patientName: rec.patientName,
+                      mrn: rec.mrn,
+                      age: '32 Yrs',
+                      gender: 'Female',
+                      bloodGroup: 'O+',
+                      doctorName: rec.doctorName,
+                      department: rec.department,
+                      date: rec.date,
+                      diagnosis: rec.diagnosis,
+                      medications: rec.medications,
+                      labTests: rec.labTests?.map((t) => ({
+                        name: t.name,
+                        category: t.category || 'Pathology',
+                        specimen: t.specimen || 'Blood Specimen',
+                        instructions: t.instructions || 'Standard Protocol',
+                      })),
+                      signatureHash: rec.signatureHash,
+                    };
+                    setSelectedRxData(rxData);
+                    setIsRxPdfOpen(true);
+                  }}
+                  className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-xl font-bold text-xs flex items-center gap-1 cursor-pointer transition-all"
+                >
+                  <FileText className="w-3.5 h-3.5 text-blue-600" />
+                  <span>View Prescription PDF</span>
+                </button>
+
+                <button
+                  type="button"
+                  onClick={() => {
+                    const newSale: PharmacySaleRecord = {
+                      id: `ps-${Date.now()}`,
+                      invoiceNo: `INV-2026-${Math.floor(1000 + Math.random() * 9000)}`,
+                      date: `${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`,
+                      timestamp: Date.now(),
+                      customerName: `${rec.patientName} (${rec.mrn})`,
+                      mrn: rec.mrn,
+                      type: 'PATIENT_DISPENSARY',
+                      items: rec.medications.map((m) => ({
+                        medicineName: m.name,
+                        qty: 1,
+                        unitPrice: 150,
+                        total: 150,
+                      })),
+                      totalAmount: rec.medications.length * 150,
+                      paymentMethod: 'Pharmacy Credit (Paid)',
+                      dispensedBy: 'Pharmacist Dispensary (PHARMACIST)',
+                    };
+                    savePharmacySale(newSale);
+                    setSalesRecords(getPharmacySales());
+                    showToast({
+                      title: 'Prescription Dispensed & Billed! 💊',
+                      message: `Generated GST Invoice #${newSale.invoiceNo} for ${rec.patientName}. Inventory stock deducted.`,
+                      type: 'success',
+                    });
+                  }}
+                  className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-xs flex items-center gap-1 cursor-pointer transition-all"
+                >
+                  <ShoppingBag className="w-3.5 h-3.5" />
+                  <span>Dispense & Bill</span>
+                </button>
+              </div>
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Main Inventory Table */}
@@ -559,6 +697,13 @@ export const PharmacistDashboard: React.FC = () => {
           </div>
         )}
       </AnimatePresence>
+
+      {/* Official Doctor Prescription PDF Viewer Modal */}
+      <PrescriptionPdfModal
+        isOpen={isRxPdfOpen}
+        onClose={() => setIsRxPdfOpen(false)}
+        prescriptionData={selectedRxData}
+      />
     </div>
   );
 };

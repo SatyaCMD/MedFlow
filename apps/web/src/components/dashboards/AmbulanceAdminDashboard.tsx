@@ -31,6 +31,7 @@ import { StatCard } from '../shared/StatCard';
 import { DataTable } from '../shared/DataTable';
 import { AmbulanceTrackerModal } from '../shared/AmbulanceTrackerModal';
 import { useToast } from '../../context/ToastContext';
+import { printOfficialGstInvoicePdf } from '../../lib/singlePageReceiptPdf';
 
 export interface AmbulanceVehicle {
   id: string;
@@ -517,7 +518,26 @@ export const AmbulanceAdminDashboard: React.FC = () => {
                 message: 'Generated itemized Ambulance Service Invoice #AMB-INV-2026-881 for Sarah Connor (12 KM ALS Transport + Oxygen = ₹3,465 incl. GST).',
                 type: 'success',
               });
-              if (typeof window !== 'undefined') window.print();
+              printOfficialGstInvoicePdf({
+                invoiceId: 'AMB-INV-2026-881',
+                patientName: 'Sarah Connor',
+                mrn: 'MC-1001',
+                email: 'sarahconnor@medflow.com',
+                phone: '+91 98765 44321',
+                date: new Date().toISOString().split('T')[0],
+                department: 'Emergency Ambulance Fleet',
+                doctorName: 'Dr. Gregory House',
+                tpaApproved: true,
+                lineItems: [
+                  { category: 'AMBULANCE', description: 'ALS Advanced Life Support Dispatch (12 KM)', qty: 1, unitPrice: 2800, total: 2800, tpaCovered: true },
+                  { category: 'OXYGEN', description: 'High-Flow Emergency Oxygen Canister (2 Hours)', qty: 1, unitPrice: 500, total: 500, tpaCovered: true },
+                ],
+                subtotal: 3300,
+                gstTax: 165,
+                grandTotal: 3465,
+                tpaCoverage: 3000,
+                netPayable: 465,
+              });
             }}
             className="px-5 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-black text-xs rounded-2xl shadow-lg hover:shadow-emerald-600/30 transition-all flex items-center gap-2 cursor-pointer hover:scale-[1.02]"
           >
@@ -623,7 +643,26 @@ export const AmbulanceAdminDashboard: React.FC = () => {
                 message: 'Generated itemized Ambulance Service Invoice #AMB-INV-2026-881 for Sarah Connor (12 KM ALS Transport + Oxygen = ₹3,465 incl. GST).',
                 type: 'success',
               });
-              if (typeof window !== 'undefined') window.print();
+              printOfficialGstInvoicePdf({
+                invoiceId: 'AMB-INV-2026-881',
+                patientName: 'Sarah Connor',
+                mrn: 'MC-1001',
+                email: 'sarahconnor@medflow.com',
+                phone: '+91 98765 44321',
+                date: new Date().toISOString().split('T')[0],
+                department: 'Emergency Ambulance Fleet',
+                doctorName: 'Dr. Gregory House',
+                tpaApproved: true,
+                lineItems: [
+                  { category: 'AMBULANCE', description: 'ALS Advanced Life Support Dispatch (12 KM)', qty: 1, unitPrice: 2800, total: 2800, tpaCovered: true },
+                  { category: 'OXYGEN', description: 'High-Flow Emergency Oxygen Canister (2 Hours)', qty: 1, unitPrice: 500, total: 500, tpaCovered: true },
+                ],
+                subtotal: 3300,
+                gstTax: 165,
+                grandTotal: 3465,
+                tpaCoverage: 3000,
+                netPayable: 465,
+              });
             }}
             className="px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-md shadow-emerald-600/20 flex items-center gap-1.5 cursor-pointer transition-all shrink-0"
           >
@@ -669,7 +708,25 @@ export const AmbulanceAdminDashboard: React.FC = () => {
                     message: `Exporting ambulance invoice #${inv.id}...`,
                     type: 'info',
                   });
-                  if (typeof window !== 'undefined') window.print();
+                  printOfficialGstInvoicePdf({
+                    invoiceId: inv.id,
+                    patientName: inv.patient,
+                    mrn: 'MC-1001',
+                    email: 'patient@medflow.com',
+                    phone: '+91 98765 44321',
+                    date: inv.date,
+                    department: 'Emergency Ambulance Fleet',
+                    doctorName: 'Dr. Gregory House',
+                    tpaApproved: inv.tpa.includes('TPA'),
+                    lineItems: [
+                      { category: 'AMBULANCE', description: `${inv.type} (${inv.distance})`, qty: 1, unitPrice: inv.subtotal, total: inv.subtotal, tpaCovered: true },
+                    ],
+                    subtotal: inv.subtotal,
+                    gstTax: inv.gst,
+                    grandTotal: inv.total,
+                    tpaCoverage: inv.tpa.includes('TPA') ? inv.subtotal : 0,
+                    netPayable: inv.tpa.includes('TPA') ? inv.gst : inv.total,
+                  });
                 }}
                 className="w-full py-1.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
               >

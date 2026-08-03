@@ -15,6 +15,7 @@ import {
 import { getLabEquipmentInvoices } from '../../data/patientBillingStore';
 import { PaymentModal } from '../shared/PaymentModal';
 import { PharmacyPurchaseModal } from '../shared/PharmacyPurchaseModal';
+import { printVendorEquipmentInvoicePdf } from '../../lib/singlePageReceiptPdf';
 import {
   FlaskConical,
   CheckCircle2,
@@ -323,7 +324,16 @@ export const LabTechnicianDashboard: React.FC = () => {
                     message: `Exporting equipment purchase invoice #${eqp.invoiceNo}...`,
                     type: 'info',
                   });
-                  if (typeof window !== 'undefined') window.print();
+                  printVendorEquipmentInvoicePdf({
+                    equipmentCode: eqp.invoiceNo,
+                    equipmentName: eqp.equipmentName,
+                    vendorName: eqp.vendorName,
+                    modelSerial: `${eqp.modelNumber} (${eqp.serialNumber})`,
+                    warranty: eqp.warrantyPeriod,
+                    date: eqp.purchaseDate,
+                    cost: `₹${eqp.cost.toLocaleString('en-IN')}`,
+                    status: eqp.maintenanceStatus,
+                  });
                 }}
                 className="w-full py-1.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 cursor-pointer transition-colors"
               >
