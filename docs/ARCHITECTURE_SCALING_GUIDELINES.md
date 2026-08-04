@@ -8,32 +8,32 @@ This document outlines the enterprise architectural guidelines, infrastructure t
 
 ```mermaid
 flowchart TD
-    Client[Client Requests / Web Dashboard / Mobile] --> ALB[AWS ALB / NGINX Load Balancer]
+    Client["Client Requests / Web Dashboard / Mobile"] --> ALB["AWS ALB / NGINX Load Balancer"]
     
-    subgraph Compute Layer [Horizontal Container / Cluster Layer]
-        ALB --> WorkerNode1[Node.js API Container - Process 1..N]
-        ALB --> WorkerNode2[Node.js API Container - Process 1..N]
-        ALB --> WorkerNode3[Node.js API Container - Process 1..N]
+    subgraph ComputeLayer ["Horizontal Container / Cluster Layer"]
+        ALB --> WorkerNode1["Node.js API Container - Process 1..N"]
+        ALB --> WorkerNode2["Node.js API Container - Process 1..N"]
+        ALB --> WorkerNode3["Node.js API Container - Process 1..N"]
     end
 
-    subgraph Data & Caching Layer
-        WorkerNode1 <-->|Read/Write Cache| RedisCluster[(Redis Sentinel / Cluster)]
-        WorkerNode1 <-->|Read Secondary / Write Primary| MongoReplica[(MongoDB Replica Set)]
+    subgraph DataCachingLayer ["Data & Caching Layer"]
+        WorkerNode1 <-->|Read/Write Cache| RedisCluster[("Redis Sentinel / Cluster")]
+        WorkerNode1 <-->|Read Secondary / Write Primary| MongoReplica[("MongoDB Replica Set")]
         WorkerNode2 <--> RedisCluster
         WorkerNode2 <--> MongoReplica
         WorkerNode3 <--> RedisCluster
         WorkerNode3 <--> MongoReplica
     end
 
-    subgraph Async Processing Layer
-        WorkerNode1 -->|Enqueue PDF / Email / S3 Jobs| BullMQ[BullMQ Job Queues (Redis-backed)]
+    subgraph AsyncProcessingLayer ["Async Processing Layer"]
+        WorkerNode1 -->|Enqueue PDF / Email / S3 Jobs| BullMQ["BullMQ Job Queues (Redis-backed)"]
         WorkerNode2 -->|Enqueue Jobs| BullMQ
-        BullMQ --> WorkerPool1[Background Worker Service 1]
-        BullMQ --> WorkerPool2[Background Worker Service 2]
+        BullMQ --> WorkerPool1["Background Worker Service 1"]
+        BullMQ --> WorkerPool2["Background Worker Service 2"]
         
-        WorkerPool1 --> AWS_S3[AWS S3 Bucket]
-        WorkerPool1 --> SMTP[SMTP / AWS SES Email]
-        WorkerPool1 --> PDF[PDFKit Engine]
+        WorkerPool1 --> AWS_S3["AWS S3 Bucket"]
+        WorkerPool1 --> SMTP["SMTP / AWS SES Email"]
+        WorkerPool1 --> PDF["PDFKit Engine"]
     end
 ```
 
