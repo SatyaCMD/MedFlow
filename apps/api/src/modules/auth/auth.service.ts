@@ -45,6 +45,12 @@ export class AuthService {
       return;
     }
 
+    const count = await User.countDocuments({ deletedAt: null });
+    if (count >= 15) {
+      AuthService.systemUsersSeeded = true;
+      return;
+    }
+
     const seedUsers = [
       { email: env.SUPER_ADMIN_EMAIL, pass: env.SUPER_ADMIN_PASSWORD, firstName: 'Super', lastName: 'Admin', role: ROLES.SUPER_ADMIN, hospitalId: 'HOSP-001', kycStatus: 'VERIFIED' },
       { email: 'hospital.admin@medflow.com', pass: 'Hospital@321', firstName: 'Hospital', lastName: 'Admin', role: ROLES.HOSPITAL_ADMIN, hospitalId: 'HOSP-001', kycStatus: 'VERIFIED', department: 'Hospital Administration', specialty: 'Operations Management' },
@@ -92,13 +98,6 @@ export class AuthService {
           department: u.department,
           specialty: u.specialty,
         });
-      } else {
-        const salt = crypto.randomBytes(16).toString('hex');
-        const passwordHash = await this.hashPassword(u.pass, salt);
-        await User.updateOne(
-          { _id: existing._id },
-          { $set: { passwordHash, passwordSalt: salt, email: u.email, role: u.role } }
-        );
       }
     }
     AuthService.systemUsersSeeded = true;
