@@ -3,7 +3,7 @@
 
 # 1. Private S3 Bucket for HIPAA-Compliant Encrypted Medical Records (Prescriptions & Test Reports)
 resource "aws_s3_bucket" "medical_records" {
-  bucket        = "medflow-medical-records-${var.environment}"
+  bucket        = "medflow-medical-records-${var.environment}-${random_id.bucket_suffix.hex}"
   force_destroy = false
 
   tags = {

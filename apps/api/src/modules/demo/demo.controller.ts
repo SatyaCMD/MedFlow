@@ -5,9 +5,13 @@ import { DemoService } from './demo.service.js';
 export class DemoController {
   private service = new DemoService();
 
+  private getHospitalId(req: Request): string {
+    return req.user?.hospitalId || (req.headers['x-hospital-id'] as string) || 'HOSP-001';
+  }
+
   getMany = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const hospitalId = req.user!.hospitalId;
+      const hospitalId = this.getHospitalId(req);
       
       const page = req.query.page ? Number.parseInt(req.query.page as string, 10) : undefined;
       const limit = req.query.limit ? Number.parseInt(req.query.limit as string, 10) : undefined;
@@ -38,7 +42,7 @@ export class DemoController {
 
   getOne = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const hospitalId = req.user!.hospitalId;
+      const hospitalId = this.getHospitalId(req);
       const result = await this.service.getDemoById(req.params.id, hospitalId);
       res.status(200).json({ success: true, data: result });
     } catch (err) {
@@ -48,7 +52,7 @@ export class DemoController {
 
   create = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const hospitalId = req.user!.hospitalId;
+      const hospitalId = this.getHospitalId(req);
       const result = await this.service.createDemo(req.body, hospitalId);
       res.status(201).json({ success: true, data: result });
     } catch (err) {
@@ -58,7 +62,7 @@ export class DemoController {
 
   update = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const hospitalId = req.user!.hospitalId;
+      const hospitalId = this.getHospitalId(req);
       const result = await this.service.updateDemo(req.params.id, req.body, hospitalId);
       res.status(200).json({ success: true, data: result });
     } catch (err) {
@@ -68,7 +72,7 @@ export class DemoController {
 
   delete = async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const hospitalId = req.user!.hospitalId;
+      const hospitalId = this.getHospitalId(req);
       await this.service.deleteDemo(req.params.id, hospitalId);
       res.status(200).json({ success: true, data: null });
     } catch (err) {
