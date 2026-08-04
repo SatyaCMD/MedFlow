@@ -567,51 +567,167 @@ Port `4000` is occupied because `pnpm dev` (the local Express API process) is ru
 
 ---
 
-<!-- ## 💳 Patient Portal, Digital Wallet & Ongoing Diagnosis Protocol
+## 🚀 High-Throughput Production Execution Guide (Scaling to Millions/Billions of Requests)
 
 <div align="center">
 
-![Patient Portal](https://img.shields.io/badge/Patient%20Portal-Active-0052CC?style=for-the-badge&logo=shield)
-![Digital Wallet](https://img.shields.io/badge/Digital%20Wallet-Auto--Refund-10B981?style=for-the-badge&logo=wallet)
-![Follow Up Discount](https://img.shields.io/badge/Follow--Up-50%25--75%25%20Discount-EF4444?style=for-the-badge&logo=tag)
+![PM2 Cluster](https://img.shields.io/badge/PM2-Cluster%20Mode-2B037A?style=for-the-badge&logo=pm2)
+![NGINX LB](https://img.shields.io/badge/NGINX-Load%20Balancer-009639?style=for-the-badge&logo=nginx)
+![Redis Sentinel](https://img.shields.io/badge/Redis-Cache%20Aside-DC382D?style=for-the-badge&logo=redis)
+![BullMQ](https://img.shields.io/badge/BullMQ-Async%20Workers-FF4500?style=for-the-badge&logo=redis)
+![k6 Load Test](https://img.shields.io/badge/k6-Headless%20Load%20Test-7D64FF?style=for-the-badge&logo=k6)
 
 </div>
 
-### 1. Patient Digital Wallet & Payment Gateway Redemption
-
-> [!TIP]
-> **Green Protection Tier — Instant Wallet Redemption & Guarantee**
-> - **Wallet Redemption at Checkout**: Patients can redeem funds directly from their **Patient Digital Wallet** inside the Checkout Payment Gateway (`PaymentModal`).
-> - **100% Covered Checkout**: If wallet balance covers the total bill, the transaction is processed instantly without needing external cards or UPI.
-> - **Partial Wallet Redemption**: If the bill exceeds the wallet balance, wallet funds are applied as a credit discount, allowing the remaining balance to be paid via Razorpay UPI or Stripe Card.
+To run **MedFlow** in production so it can handle **millions/billions of requests** with high availability and sub-50ms latency, follow these step-by-step execution instructions:
 
 ---
 
-### 2. 3-Day Doctor Approval Expiration & Auto-Refund Guarantee
+### 📊 Enterprise Scaling Architecture Flow
 
-> [!WARNING]
-> **Red Critical Alert — 3-Day Auto-Refund Rule**
-> - **Automatic Expiry**: When a patient books and pays for a consultation, it is assigned `PENDING DOCTOR APPROVAL`.
-> - **72-Hour Expiration Window**: If the doctor does not approve the appointment request within **3 Days (72 Hours)**, the system automatically marks the appointment as `EXPIRED & REFUNDED`.
-> - **Instant Wallet Credit**: The paid consultation fee (e.g. ₹1,500) is credited back into the patient's **Digital Wallet**, generating an audit log and real-time toast notification.
+```mermaid
+flowchart TD
+    Client[Client Requests / Web Dashboard / Mobile] --> ALB[AWS ALB / NGINX Load Balancer]
+    
+    subgraph Compute Layer [Horizontal Container / Cluster Layer]
+        ALB --> WorkerNode1[Node.js API Container - Process 1..N]
+        ALB --> WorkerNode2[Node.js API Container - Process 1..N]
+        ALB --> WorkerNode3[Node.js API Container - Process 1..N]
+    end
+
+    subgraph Data & Caching Layer
+        WorkerNode1 <-->|Read/Write Cache| RedisCluster[(Redis Sentinel / Cluster)]
+        WorkerNode1 <-->|Read Secondary / Write Primary| MongoReplica[(MongoDB Replica Set)]
+        WorkerNode2 <--> RedisCluster
+        WorkerNode2 <--> MongoReplica
+        WorkerNode3 <--> RedisCluster
+        WorkerNode3 <--> MongoReplica
+    end
+
+    subgraph Async Processing Layer
+        WorkerNode1 -->|Enqueue PDF / Email / S3 Jobs| BullMQ[BullMQ Job Queues (Redis-backed)]
+        WorkerNode2 -->|Enqueue Jobs| BullMQ
+        BullMQ --> WorkerPool1[Background Worker Service 1]
+        BullMQ --> WorkerPool2[Background Worker Service 2]
+        
+        WorkerPool1 --> AWS_S3[AWS S3 Bucket]
+        WorkerPool1 --> SMTP[SMTP / AWS SES Email]
+        WorkerPool1 --> PDF[PDFKit Engine]
+    end
+```
 
 ---
 
-### 3. Dedicated "Ongoing Diagnosis" Tab & Follow-Up Visit Discounts
+### ⚡ Step-by-Step Operational Execution Guide
 
-> [!NOTE]
-> **Blue Information Tier — Dedicated Ongoing Evaluation Workstation**
-> - **Dedicated Ongoing Diagnosis Tab**: Active diagnoses and pending lab tests are displayed in a dedicated tab (`Ongoing Diagnosis`) alongside Medical History.
-> - **Completed Medical Vault**: In the `Medical & Prescription History` tab, all records are archived as completed with dual download buttons:
->   - **`[Download Prescription PDF 📜]`**: Generates encrypted digital prescription PDF.
->   - **`[Download Lab Report PDF 🧪]`**: Generates NABL-certified pathology report PDF.
-> - **50% to 75% Follow-Up Visit Discount**: When booking a 2nd/follow-up consultation for the same ongoing diagnosis with test reports, patients receive a **50% to 75% fee discount** (e.g. ₹1,500 initial fee → ₹600 follow-up fee).
+#### STEP 1: Build All Workspace Packages
+Before launching cluster processes, compile TypeScript across all workspace packages and applications:
+
+```bash
+pnpm run build
+```
 
 ---
 
-### 4. Layout Architecture & Fixed Sidebar Guarantee
+#### STEP 2: Launch Infrastructure (MongoDB + Redis + NGINX)
+Spin up high-performance database and caching containers using [`docker-compose.prod.yml`](./docker-compose.prod.yml):
+
+```bash
+docker-compose -f docker-compose.prod.yml up -d mongo redis mailpit
+```
 
 > [!IMPORTANT]
-> **Blue Architectural Rule — Fixed Workstation Layout**
-> - **Non-Scrolling Sidebar**: Side menu navigation in `AppShell` uses `sticky top-0 h-screen overflow-y-auto` layout architecture.
-> - **Independent Main Scroll**: Page content scrolls independently inside the main workspace container (`main`), preventing sidebar displacement while scrolling. -->
+> **MongoDB Replica Set Verification**
+> - Ensure your MongoDB connection URI points to a replica set (`replicaSet=rs0`) so read queries are automatically offloaded to secondary nodes (`readPreference=secondaryPreferred`).
+
+---
+
+#### STEP 3: Launch Multi-Core / Multi-Container Scaled API
+
+Choose **Option A** (Docker Multi-Container) or **Option B** (PM2 Bare-Metal/VM Cluster Mode):
+
+##### 🚀 Option A: Docker Production Scaling (Cloud Containers / K8s)
+Scale the API to 4+ parallel container instances behind the NGINX Reverse Proxy:
+
+```bash
+# Spin up 4 API container replicas dynamically
+docker-compose -f docker-compose.prod.yml up -d --scale api=4 --build
+
+# Verify running containers
+docker-compose -f docker-compose.prod.yml ps
+```
+
+##### ⚡ Option B: PM2 Cluster Mode (Bare-Metal / AWS EC2 VMs)
+Use PM2 to spawn 1 worker per CPU core on your server host using [`ecosystem.config.cjs`](./ecosystem.config.cjs):
+
+```bash
+# Start PM2 in cluster mode (auto-detects all available CPU cores)
+npx pm2 start ecosystem.config.cjs
+
+# Check cluster status and live resource usage
+npx pm2 status
+npx pm2 monit
+```
+
+---
+
+#### STEP 4: Run Dedicated Background Queue Workers (BullMQ)
+To keep API response times **< 50ms**, heavy synchronous tasks (PDF prescription rendering, AWS S3 uploads, SMTP email dispatching) are offloaded to BullMQ background workers:
+
+```bash
+# Start BullMQ worker processes separately from API HTTP instances
+NODE_ENV=production node apps/api/dist/workers/prescriptionWorker.js
+```
+
+> [!TIP]
+> **Worker Process Isolation**
+> - Running background queue workers as independent processes ensures CPU rendering spikes never degrade HTTP API request latency.
+
+---
+
+#### STEP 5: Verify High-Throughput Setup with k6 Load Testing
+
+Run headless distributed load testing using the k6 script ([`tests/load/api-load-test.js`](./tests/load/api-load-test.js)):
+
+1. **Install k6 (if not already installed):**
+   - **Windows (winget):** `winget install k6`
+   - **macOS:** `brew install k6`
+   - **Linux:** `sudo apt-get install k6`
+
+2. **Execute high-concurrency load test (2,000+ Virtual Users / ~20,000 requests/sec):**
+   ```bash
+   k6 run tests/load/api-load-test.js
+   ```
+
+**Target Threshold Benchmark Results:**
+- `http_req_duration (p95)`: **< 50ms**
+- `http_req_failed`: **< 0.01%**
+
+---
+
+#### STEP 6: Real-Time Operational Monitoring
+
+Monitor server health, connection pools, and memory footprint during peak traffic:
+
+```bash
+# Docker Container Resource Usage (CPU, Memory, Network I/O)
+docker stats
+
+# PM2 Real-Time Process Monitor
+npx pm2 monit
+
+# Tail live application logs
+npx pm2 logs medflow-api
+```
+
+---
+
+### 🎯 Summary Performance & Scaling Matrix
+
+| Phase | Milestone | Tools / Technology | Target Metric / SLA |
+| :--- | :--- | :--- | :--- |
+| **Phase 1** | Node.js Cluster + NGINX LB | PM2, Docker Compose (`deploy.replicas`), NGINX | 100% CPU core utilization across nodes |
+| **Phase 2** | DB Compound Indexes & Redis Caching | MongoDB Indexing, Redis Cache-Aside | Database query time < 10ms |
+| **Phase 3** | Offload PDF, S3, SMTP to Workers | BullMQ, Redis Queues, Isolated Worker Process | API HTTP response time < 50ms |
+| **Phase 4** | Headless Cloud Load Testing | k6, Newman, Grafana Dashboard | Zero request drops at 10,000+ RPS |
+

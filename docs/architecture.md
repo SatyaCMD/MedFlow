@@ -10,15 +10,16 @@ For deep-dive architectural specifications, state machines, sequence diagrams, e
 
 | Architectural Domain | Specification Document | Key Topics Covered |
 | :--- | :--- | :--- |
-| **Clinical Pathways & EMR** | [CLINICAL_EMR_WORKFLOW.md](file:///c:/Users/SATYA/OneDrive/Desktop/MedFlow/docs/CLINICAL_EMR_WORKFLOW.md) | Patient Lifecycle, AI SOAP Notes, HIPAA PII Scrubbing & Encryption |
-| **Emergency & Ambulance** | [EMERGENCY_AMBULANCE_DISPATCH.md](file:///c:/Users/SATYA/OneDrive/Desktop/MedFlow/docs/EMERGENCY_AMBULANCE_DISPATCH.md) | ESI Triage (1-5), GPS Telemetry, Real-time ER Bed Locking |
-| **Pharmacy & Blood Bank** | [PHARMACY_INVENTORY_BLOODBANK.md](file:///c:/Users/SATYA/OneDrive/Desktop/MedFlow/docs/PHARMACY_INVENTORY_BLOODBANK.md) | FEFO/FIFO Inventory, Blood Compatibility Matrix, Cold-Chain IoT |
-| **Security & Auth & RBAC** | [SECURITY_AUTH_GOVERNANCE.md](file:///c:/Users/SATYA/OneDrive/Desktop/MedFlow/docs/SECURITY_AUTH_GOVERNANCE.md) | Dual-Token Auth (Argon2id), RBAC Permissions Matrix, Immutable Audit Logs |
-| **Billing & Payments** | [BILLING_PAYMENT_GATEWAY.md](file:///c:/Users/SATYA/OneDrive/Desktop/MedFlow/docs/BILLING_PAYMENT_GATEWAY.md) | Stripe Webhook Idempotency, Invoice Lifecycle, Insurance Copay Split |
-| **DevOps & K8s Infrastructure** | [DEVOPS_K8S_INFRASTRUCTURE.md](file:///c:/Users/SATYA/OneDrive/Desktop/MedFlow/docs/DEVOPS_K8S_INFRASTRUCTURE.md) | Kubernetes Pod Topology, ArgoCD GitOps, Helm Charts, Disaster Recovery |
-| **Observability & Telemetry** | [OBSERVABILITY_TELEMETRY.md](file:///c:/Users/SATYA/OneDrive/Desktop/MedFlow/docs/OBSERVABILITY_TELEMETRY.md) | OpenTelemetry, Jaeger Tracing, Correlation ID Lifecycle, SRE KPIs |
-| **Realtime Event Topology** | [REALTIME_ARCHITECTURE.md](file:///c:/Users/SATYA/OneDrive/Desktop/MedFlow/docs/REALTIME_ARCHITECTURE.md) | WebSocket Gateway, Kafka Event Bridge, Transactional Outbox Pattern |
-| **Git & Branching Workflow** | [git-workflow.md](file:///c:/Users/SATYA/OneDrive/Desktop/MedFlow/docs/git-workflow.md) | Trunk-Based Development, Conventional Commits |
+| **Clinical Pathways & EMR** | [CLINICAL_EMR_WORKFLOW.md](./CLINICAL_EMR_WORKFLOW.md) | Patient Lifecycle, AI SOAP Notes, HIPAA PII Scrubbing & Encryption |
+| **Emergency & Ambulance** | [EMERGENCY_AMBULANCE_DISPATCH.md](./EMERGENCY_AMBULANCE_DISPATCH.md) | ESI Triage (1-5), GPS Telemetry, Real-time ER Bed Locking |
+| **Pharmacy & Blood Bank** | [PHARMACY_INVENTORY_BLOODBANK.md](./PHARMACY_INVENTORY_BLOODBANK.md) | FEFO/FIFO Inventory, Blood Compatibility Matrix, Cold-Chain IoT |
+| **Security & Auth & RBAC** | [SECURITY_AUTH_GOVERNANCE.md](./SECURITY_AUTH_GOVERNANCE.md) | Dual-Token Auth (Argon2id), RBAC Permissions Matrix, Immutable Audit Logs |
+| **Billing & Payments** | [BILLING_PAYMENT_GATEWAY.md](./BILLING_PAYMENT_GATEWAY.md) | Stripe Webhook Idempotency, Invoice Lifecycle, Insurance Copay Split |
+| **DevOps & K8s Infrastructure** | [DEVOPS_K8S_INFRASTRUCTURE.md](./DEVOPS_K8S_INFRASTRUCTURE.md) | Kubernetes Pod Topology, ArgoCD GitOps, Helm Charts, Disaster Recovery |
+| **Observability & Telemetry** | [OBSERVABILITY_TELEMETRY.md](./OBSERVABILITY_TELEMETRY.md) | OpenTelemetry, Jaeger Tracing, Correlation ID Lifecycle, SRE KPIs |
+| **Realtime Event Topology** | [REALTIME_ARCHITECTURE.md](./REALTIME_ARCHITECTURE.md) | WebSocket Gateway, Kafka Event Bridge, Transactional Outbox Pattern |
+| **High-Throughput Scaling** | [ARCHITECTURE_SCALING_GUIDELINES.md](./ARCHITECTURE_SCALING_GUIDELINES.md) | Multi-Core PM2, DB Replicas, BullMQ Worker Queues, k6 Load Testing |
+| **Git & Branching Workflow** | [git-workflow.md](./git-workflow.md) | Trunk-Based Development, Conventional Commits |
 
 ---
 
@@ -87,7 +88,7 @@ flowchart TD
     RabbitMQ -.->|Trace Context| OTel
 ```
 
-See [docs/REALTIME_ARCHITECTURE.md](file:///c:/Users/SATYA/OneDrive/Desktop/MedFlow/docs/REALTIME_ARCHITECTURE.md) for full specification.
+See [REALTIME_ARCHITECTURE.md](./REALTIME_ARCHITECTURE.md) for full specification.
 
 ### 1.1 System Context (Level 1)
 Shows how actors interact with MediCore 360:
