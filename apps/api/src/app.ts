@@ -26,6 +26,8 @@ import doctorRouter from './modules/doctor/doctor.routes.js';
 import bloodBankRouter from './modules/bloodBank/bloodBank.routes.js';
 import ambulanceRouter from './modules/ambulance/ambulance.routes.js';
 import kycRouter from './modules/kyc/kyc.routes.js';
+import aiRouter from './modules/ai/ai.routes.js';
+import auditRouter from './modules/audit/audit.routes.js';
 import { rateLimit } from './middleware/rateLimit.js';
 import { apiGatewayMiddleware } from './gateway/gatewayRouter.js';
 
@@ -79,6 +81,8 @@ app.use('/api/v1/notification', notificationRouter);
 app.use('/api/v1/staff', staffRouter);
 app.use('/api/v1/doctor', doctorRouter);
 app.use('/api/v1/kyc', kycRouter);
+app.use('/api/v1/ai', aiRouter);
+app.use('/api/v1/audit', auditRouter);
 app.use('/api/v1/demo', demoRouter);
 
 // Metrics Scraping Endpoint
@@ -125,6 +129,17 @@ app.get('/ready', async (_req, res) => {
       status: 'ready',
       services: status,
       timestamp: new Date().toISOString(),
+    },
+  });
+});
+
+// 404 Catch-All Handler (Ensures all unmapped routes return structured JSON instead of default HTML)
+app.use((req, res) => {
+  res.status(404).json({
+    success: false,
+    error: {
+      code: 'NOT_FOUND',
+      message: `Cannot ${req.method} ${req.originalUrl}`,
     },
   });
 });

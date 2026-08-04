@@ -79,7 +79,7 @@ export class AppointmentController {
     try {
       const hospitalId = req.user!.hospitalId;
       await this.service.deleteAppointment(req.params.id, hospitalId);
-      res.status(204).send();
+      res.status(200).json({ success: true, message: 'Appointment deleted successfully' });
     } catch (err) {
       next(err);
     }

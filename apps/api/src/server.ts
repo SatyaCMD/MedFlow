@@ -18,13 +18,21 @@ const bootstrap = async () => {
     // 1. OpenTelemetry Distributed Tracing Init
     initTracing();
 
-    // 2. MongoDB Connection
+    // 2. MongoDB Connection with High-Throughput Connection Pool
     logger.info('Initializing MongoDB connection...');
-    await mongoose.connect(env.MONGO_URI);
-    logger.info('Successfully connected to MongoDB database.');
+    await mongoose.connect(env.MONGO_URI, {
+      maxPoolSize: 200,
+      minPoolSize: 20,
+      socketTimeoutMS: 45000,
+      serverSelectionTimeoutMS: 5000,
+    });
+    logger.info('Successfully connected to MongoDB database with tuned connection pool.');
 
-    // 3. HTTP & Socket.IO Gateway Setup
+    // 3. HTTP & Socket.IO Gateway Setup with Socket Tuning for Extreme Concurrency
     server = createServer(app);
+    server.keepAliveTimeout = 65000;
+    server.headersTimeout = 66000;
+    server.requestTimeout = 120000;
     socketServer.init(server);
 
     // 4. Initialize Messaging Infrastructure (Non-blocking resilience)

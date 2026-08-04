@@ -28,6 +28,8 @@ export class AuthService {
     });
   }
 
+  private static systemUsersSeeded = false;
+
   // Verify a password incorporating user-specific salt and application pepper (chili)
   private async verifyPassword(password: string, hash: string, salt: string): Promise<boolean> {
     const saltBuffer = Buffer.from(salt, 'hex');
@@ -39,6 +41,10 @@ export class AuthService {
   }
 
   private async ensureSystemUsers() {
+    if (AuthService.systemUsersSeeded) {
+      return;
+    }
+
     const seedUsers = [
       { email: env.SUPER_ADMIN_EMAIL, pass: env.SUPER_ADMIN_PASSWORD, firstName: 'Super', lastName: 'Admin', role: ROLES.SUPER_ADMIN, hospitalId: 'HOSP-001', kycStatus: 'VERIFIED' },
       { email: 'hospital.admin@medflow.com', pass: 'Hospital@321', firstName: 'Hospital', lastName: 'Admin', role: ROLES.HOSPITAL_ADMIN, hospitalId: 'HOSP-001', kycStatus: 'VERIFIED', department: 'Hospital Administration', specialty: 'Operations Management' },
@@ -95,6 +101,7 @@ export class AuthService {
         );
       }
     }
+    AuthService.systemUsersSeeded = true;
   }
 
   async registerUser(data: Partial<IUser> & { password?: string }, hospitalId: string) {
@@ -102,22 +109,15 @@ export class AuthService {
       throw new AppError('Email and password are required', 400);
     }
 
-    if (env.NODE_ENV === 'development' || env.NODE_ENV === 'test') {
-      await User.deleteOne({ email: data.email });
-      if (data.role === 'SUPER_ADMIN') {
-        await User.deleteOne({ role: 'SUPER_ADMIN' });
-      }
-    } else {
-      const existingUser = await User.findOne({ email: data.email, deletedAt: null });
-      if (existingUser) {
-        throw new AppError('User with this email already exists', 409, 'DUPLICATE_RESOURCE');
-      }
+    const existingUser = await User.findOne({ email: data.email, deletedAt: null });
+    if (existingUser) {
+      throw new AppError('User with this email already exists', 409, 'DUPLICATE_RESOURCE');
+    }
 
-      if (data.role === 'SUPER_ADMIN') {
-        const existingSuperAdmin = await User.findOne({ role: 'SUPER_ADMIN', deletedAt: null });
-        if (existingSuperAdmin) {
-          throw new AppError('A Super Admin already exists in the system', 400, 'SUPER_ADMIN_EXISTS');
-        }
+    if (data.role === 'SUPER_ADMIN') {
+      const existingSuperAdmin = await User.findOne({ role: 'SUPER_ADMIN', deletedAt: null });
+      if (existingSuperAdmin) {
+        throw new AppError('A Super Admin already exists in the system', 400, 'SUPER_ADMIN_EXISTS');
       }
     }
 
@@ -429,7 +429,7 @@ export class AuthService {
     });
 
     if (!user) {
-      throw new AppError('User account not found.', 404);
+      throw new AppError('User account not found.', 400, 'USER_NOT_FOUND');
     }
 
     if (oldPassword) {
@@ -521,7 +521,7 @@ export class AuthService {
     // Retrieve full user
     const user = await User.findById(userId);
     if (!user || user.deletedAt) {
-      throw new AppError('User not found.', 404);
+      throw new AppError('User not found.', 400, 'USER_NOT_FOUND');
     }
 
     // Establish unique session ID

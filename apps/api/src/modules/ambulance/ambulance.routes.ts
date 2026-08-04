@@ -32,4 +32,9 @@ router.post('/maintenance', authorize(PERMISSIONS.PATIENT_UPDATE), AmbulanceCont
 router.get('/fuel', AmbulanceController.getFuelLogs);
 router.post('/fuel', authorize(PERMISSIONS.PATIENT_UPDATE), AmbulanceController.createFuelLog);
 
+// Single Ambulance Vehicle CRUD by ID
+router.get('/:id', AmbulanceController.getAmbulanceById);
+router.put('/:id', authorize(PERMISSIONS.PATIENT_UPDATE), AmbulanceController.updateAmbulance);
+router.delete('/:id', authorize(PERMISSIONS.PATIENT_DELETE), AmbulanceController.deleteAmbulance);
+
 export default router;

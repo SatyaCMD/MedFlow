@@ -1,4 +1,5 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
+import { AppError } from '../../middleware/errorHandler.js';
 import {
   AmbulanceModel,
   DriverModel,
@@ -14,6 +15,27 @@ export class AmbulanceService {
   // 1. Get All Ambulances
   static async getAllAmbulances(filter: any = {}) {
     return AmbulanceModel.find(filter).populate('assignedDriverId').sort({ updatedAt: -1 });
+  }
+
+  // Get Ambulance by ID
+  static async getAmbulanceById(id: string) {
+    const ambulance = await AmbulanceModel.findById(id).populate('assignedDriverId');
+    if (!ambulance) throw new AppError('Ambulance not found', 404, 'NOT_FOUND');
+    return ambulance;
+  }
+
+  // Update Ambulance
+  static async updateAmbulance(id: string, data: any) {
+    const ambulance = await AmbulanceModel.findByIdAndUpdate(id, data, { new: true });
+    if (!ambulance) throw new AppError('Ambulance not found', 404, 'NOT_FOUND');
+    return ambulance;
+  }
+
+  // Delete Ambulance
+  static async deleteAmbulance(id: string) {
+    const ambulance = await AmbulanceModel.findByIdAndDelete(id);
+    if (!ambulance) throw new AppError('Ambulance not found', 404, 'NOT_FOUND');
+    return ambulance;
   }
 
   // 2. Register New Ambulance Vehicle

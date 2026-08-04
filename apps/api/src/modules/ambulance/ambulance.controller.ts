@@ -29,6 +29,36 @@ export class AmbulanceController {
     }
   }
 
+  // GET /api/v1/ambulance/:id - Get ambulance details
+  static async getAmbulanceById(req: Request, res: Response): Promise<void> {
+    try {
+      const ambulance = await AmbulanceService.getAmbulanceById(req.params.id);
+      res.status(200).json({ success: true, data: ambulance });
+    } catch (error: any) {
+      res.status(error.statusCode || 404).json({ success: false, message: error.message });
+    }
+  }
+
+  // PUT /api/v1/ambulance/:id - Update ambulance details
+  static async updateAmbulance(req: Request, res: Response): Promise<void> {
+    try {
+      const ambulance = await AmbulanceService.updateAmbulance(req.params.id, req.body);
+      res.status(200).json({ success: true, message: 'Ambulance updated', data: ambulance });
+    } catch (error: any) {
+      res.status(error.statusCode || 400).json({ success: false, message: error.message });
+    }
+  }
+
+  // DELETE /api/v1/ambulance/:id - Delete ambulance vehicle
+  static async deleteAmbulance(req: Request, res: Response): Promise<void> {
+    try {
+      await AmbulanceService.deleteAmbulance(req.params.id);
+      res.status(200).json({ success: true, message: 'Ambulance deleted successfully' });
+    } catch (error: any) {
+      res.status(error.statusCode || 404).json({ success: false, message: error.message });
+    }
+  }
+
   // GET /api/v1/ambulance/drivers - List all drivers
   static async getAllDrivers(_req: Request, res: Response): Promise<void> {
     try {

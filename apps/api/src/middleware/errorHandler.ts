@@ -29,16 +29,23 @@ export const errorHandler = (
   _next: NextFunction
 ) => {
   const reqId = req.requestId || 'unknown';
-  const statusCode = err.statusCode || 500;
-  const errorCode = err.code || 'INTERNAL_SERVER_ERROR';
-  const message = err.message || 'An unexpected error occurred';
+  let statusCode = err.statusCode || 500;
+  let errorCode = err.code ? String(err.code) : 'INTERNAL_SERVER_ERROR';
+  let message = err.message || 'An unexpected error occurred';
   const details = err.details || null;
+
+  // Handle MongoDB E11000 duplicate key errors gracefully
+  if (err.name === 'MongoServerError' || String((err as any).code) === '11000' || message.includes('E11000 duplicate key')) {
+    statusCode = 409;
+    errorCode = 'DUPLICATE_RESOURCE';
+    message = 'A resource with this unique identifier or email already exists in the system.';
+  }
 
   logger.error(
     {
       requestId: reqId,
       error: {
-        message: err.message,
+        message,
         stack: env.NODE_ENV !== 'production' ? err.stack : undefined,
         code: errorCode,
       },

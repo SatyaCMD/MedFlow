@@ -2,6 +2,7 @@ import { Router, Request, Response } from 'express';
 import multer from 'multer';
 import { uploadKycDocumentToS3 } from '../../lib/s3Client.js';
 import { logger } from '../../lib/logger.js';
+import { KycController } from './kyc.controller.js';
 
 const router = Router();
 const storage = multer.memoryStorage();
@@ -9,6 +10,10 @@ const upload = multer({
   storage,
   limits: { fileSize: 15 * 1024 * 1024 }, // Max 15MB file size limit for KYC documents
 });
+
+// Standard REST CRUD endpoints for KYC records
+router.post('/', KycController.createKyc);
+router.get('/', KycController.getAllKycs);
 
 // POST /api/v1/kyc/upload - Upload identity KYC document to AWS S3 Bucket
 router.post('/upload', upload.single('file'), async (req: Request, res: Response) => {
@@ -35,7 +40,6 @@ router.post('/upload', upload.single('file'), async (req: Request, res: Response
       originalName = file.originalname;
       mimeType = file.mimetype;
     } else {
-      // Base64 fallback if sent via JSON payload
       const base64Data = req.body.fileBase64.replace(/^data:.*;base64,/, '');
       buffer = Buffer.from(base64Data, 'base64');
       originalName = req.body.fileName || 'kyc_document.pdf';
@@ -83,5 +87,10 @@ router.post('/upload', upload.single('file'), async (req: Request, res: Response
     });
   }
 });
+
+// Parameterized ID routes
+router.get('/:id', KycController.getKycById);
+router.put('/:id', KycController.updateKyc);
+router.delete('/:id', KycController.deleteKyc);
 
 export default router;
