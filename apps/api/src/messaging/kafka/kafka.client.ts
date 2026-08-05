@@ -120,6 +120,7 @@ class KafkaEngine {
     }
 
     try {
+      await this.connectProducer();
       const consumer = this.kafka.consumer({ groupId });
       await consumer.connect();
 

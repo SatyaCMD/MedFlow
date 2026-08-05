@@ -20,13 +20,40 @@ const bootstrap = async () => {
 
     // 2. MongoDB Connection with High-Throughput Connection Pool
     logger.info('Initializing MongoDB connection...');
-    await mongoose.connect(env.MONGO_URI, {
-      maxPoolSize: 200,
-      minPoolSize: 20,
-      socketTimeoutMS: 45000,
-      serverSelectionTimeoutMS: 5000,
-    });
-    logger.info('Successfully connected to MongoDB database with tuned connection pool.');
+    try {
+      await mongoose.connect(env.MONGO_URI, {
+        maxPoolSize: 200,
+        minPoolSize: 20,
+        socketTimeoutMS: 45000,
+        serverSelectionTimeoutMS: 5000,
+      });
+      logger.info('Successfully connected to MongoDB database with tuned connection pool.');
+    } catch (dbErr) {
+      logger.warn({ err: dbErr }, 'Primary MongoDB connection failed. Attempting local MongoDB fallback...');
+      const fallbackUris = [
+        'mongodb://127.0.0.1:27017/medflow',
+        'mongodb://127.0.0.1:27018/medflow',
+      ];
+      let connected = false;
+      for (const fallbackUri of fallbackUris) {
+        try {
+          await mongoose.connect(fallbackUri, {
+            maxPoolSize: 200,
+            minPoolSize: 20,
+            socketTimeoutMS: 45000,
+            serverSelectionTimeoutMS: 3000,
+          });
+          logger.info(`Successfully connected to local MongoDB fallback at ${fallbackUri}`);
+          connected = true;
+          break;
+        } catch {
+          // Continue to next fallback URI
+        }
+      }
+      if (!connected) {
+        throw dbErr;
+      }
+    }
 
     // 3. HTTP & Socket.IO Gateway Setup with Socket Tuning for Extreme Concurrency
     server = createServer(app);

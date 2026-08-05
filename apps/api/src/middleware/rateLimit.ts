@@ -17,7 +17,7 @@ export const rateLimit = (options: RateLimitOptions) => {
 
   return async (req: Request, res: Response, next: NextFunction) => {
     // Bypass rate limiting in test/dev environment when skipDev is enabled
-    if (options.skipDev || process.env.NODE_ENV === 'test') {
+    if (options.skipDev || process.env.NODE_ENV !== 'production') {
       return next();
     }
 

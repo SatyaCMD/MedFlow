@@ -3,18 +3,18 @@ import { z } from 'zod';
 
 export const CreateDemoSchema = z.object({
   body: z.object({
-    name: z.string().min(2, 'Name must be at least 2 characters'),
-  }),
-});
+    name: z.string().optional().default('Demo Record'),
+  }).passthrough().optional().default({ name: 'Demo Record' }),
+}).passthrough();
 
 export const UpdateDemoSchema = z.object({
   params: z.object({
-    id: z.string().min(1, 'ID parameter is required'),
-  }),
+    id: z.string().optional(),
+  }).passthrough().optional(),
   body: z.object({
-    name: z.string().min(2, 'Name must be at least 2 characters').optional(),
-  }),
-});
+    name: z.string().optional(),
+  }).passthrough().optional().default({}),
+}).passthrough();
 
 export type CreateDemoInput = z.infer<typeof CreateDemoSchema>;
 

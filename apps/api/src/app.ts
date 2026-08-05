@@ -87,9 +87,10 @@ app.use('/api/v1/demo', demoRouter);
 
 // Metrics Scraping Endpoint
 app.get('/metrics', getMetricsHandler);
+app.get('/api/v1/metrics', getMetricsHandler);
 
 // Liveness Probe
-app.get('/health', (_req, res) => {
+const healthHandler = (_req: express.Request, res: express.Response) => {
   res.status(200).json({
     success: true,
     data: {
@@ -97,10 +98,13 @@ app.get('/health', (_req, res) => {
       timestamp: new Date().toISOString(),
     },
   });
-});
+};
+
+app.get('/health', healthHandler);
+app.get('/api/v1/health', healthHandler);
 
 // Readiness Probe
-app.get('/ready', async (_req, res) => {
+const readyHandler = async (_req: express.Request, res: express.Response) => {
   const isMongoConnected = mongoose.connection.readyState === 1;
   const isRedisConnected = redis.status === 'ready';
 
@@ -131,7 +135,10 @@ app.get('/ready', async (_req, res) => {
       timestamp: new Date().toISOString(),
     },
   });
-});
+};
+
+app.get('/ready', readyHandler);
+app.get('/api/v1/ready', readyHandler);
 
 // 404 Catch-All Handler (Ensures all unmapped routes return structured JSON instead of default HTML)
 app.use((req, res) => {

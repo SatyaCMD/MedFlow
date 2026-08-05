@@ -35,6 +35,6 @@ export const metricsMiddleware = (req: Request, res: Response, next: NextFunctio
 };
 
 export const getMetricsHandler = async (_req: Request, res: Response) => {
-  res.set('Content-Type', client.register.contentType);
-  res.end(await client.register.metrics());
+  const metrics = await client.register.metrics();
+  res.status(200).setHeader('Content-Type', client.register.contentType).send(metrics);
 };
