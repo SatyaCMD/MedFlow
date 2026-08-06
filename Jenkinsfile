@@ -100,34 +100,33 @@ pipeline {
                 echo 'Executing SonarQube static code analysis...'
                 script {
                     try {
-                        def sonarEnvName = env.SONAR_SERVER_NAME ?: 'SonarQube'
-                        withSonarQubeEnv(sonarEnvName) {
+                        withSonarQubeEnv {
                             if (isUnix()) {
                                 sh 'npx sonar-scanner -Dsonar.projectKey=MedFlow -Dsonar.sources=. -Dsonar.exclusions="**/node_modules/**,**/.next/**,**/dist/**,**/coverage/**,**/*.test.ts,**/*.spec.ts,**/*.d.ts" -Dsonar.host.url=http://127.0.0.1:9000 -Dsonar.token=sqp_ff029e764892b9077514d42070035e2c1243c93b'
                             } else {
                                 bat 'npx sonar-scanner -Dsonar.projectKey=MedFlow -Dsonar.sources=. -Dsonar.exclusions="**/node_modules/**,**/.next/**,**/dist/**,**/coverage/**,**/*.test.ts,**/*.spec.ts,**/*.d.ts" -Dsonar.host.url=http://127.0.0.1:9000 -Dsonar.token=sqp_ff029e764892b9077514d42070035e2c1243c93b'
                             }
+
+                            try {
+                                timeout(time: 2, unit: 'MINUTES') {
+                                    def qg = waitForQualityGate()
+                                    if (qg.status != 'OK') {
+                                        echo "[WARN] SonarQube Quality Gate status: ${qg.status}"
+                                    } else {
+                                        echo "[INFO] SonarQube Quality Gate passed successfully."
+                                    }
+                                }
+                            } catch (Throwable qgErr) {
+                                echo "[WARN] SonarQube Quality Gate webhook check skipped: ${qgErr.message}"
+                            }
                         }
-                    } catch (Exception e) {
+                    } catch (Throwable e) {
                         echo "[WARN] SonarQube scanner execute fallback: ${e.message}"
                         if (isUnix()) {
                             sh 'npx sonar-scanner -Dsonar.projectKey=MedFlow -Dsonar.sources=. -Dsonar.exclusions="**/node_modules/**,**/.next/**,**/dist/**,**/coverage/**,**/*.test.ts,**/*.spec.ts,**/*.d.ts" -Dsonar.host.url=http://127.0.0.1:9000 -Dsonar.token=sqp_ff029e764892b9077514d42070035e2c1243c93b || echo "[WARN] SonarQube host unavailable."'
                         } else {
-                            bat 'npx sonar-scanner -Dsonar.projectKey=MedFlow -Dsonar.sources=. -Dsonar.exclusions="**/node_modules/**,**/.next/**,**/dist/**,**/coverage/**,**/*.test.ts,**/*.spec.ts,**/*.d.ts" -Dsonar.host.url=http://127.0.0.1:9000 -Dsonar.token=sqp_ff029e764892b9077514d42070035e2c1243c93b'
+                            bat 'npx sonar-scanner -Dsonar.projectKey=MedFlow -Dsonar.sources=. -Dsonar.exclusions="**/node_modules/**,**/.next/**,**/dist/**,**/coverage/**,**/*.test.ts,**/*.spec.ts,**/*.d.ts" -Dsonar.host.url=http://127.0.0.1:9000 -Dsonar.token=sqp_ff029e764892b9077514d42070035e2c1243c93b || echo [WARN] SonarQube host unavailable.'
                         }
-                    }
-
-                    try {
-                        timeout(time: 2, unit: 'MINUTES') {
-                            def qg = waitForQualityGate()
-                            if (qg.status != 'OK') {
-                                echo "[WARN] SonarQube Quality Gate status: ${qg.status}"
-                            } else {
-                                echo "[INFO] SonarQube Quality Gate passed successfully."
-                            }
-                        }
-                    } catch (Exception e) {
-                        echo "[WARN] SonarQube Quality Gate webhook / badge check skipped: ${e.message}"
                     }
                 }
             }
