@@ -39,7 +39,7 @@ export function DataTable<T>({
               {columns.map((col, idx) => (
                 <th
                   key={idx}
-                  className={`px-6 py-3.5 text-xs font-black uppercase tracking-wider text-slate-700 whitespace-nowrap ${
+                  className={`px-4 sm:px-5 py-3.5 text-xs font-black uppercase tracking-wider text-slate-700 whitespace-nowrap ${
                     col.align === 'center' ? 'text-center' : col.align === 'right' ? 'text-right' : 'text-left'
                   }`}
                 >
@@ -55,7 +55,7 @@ export function DataTable<T>({
               Array.from({ length: 5 }).map((_, rIdx) => (
                 <tr key={rIdx}>
                   {columns.map((_, cIdx) => (
-                    <td key={cIdx} className="px-6 py-4 whitespace-nowrap">
+                    <td key={cIdx} className="px-4 sm:px-5 py-3.5 whitespace-nowrap">
                       <div className="h-4 bg-slate-100 rounded animate-pulse w-full max-w-[120px]" />
                     </td>
                   ))}
@@ -84,7 +84,7 @@ export function DataTable<T>({
                   {columns.map((col, cIdx) => (
                     <td
                       key={cIdx}
-                      className={`px-6 py-4 text-xs text-slate-800 font-semibold whitespace-nowrap ${
+                      className={`px-4 sm:px-5 py-3.5 text-xs text-slate-800 font-semibold whitespace-nowrap ${
                         col.align === 'center' ? 'text-center' : col.align === 'right' ? 'text-right' : 'text-left'
                       }`}
                     >

@@ -115,10 +115,15 @@ export const PrescriptionPdfModal: React.FC<PrescriptionPdfModalProps> = ({
             <style>
               @import url('https://fonts.googleapis.com/css2?family=Great+Vibes&family=Dancing+Script:wght@700&family=Inter:wght@400;600;700;800;900&display=swap');
               
+              @page {
+                size: auto;
+                margin: 0mm;
+              }
+
               * { box-sizing: border-box; margin: 0; padding: 0; }
               body {
                 font-family: 'Inter', 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-                padding: 40px;
+                padding: 35px 40px;
                 color: #0f172a;
                 max-width: 800px;
                 margin: 0 auto;
@@ -268,7 +273,11 @@ export const PrescriptionPdfModal: React.FC<PrescriptionPdfModalProps> = ({
               }
 
               @media print {
-                body { padding: 0; }
+                @page {
+                  size: auto;
+                  margin: 0mm;
+                }
+                body { padding: 35px 40px !important; }
               }
             </style>
           </head>

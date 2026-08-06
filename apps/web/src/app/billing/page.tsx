@@ -213,31 +213,31 @@ export default function BillingPage() {
     {
       header: 'Billing Date',
       accessor: (row: PatientInvoice) => (
-        <span className="text-slate-600 font-semibold text-xs">{row.date}</span>
+        <span className="text-slate-600 font-semibold text-xs whitespace-nowrap">{row.date}</span>
       ),
     },
     {
       header: 'Patient Name & MRN',
       accessor: (row: PatientInvoice) => (
-        <div>
-          <span className="font-bold text-slate-900 block text-xs">{row.patientName}</span>
-          <span className="text-[10px] font-bold text-blue-600">MRN: {row.mrn}</span>
+        <div className="max-w-[160px]">
+          <span className="font-bold text-slate-900 block text-xs truncate">{row.patientName}</span>
+          <span className="text-[10px] font-bold text-blue-600 block">MRN: {row.mrn}</span>
         </div>
       ),
     },
     {
       header: 'Department & Doctor',
       accessor: (row: PatientInvoice) => (
-        <div>
-          <span className="text-slate-800 font-semibold text-xs block">{row.department}</span>
-          <span className="text-[10px] font-bold text-slate-500">{row.attendingDoctor}</span>
+        <div className="max-w-[170px]">
+          <span className="text-slate-800 font-semibold text-xs block truncate">{row.department}</span>
+          <span className="text-[10px] font-bold text-slate-500 block truncate">{row.attendingDoctor}</span>
         </div>
       ),
     },
     {
       header: 'Line Items',
       accessor: (row: PatientInvoice) => (
-        <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-100/90 border border-slate-200 text-slate-700 font-extrabold rounded-full text-[10px] whitespace-nowrap shadow-2xs">
+        <span className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-slate-100/90 border border-slate-200 text-slate-700 font-extrabold rounded-full text-[10px] whitespace-nowrap shadow-2xs">
           <span className="w-1.5 h-1.5 rounded-full bg-blue-600 shrink-0" />
           <span>{row.lineItems.length} {row.lineItems.length === 1 ? 'Itemized Charge' : 'Itemized Charges'}</span>
         </span>
@@ -245,14 +245,16 @@ export default function BillingPage() {
     },
     {
       header: 'GST Tax (5%)',
+      align: 'right' as const,
       accessor: (row: PatientInvoice) => (
-        <span className="text-slate-500 font-semibold text-xs">₹{row.gstAmount.toLocaleString('en-IN')}</span>
+        <span className="text-slate-500 font-semibold text-xs whitespace-nowrap">₹{row.gstAmount.toLocaleString('en-IN')}</span>
       ),
     },
     {
       header: 'Total Invoice (₹)',
+      align: 'right' as const,
       accessor: (row: PatientInvoice) => (
-        <span className="font-black text-slate-900 text-xs">₹{row.totalAmount.toLocaleString('en-IN')}</span>
+        <span className="font-black text-slate-900 text-xs whitespace-nowrap px-1">₹{row.totalAmount.toLocaleString('en-IN')}</span>
       ),
     },
     {
@@ -260,7 +262,7 @@ export default function BillingPage() {
       accessor: (row: PatientInvoice) => (
         <button
           onClick={() => handleOpenTpaModal(row)}
-          className={`px-3 py-1 rounded-full text-[10px] font-black uppercase flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 shadow-2xs hover:shadow-md ${row.tpaStatus.includes('Approved') || row.tpaStatus.includes('Settled')
+          className={`px-3 py-1 rounded-full text-[10px] font-black uppercase flex items-center gap-1.5 cursor-pointer transition-all hover:scale-105 shadow-2xs hover:shadow-md whitespace-nowrap ${row.tpaStatus.includes('Approved') || row.tpaStatus.includes('Settled')
               ? 'bg-emerald-100 text-emerald-900 border border-emerald-300 hover:bg-emerald-200'
               : row.tpaStatus.includes('Direct')
                 ? 'bg-blue-100 text-blue-900 border border-blue-300 hover:bg-blue-200'
@@ -279,7 +281,7 @@ export default function BillingPage() {
       accessor: (row: PatientInvoice) => (
         <button
           onClick={() => handleOpenInvoiceModal(row)}
-          className="px-3 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-xs rounded-lg border border-blue-200 flex items-center gap-1.5 cursor-pointer transition-colors"
+          className="px-3 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-xs rounded-lg border border-blue-200 flex items-center gap-1.5 cursor-pointer transition-colors whitespace-nowrap"
         >
           <FileText className="w-3.5 h-3.5" />
           <span>View Invoice</span>
