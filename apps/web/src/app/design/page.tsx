@@ -91,20 +91,23 @@ export default function DesignStyleGuide() {
             { id: 'buttons', label: 'Buttons', icon: Component },
             { id: 'badges', label: 'Status Badges', icon: ShieldCheck },
             { id: 'cards', label: 'UI Cards', icon: Layers },
-          ].map((tab) => (
-            <button
-              key={tab.id}
-              onClick={() => setActiveTab(tab.id as any)}
-              className={`flex-1 py-2.5 px-4 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer whitespace-nowrap ${
-                activeTab === tab.id
-                  ? 'bg-white text-blue-600 shadow-md'
-                  : 'text-slate-600 hover:text-slate-900'
-              }`}
-            >
-              <tab.icon className="w-3.5 h-3.5" />
-              <span>{tab.label}</span>
-            </button>
-          ))}
+          ].map((tab) => {
+            const TabIcon = tab.icon;
+            return (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as any)}
+                className={`flex-1 py-2.5 px-4 rounded-xl text-xs font-bold flex items-center justify-center gap-2 transition-all cursor-pointer whitespace-nowrap ${
+                  activeTab === tab.id
+                    ? 'bg-white text-blue-600 shadow-md'
+                    : 'text-slate-600 hover:text-slate-900'
+                }`}
+              >
+                <TabIcon className="w-3.5 h-3.5" />
+                <span>{tab.label}</span>
+              </button>
+            );
+          })}
         </div>
 
         {/* Dynamic Display Content per Tab */}
