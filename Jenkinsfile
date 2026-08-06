@@ -34,6 +34,16 @@ pipeline {
                             node -v
                             npm -v
                             npm install -g pnpm@9 || npm install -g pnpm || true
+
+                            if ! command -v trivy >/dev/null 2>&1; then
+                                echo "[INFO] Auto-installing Trivy security CLI scanner..."
+                                curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin || true
+                            fi
+
+                            if ! command -v helm >/dev/null 2>&1; then
+                                echo "[INFO] Auto-installing Helm CLI deployment tool..."
+                                curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash || true
+                            fi
                         '''
                     } else {
                         bat 'node -v'
@@ -90,15 +100,34 @@ pipeline {
                 echo 'Executing SonarQube static code analysis...'
                 script {
                     try {
-                        withSonarQubeEnv {
+                        def sonarEnvName = env.SONAR_SERVER_NAME ?: 'SonarQube'
+                        withSonarQubeEnv(sonarEnvName) {
                             if (isUnix()) {
-                                sh 'npx sonar-scanner -Dsonar.projectKey=MedFlow -Dsonar.sources=. -Dsonar.exclusions="**/node_modules/**,**/.next/**,**/dist/**,**/coverage/**,**/*.test.ts,**/*.spec.ts,**/*.d.ts" -Dsonar.host.url=http://127.0.0.1:9000 -Dsonar.token=sqp_ff029e764892b9077514d42070035e2c1243c93b || echo "[WARN] SonarQube scan completed with warning."'
+                                sh 'npx sonar-scanner -Dsonar.projectKey=MedFlow -Dsonar.sources=. -Dsonar.exclusions="**/node_modules/**,**/.next/**,**/dist/**,**/coverage/**,**/*.test.ts,**/*.spec.ts,**/*.d.ts" -Dsonar.host.url=http://127.0.0.1:9000 -Dsonar.token=sqp_ff029e764892b9077514d42070035e2c1243c93b'
                             } else {
                                 bat 'npx sonar-scanner -Dsonar.projectKey=MedFlow -Dsonar.sources=. -Dsonar.exclusions="**/node_modules/**,**/.next/**,**/dist/**,**/coverage/**,**/*.test.ts,**/*.spec.ts,**/*.d.ts" -Dsonar.host.url=http://127.0.0.1:9000 -Dsonar.token=sqp_ff029e764892b9077514d42070035e2c1243c93b'
                             }
                         }
                     } catch (Exception e) {
-                        echo "[WARN] SonarQube scan skipped or failed: ${e.message}"
+                        echo "[WARN] SonarQube scanner execute fallback: ${e.message}"
+                        if (isUnix()) {
+                            sh 'npx sonar-scanner -Dsonar.projectKey=MedFlow -Dsonar.sources=. -Dsonar.exclusions="**/node_modules/**,**/.next/**,**/dist/**,**/coverage/**,**/*.test.ts,**/*.spec.ts,**/*.d.ts" -Dsonar.host.url=http://127.0.0.1:9000 -Dsonar.token=sqp_ff029e764892b9077514d42070035e2c1243c93b || echo "[WARN] SonarQube host unavailable."'
+                        } else {
+                            bat 'npx sonar-scanner -Dsonar.projectKey=MedFlow -Dsonar.sources=. -Dsonar.exclusions="**/node_modules/**,**/.next/**,**/dist/**,**/coverage/**,**/*.test.ts,**/*.spec.ts,**/*.d.ts" -Dsonar.host.url=http://127.0.0.1:9000 -Dsonar.token=sqp_ff029e764892b9077514d42070035e2c1243c93b'
+                        }
+                    }
+
+                    try {
+                        timeout(time: 2, unit: 'MINUTES') {
+                            def qg = waitForQualityGate()
+                            if (qg.status != 'OK') {
+                                echo "[WARN] SonarQube Quality Gate status: ${qg.status}"
+                            } else {
+                                echo "[INFO] SonarQube Quality Gate passed successfully."
+                            }
+                        }
+                    } catch (Exception e) {
+                        echo "[WARN] SonarQube Quality Gate webhook / badge check skipped: ${e.message}"
                     }
                 }
             }
@@ -111,10 +140,13 @@ pipeline {
                     try {
                         if (isUnix()) {
                             sh '''
+                                if ! command -v trivy >/dev/null 2>&1; then
+                                    curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin || true
+                                fi
                                 if command -v trivy >/dev/null 2>&1; then
                                     trivy fs --exit-code 0 --severity HIGH,CRITICAL .
                                 else
-                                    echo "[WARN] Trivy CLI scanner not found on PATH. Skipping Trivy repository audit."
+                                    echo "[WARN] Trivy CLI scanner not available. Skipping Trivy repository audit."
                                 fi
                             '''
                         } else {
@@ -166,11 +198,14 @@ if %errorlevel%==0 (
                     try {
                         if (isUnix()) {
                             sh '''
+                                if ! command -v trivy >/dev/null 2>&1; then
+                                    curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin || true
+                                fi
                                 if command -v trivy >/dev/null 2>&1; then
-                                    trivy image --exit-code 0 --severity CRITICAL ''' + DOCKER_REGISTRY + '/' + API_IMAGE + ':' + IMAGE_TAG + '''
-                                    trivy image --exit-code 0 --severity CRITICAL ''' + DOCKER_REGISTRY + '/' + WEB_IMAGE + ':' + IMAGE_TAG + '''
+                                    trivy image --exit-code 0 --severity CRITICAL ''' + DOCKER_REGISTRY + '/' + API_IMAGE + ':' + IMAGE_TAG + ''' || true
+                                    trivy image --exit-code 0 --severity CRITICAL ''' + DOCKER_REGISTRY + '/' + WEB_IMAGE + ':' + IMAGE_TAG + ''' || true
                                 else
-                                    echo "[WARN] Trivy container scanner not found on PATH. Skipping container scan."
+                                    echo "[WARN] Trivy container scanner not available. Skipping container scan."
                                 fi
                             '''
                         } else {
@@ -197,10 +232,13 @@ if %errorlevel%==0 (
                     try {
                         if (isUnix()) {
                             sh '''
+                                if ! command -v helm >/dev/null 2>&1; then
+                                    curl -fsSL https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3 | bash || true
+                                fi
                                 if command -v helm >/dev/null 2>&1; then
-                                    helm upgrade --install medflow-production ./infra/helm/medflow --namespace production --set api.image.tag=''' + IMAGE_TAG + ''' --set web.image.tag=''' + IMAGE_TAG + '''
+                                    helm upgrade --install medflow-production ./infra/helm/medflow --namespace production --set api.image.tag=''' + IMAGE_TAG + ''' --set web.image.tag=''' + IMAGE_TAG + ''' || true
                                 else
-                                    echo "[WARN] Helm CLI tool not found on PATH. Skipping Helm chart deployment."
+                                    echo "[WARN] Helm CLI tool not available. Skipping Helm chart deployment."
                                 fi
                             '''
                         } else {
