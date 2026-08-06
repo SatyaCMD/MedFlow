@@ -75,9 +75,9 @@ export function printSinglePageReceipt(data: ReceiptPrintData) {
           .header {
             display: flex;
             justify-content: space-between;
-            align-items: center;
+            align-items: flex-start;
             border-bottom: 2.5px solid #2563eb;
-            padding-bottom: 8px;
+            padding-bottom: 10px;
           }
 
           .brand-logo {
@@ -115,28 +115,36 @@ export function printSinglePageReceipt(data: ReceiptPrintData) {
           }
 
           .invoice-badge {
+            display: flex;
+            flex-direction: column;
+            align-items: flex-end;
+            gap: 4px;
             text-align: right;
+            flex-shrink: 0;
           }
 
           .invoice-title {
-            font-size: 15pt;
+            font-size: 13pt;
             font-weight: 900;
             color: #0f172a;
             text-transform: uppercase;
             letter-spacing: 0.5px;
+            white-space: nowrap;
+            line-height: 1.2;
           }
 
           .status-tag {
-            display: inline-block;
+            display: inline-flex;
+            align-items: center;
             background: #dcfce7;
             color: #15803d;
             border: 1px solid #86efac;
-            padding: 2px 9px;
+            padding: 3px 10px;
             border-radius: 20px;
             font-size: 7.5pt;
             font-weight: 800;
-            margin-top: 3px;
             text-transform: uppercase;
+            white-space: nowrap;
           }
 
           /* Info Cards Grid */
@@ -212,8 +220,9 @@ export function printSinglePageReceipt(data: ReceiptPrintData) {
           .totals-section {
             display: flex;
             justify-content: space-between;
-            align-items: flex-start;
+            align-items: stretch;
             gap: 16px;
+            margin-top: 4px;
           }
 
           .payment-card-box {
@@ -243,30 +252,35 @@ export function printSinglePageReceipt(data: ReceiptPrintData) {
           }
 
           .totals-box {
-            width: 210px;
+            width: 250px;
             background: #f0fdf4;
             border: 1px solid #bbf7d0;
             border-radius: 10px;
-            padding: 10px 12px;
+            padding: 10px 14px;
+            flex-shrink: 0;
           }
 
           .totals-row {
             display: flex;
             justify-content: space-between;
+            align-items: center;
             font-size: 8pt;
             color: #475569;
-            margin-bottom: 3px;
+            margin-bottom: 4px;
+            white-space: nowrap;
           }
 
           .grand-total {
             border-top: 1.5px solid #86efac;
-            padding-top: 5px;
-            margin-top: 5px;
+            padding-top: 6px;
+            margin-top: 6px;
             display: flex;
             justify-content: space-between;
+            align-items: center;
             font-size: 10.5pt;
             font-weight: 900;
             color: #15803d;
+            white-space: nowrap;
           }
 
           /* Security & Sign Footer */
@@ -379,7 +393,7 @@ export function printSinglePageReceipt(data: ReceiptPrintData) {
           <!-- Top Header -->
           <div class="header">
             <div class="brand-logo">
-              <div class="brand-icon">✚</div>
+              <div class="brand-icon">&#10010;</div>
               <div>
                 <div class="brand-title">MediFlow Healthcare</div>
                 <div class="brand-sub">Enterprise Billing & Financial Telemetry</div>
@@ -387,7 +401,7 @@ export function printSinglePageReceipt(data: ReceiptPrintData) {
             </div>
             <div class="invoice-badge">
               <div class="invoice-title">Official Tax Receipt</div>
-              <div class="status-tag">✓ ${data.status || 'Paid & Verified'}</div>
+              <div class="status-tag">&#10003; ${data.status || 'Paid & Verified'}</div>
             </div>
           </div>
 
@@ -413,9 +427,9 @@ export function printSinglePageReceipt(data: ReceiptPrintData) {
             <table>
               <thead>
                 <tr>
-                  <th style="width: 55%;">Healthcare Description / Service Item</th>
+                  <th style="width: 50%;">Healthcare Description / Service Item</th>
                   <th style="width: 25%;">Category</th>
-                  <th style="width: 20%; text-align: right;">Total Amount (₹)</th>
+                  <th style="width: 25%; text-align: right; white-space: nowrap;">Total Amount (&#8377;)</th>
                 </tr>
               </thead>
               <tbody>
@@ -427,7 +441,7 @@ export function printSinglePageReceipt(data: ReceiptPrintData) {
                     </div>
                   </td>
                   <td>${data.itemCategory || 'Medical Service'}</td>
-                  <td style="text-align: right; font-weight: 800;">${data.amount}</td>
+                  <td style="text-align: right; font-weight: 800; white-space: nowrap;">&#8377;${numericAmount.toLocaleString('en-IN')}</td>
                 </tr>
               </tbody>
             </table>
@@ -446,15 +460,15 @@ export function printSinglePageReceipt(data: ReceiptPrintData) {
             <div class="totals-box">
               <div class="totals-row">
                 <span>Subtotal (Net):</span>
-                <span>₹${subtotal}</span>
+                <span>&#8377;${parseFloat(subtotal).toLocaleString('en-IN')}</span>
               </div>
               <div class="totals-row">
                 <span>Medical GST (5%):</span>
-                <span>₹${taxAmount}</span>
+                <span>&#8377;${parseFloat(taxAmount).toLocaleString('en-IN')}</span>
               </div>
               <div class="grand-total">
                 <span>Grand Total:</span>
-                <span>${data.amount}</span>
+                <span>&#8377;${numericAmount.toLocaleString('en-IN')}</span>
               </div>
             </div>
           </div>
