@@ -49,7 +49,7 @@ pipeline {
                 echo 'Installing workspace dependencies...'
                 script {
                     if (isUnix()) {
-                        sh 'npx pnpm install --no-frozen-lockfile'
+                        sh 'pnpm install --no-frozen-lockfile || npx pnpm install --no-frozen-lockfile'
                     } else {
                         bat 'npx pnpm install --no-frozen-lockfile'
                     }
@@ -62,7 +62,7 @@ pipeline {
                 echo 'Running static analysis linting checks...'
                 script {
                     if (isUnix()) {
-                        sh 'npx pnpm run lint'
+                        sh 'pnpm run lint || npx pnpm run lint'
                     } else {
                         bat 'npx pnpm run lint'
                     }
@@ -76,7 +76,7 @@ pipeline {
                 script {
                     if (isUnix()) {
                         sh 'rm -rf apps/web/.next'
-                        sh 'npx pnpm run build'
+                        sh 'pnpm run build || npx pnpm run build'
                     } else {
                         bat 'if exist apps\\web\\.next rmdir /s /q apps\\web\\.next'
                         bat 'npx pnpm run build'
@@ -92,21 +92,13 @@ pipeline {
                     try {
                         withSonarQubeEnv {
                             if (isUnix()) {
-                                sh 'npx sonar-scanner -Dsonar.projectKey=MedFlow -Dsonar.sources=. -Dsonar.exclusions="**/node_modules/**,**/.next/**,**/dist/**,**/coverage/**,**/*.test.ts,**/*.spec.ts,**/*.d.ts" -Dsonar.host.url=http://127.0.0.1:9000 -Dsonar.token=sqp_ff029e764892b9077514d42070035e2c1243c93b'
+                                sh 'npx sonar-scanner -Dsonar.projectKey=MedFlow -Dsonar.sources=. -Dsonar.exclusions="**/node_modules/**,**/.next/**,**/dist/**,**/coverage/**,**/*.test.ts,**/*.spec.ts,**/*.d.ts" -Dsonar.host.url=http://127.0.0.1:9000 -Dsonar.token=sqp_ff029e764892b9077514d42070035e2c1243c93b || echo "[WARN] SonarQube scan completed with warning."'
                             } else {
                                 bat 'npx sonar-scanner -Dsonar.projectKey=MedFlow -Dsonar.sources=. -Dsonar.exclusions="**/node_modules/**,**/.next/**,**/dist/**,**/coverage/**,**/*.test.ts,**/*.spec.ts,**/*.d.ts" -Dsonar.host.url=http://127.0.0.1:9000 -Dsonar.token=sqp_ff029e764892b9077514d42070035e2c1243c93b'
                             }
                         }
                     } catch (Exception e) {
-                        try {
-                            if (isUnix()) {
-                                sh 'npx sonar-scanner -Dsonar.projectKey=MedFlow -Dsonar.sources=. -Dsonar.exclusions="**/node_modules/**,**/.next/**,**/dist/**,**/coverage/**,**/*.test.ts,**/*.spec.ts,**/*.d.ts" -Dsonar.host.url=http://127.0.0.1:9000 -Dsonar.token=sqp_ff029e764892b9077514d42070035e2c1243c93b'
-                            } else {
-                                bat 'npx sonar-scanner -Dsonar.projectKey=MedFlow -Dsonar.sources=. -Dsonar.exclusions="**/node_modules/**,**/.next/**,**/dist/**,**/coverage/**,**/*.test.ts,**/*.spec.ts,**/*.d.ts" -Dsonar.host.url=http://127.0.0.1:9000 -Dsonar.token=sqp_ff029e764892b9077514d42070035e2c1243c93b'
-                            }
-                        } catch (Exception ex) {
-                            echo "[WARN] SonarQube scan skipped or failed: ${ex.message}"
-                        }
+                        echo "[WARN] SonarQube scan skipped or failed: ${e.message}"
                     }
                 }
             }
@@ -118,7 +110,13 @@ pipeline {
                 script {
                     try {
                         if (isUnix()) {
-                            sh 'trivy fs --exit-code 0 --severity HIGH,CRITICAL .'
+                            sh '''
+                                if command -v trivy >/dev/null 2>&1; then
+                                    trivy fs --exit-code 0 --severity HIGH,CRITICAL .
+                                else
+                                    echo "[WARN] Trivy CLI scanner not found on PATH. Skipping Trivy repository audit."
+                                fi
+                            '''
                         } else {
                             bat '''@echo off
 where trivy >nul 2>&1
@@ -142,8 +140,14 @@ if %errorlevel%==0 (
                 script {
                     try {
                         if (isUnix()) {
-                            sh "docker build -f infra/docker/api.prod.Dockerfile -t ${DOCKER_REGISTRY}/${API_IMAGE}:${IMAGE_TAG} -t ${DOCKER_REGISTRY}/${API_IMAGE}:latest ."
-                            sh "docker build -f infra/docker/web.prod.Dockerfile -t ${DOCKER_REGISTRY}/${WEB_IMAGE}:${IMAGE_TAG} -t ${DOCKER_REGISTRY}/${WEB_IMAGE}:latest ."
+                            sh '''
+                                if command -v docker >/dev/null 2>&1; then
+                                    docker build -f infra/docker/api.prod.Dockerfile -t ''' + DOCKER_REGISTRY + '/' + API_IMAGE + ':' + IMAGE_TAG + ''' -t ''' + DOCKER_REGISTRY + '/' + API_IMAGE + ''':latest .
+                                    docker build -f infra/docker/web.prod.Dockerfile -t ''' + DOCKER_REGISTRY + '/' + WEB_IMAGE + ':' + IMAGE_TAG + ''' -t ''' + DOCKER_REGISTRY + '/' + WEB_IMAGE + ''':latest .
+                                else
+                                    echo "[WARN] Docker daemon CLI not found on PATH. Skipping Docker build."
+                                fi
+                            '''
                         } else {
                             bat "docker build -f infra/docker/api.prod.Dockerfile -t ${DOCKER_REGISTRY}/${API_IMAGE}:${IMAGE_TAG} -t ${DOCKER_REGISTRY}/${API_IMAGE}:latest ."
                             bat "docker build -f infra/docker/web.prod.Dockerfile -t ${DOCKER_REGISTRY}/${WEB_IMAGE}:${IMAGE_TAG} -t ${DOCKER_REGISTRY}/${WEB_IMAGE}:latest ."
@@ -161,8 +165,14 @@ if %errorlevel%==0 (
                 script {
                     try {
                         if (isUnix()) {
-                            sh "trivy image --exit-code 0 --severity CRITICAL ${DOCKER_REGISTRY}/${API_IMAGE}:${IMAGE_TAG}"
-                            sh "trivy image --exit-code 0 --severity CRITICAL ${DOCKER_REGISTRY}/${WEB_IMAGE}:${IMAGE_TAG}"
+                            sh '''
+                                if command -v trivy >/dev/null 2>&1; then
+                                    trivy image --exit-code 0 --severity CRITICAL ''' + DOCKER_REGISTRY + '/' + API_IMAGE + ':' + IMAGE_TAG + '''
+                                    trivy image --exit-code 0 --severity CRITICAL ''' + DOCKER_REGISTRY + '/' + WEB_IMAGE + ':' + IMAGE_TAG + '''
+                                else
+                                    echo "[WARN] Trivy container scanner not found on PATH. Skipping container scan."
+                                fi
+                            '''
                         } else {
                             bat '''@echo off
 where trivy >nul 2>&1
@@ -186,7 +196,13 @@ if %errorlevel%==0 (
                 script {
                     try {
                         if (isUnix()) {
-                            sh "helm upgrade --install medflow-production ./infra/helm/medflow --namespace production --set api.image.tag=${IMAGE_TAG} --set web.image.tag=${IMAGE_TAG}"
+                            sh '''
+                                if command -v helm >/dev/null 2>&1; then
+                                    helm upgrade --install medflow-production ./infra/helm/medflow --namespace production --set api.image.tag=''' + IMAGE_TAG + ''' --set web.image.tag=''' + IMAGE_TAG + '''
+                                else
+                                    echo "[WARN] Helm CLI tool not found on PATH. Skipping Helm chart deployment."
+                                fi
+                            '''
                         } else {
                             bat '''@echo off
 where helm >nul 2>&1
