@@ -153,23 +153,26 @@ export const AuthSidebar: React.FC<AuthSidebarProps> = ({ title, subtitle }) => 
                 transition={{ duration: 0.2 }}
                 className="grid grid-cols-1 gap-2.5"
               >
-                {securityFeatures.map((item, idx) => (
-                  <div
-                    key={idx}
-                    className="p-3.5 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-blue-400/40 rounded-xl transition-all flex items-start gap-3 group"
-                  >
-                    <div className="p-2 bg-blue-500/20 text-blue-300 rounded-lg group-hover:bg-blue-600 group-hover:text-white transition-colors shrink-0">
-                      <item.icon className="w-4 h-4" />
+                {securityFeatures.map((item, idx) => {
+                  const SecIcon = item.icon;
+                  return (
+                    <div
+                      key={idx}
+                      className="p-3.5 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-blue-400/40 rounded-xl transition-all flex items-start gap-3 group"
+                    >
+                      <div className="p-2 bg-blue-500/20 text-blue-300 rounded-lg group-hover:bg-blue-600 group-hover:text-white transition-colors shrink-0">
+                        <SecIcon className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-bold text-white group-hover:text-blue-200 transition-colors flex items-center gap-1.5">
+                          {item.title}
+                          <CheckCircle2 className="w-3 h-3 text-emerald-400" />
+                        </h4>
+                        <p className="text-[11px] text-slate-400 font-medium mt-0.5 leading-relaxed">{item.desc}</p>
+                      </div>
                     </div>
-                    <div>
-                      <h4 className="text-xs font-bold text-white group-hover:text-blue-200 transition-colors flex items-center gap-1.5">
-                        {item.title}
-                        <CheckCircle2 className="w-3 h-3 text-emerald-400" />
-                      </h4>
-                      <p className="text-[11px] text-slate-400 font-medium mt-0.5 leading-relaxed">{item.desc}</p>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </motion.div>
             )}
 
@@ -201,17 +204,20 @@ export const AuthSidebar: React.FC<AuthSidebarProps> = ({ title, subtitle }) => 
                 transition={{ duration: 0.2 }}
                 className="grid grid-cols-1 gap-2.5"
               >
-                {complianceBadges.map((b, idx) => (
-                  <div key={idx} className="p-3.5 bg-white/5 border border-white/10 rounded-xl flex items-center gap-3">
-                    <div className="p-2 bg-emerald-500/20 text-emerald-300 rounded-lg shrink-0">
-                      <b.icon className="w-4 h-4" />
+                {complianceBadges.map((b, idx) => {
+                  const CompIcon = b.icon;
+                  return (
+                    <div key={idx} className="p-3.5 bg-white/5 border border-white/10 rounded-xl flex items-center gap-3">
+                      <div className="p-2 bg-emerald-500/20 text-emerald-300 rounded-lg shrink-0">
+                        <CompIcon className="w-4 h-4" />
+                      </div>
+                      <div>
+                        <h4 className="text-xs font-bold text-white">{b.name}</h4>
+                        <p className="text-[11px] text-slate-400 font-medium leading-relaxed">{b.desc}</p>
+                      </div>
                     </div>
-                    <div>
-                      <h4 className="text-xs font-bold text-white">{b.name}</h4>
-                      <p className="text-[11px] text-slate-400 font-medium leading-relaxed">{b.desc}</p>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </motion.div>
             )}
           </AnimatePresence>

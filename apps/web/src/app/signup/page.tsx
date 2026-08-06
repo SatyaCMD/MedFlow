@@ -117,6 +117,7 @@ export default function SignupPage() {
   const [success, setSuccess] = useState(false);
 
   const activeRoleConfig = PUBLIC_ROLES.find((r) => r.value === role)!;
+  const ActiveRoleIcon = activeRoleConfig.icon;
 
   // Dynamic Password Strength Meter
   const calculatePasswordStrength = (pass: string) => {
@@ -319,25 +320,20 @@ export default function SignupPage() {
           </div>
 
           {/* ROLE-DEDICATED HEADER BANNER */}
-          {(() => {
-            const ActiveIcon = activeRoleConfig.icon;
-            return (
-              <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className={`w-9 h-9 rounded-xl bg-gradient-to-r ${activeRoleConfig.accentGradient} text-white flex items-center justify-center shadow-xs`}>
-                    <ActiveIcon className="w-5 h-5" />
-                  </div>
-                  <div>
-                    <h4 className="font-black text-xs text-slate-900">{activeRoleConfig.title}</h4>
-                    <p className="text-[10px] text-slate-500 font-semibold">{activeRoleConfig.subtitle}</p>
-                  </div>
-                </div>
-                <span className={`text-[10px] font-black border px-2 py-0.5 rounded-full ${activeRoleConfig.badgeColor}`}>
-                  {activeRoleConfig.badge}
-                </span>
+          <div className="p-3.5 bg-slate-50 border border-slate-200 rounded-2xl flex items-center justify-between">
+            <div className="flex items-center gap-3">
+              <div className={`w-9 h-9 rounded-xl bg-gradient-to-r ${activeRoleConfig.accentGradient} text-white flex items-center justify-center shadow-xs`}>
+                <ActiveRoleIcon className="w-5 h-5" />
               </div>
-            );
-          })()}
+              <div>
+                <h4 className="font-black text-xs text-slate-900">{activeRoleConfig.title}</h4>
+                <p className="text-[10px] text-slate-500 font-semibold">{activeRoleConfig.subtitle}</p>
+              </div>
+            </div>
+            <span className={`text-[10px] font-black border px-2 py-0.5 rounded-full ${activeRoleConfig.badgeColor}`}>
+              {activeRoleConfig.badge}
+            </span>
+          </div>
 
           <form onSubmit={handleSubmit} className="space-y-3.5">
             {/* First & Last Name */}

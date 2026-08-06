@@ -117,17 +117,20 @@ export const Navbar: React.FC<NavbarProps> = ({ activeSection }) => {
             className="md:hidden border-t border-slate-200 dark:border-slate-800 bg-white/95 dark:bg-slate-950/95 backdrop-blur-xl px-6 py-6 space-y-4 shadow-xl"
           >
             <nav className="flex flex-col space-y-3">
-              {navLinks.map((link) => (
-                <a
-                  key={link.label}
-                  href={link.href}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-900 text-slate-700 dark:text-slate-200 text-sm font-semibold transition-all"
-                >
-                  <link.icon className="w-4 h-4 text-blue-600" />
-                  <span>{link.label}</span>
-                </a>
-              ))}
+              {navLinks.map((link) => {
+                const LinkIcon = link.icon;
+                return (
+                  <a
+                    key={link.label}
+                    href={link.href}
+                    onClick={() => setMobileMenuOpen(false)}
+                    className="flex items-center gap-3 p-3 rounded-xl hover:bg-slate-50 dark:hover:bg-slate-900 text-slate-700 dark:text-slate-200 text-sm font-semibold transition-all"
+                  >
+                    <LinkIcon className="w-4 h-4 text-blue-600" />
+                    <span>{link.label}</span>
+                  </a>
+                );
+              })}
             </nav>
 
             <div className="pt-4 border-t border-slate-100 dark:border-slate-800 flex flex-col gap-2">
