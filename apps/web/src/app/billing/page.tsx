@@ -237,8 +237,9 @@ export default function BillingPage() {
     {
       header: 'Line Items',
       accessor: (row: PatientInvoice) => (
-        <span className="px-2 py-0.5 bg-slate-100 border border-slate-200 text-slate-700 font-bold rounded-full text-[10px]">
-          {row.lineItems.length} Itemized Charges
+        <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-slate-100/90 border border-slate-200 text-slate-700 font-extrabold rounded-full text-[10px] whitespace-nowrap shadow-2xs">
+          <span className="w-1.5 h-1.5 rounded-full bg-blue-600 shrink-0" />
+          <span>{row.lineItems.length} {row.lineItems.length === 1 ? 'Itemized Charge' : 'Itemized Charges'}</span>
         </span>
       ),
     },
