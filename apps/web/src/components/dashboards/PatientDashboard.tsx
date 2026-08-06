@@ -12,6 +12,7 @@ import { LabReportPdfModal, LabReportModalData } from '../shared/LabReportPdfMod
 import { PharmacyPurchaseModal } from '../shared/PharmacyPurchaseModal';
 import { AmbulanceTrackerModal } from '../shared/AmbulanceTrackerModal';
 import { BookDoctorVisitModal, FollowUpContext } from '../shared/BookDoctorVisitModal';
+import { printSinglePageReceipt } from '../../lib/singlePageReceiptPdf';
 import {
   getSharedAppointments,
   updateSharedAppointmentPaid,
@@ -211,6 +212,23 @@ export const PatientDashboard: React.FC = () => {
     }
   };
 
+  const handleDirectPrintReceipt = (row: any) => {
+    printSinglePageReceipt({
+      invoiceId: row.invoiceCode || `ORD-RX-${Math.floor(100000 + Math.random() * 900000)}`,
+      transactionId: `pay_rzp_${Math.random().toString(36).substring(2, 14)}`,
+      itemTitle: `Consultation Fee — ${row.doctorName}`,
+      itemCategory: 'APPOINTMENT',
+      amount: row.amount || '₹1,500',
+      customerName: displayName,
+      cardholderName: displayName,
+      cardLast4: '7712',
+      cardBrand: 'Visa',
+      paymentMethod: 'Credit / Debit Card',
+      timestamp: row.date || new Date().toLocaleString(),
+      status: 'Paid & Verified',
+    });
+  };
+
   const handlePaymentSuccess = (receipt: any) => {
     if (paymentTarget.appointmentId) {
       updateSharedAppointmentPaid(paymentTarget.appointmentId, true);
@@ -386,16 +404,7 @@ export const PatientDashboard: React.FC = () => {
                 <Download className="w-3.5 h-3.5" /> Download Rx 📥
               </button>
               <button
-                onClick={() => {
-                  setPaymentTarget({
-                    appointmentId: row.id,
-                    title: `Consultation Fee — ${row.doctorName}`,
-                    category: 'APPOINTMENT',
-                    amount: row.amount || '₹1,500',
-                    patientName: displayName,
-                  });
-                  setIsPaymentModalOpen(true);
-                }}
+                onClick={() => handleDirectPrintReceipt(row)}
                 className="px-2.5 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl flex items-center gap-1 cursor-pointer transition-colors"
                 title="View Tax Receipt Slip"
               >
@@ -411,16 +420,7 @@ export const PatientDashboard: React.FC = () => {
               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" /> Paid ✓
             </span>
             <button
-              onClick={() => {
-                setPaymentTarget({
-                  appointmentId: row.id,
-                  title: `Consultation Fee — ${row.doctorName}`,
-                  category: 'APPOINTMENT',
-                  amount: row.amount || '₹1,500',
-                  patientName: displayName,
-                });
-                setIsPaymentModalOpen(true);
-              }}
+              onClick={() => handleDirectPrintReceipt(row)}
               className="px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-700 font-bold text-xs rounded-xl flex items-center gap-1 cursor-pointer transition-colors"
               title="View Tax Receipt Slip"
             >

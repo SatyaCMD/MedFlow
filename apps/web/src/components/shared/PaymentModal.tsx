@@ -79,12 +79,13 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   const [upiApp, setUpiApp] = useState<'GPAY' | 'PHONEPE' | 'PAYTM' | 'QR'>('GPAY');
   const [upiId, setUpiId] = useState('user@okaxis');
   
-  // Dynamic User Card Input States
-  const [cardholderName, setCardholderName] = useState(resolvedName);
-  const [cardNumber, setCardNumber] = useState('4532 8819 9021 7712');
-  const [cardExpiry, setCardExpiry] = useState('08/29');
-  const [cardCvv, setCardCvv] = useState('882');
-  const [billingZip, setBillingZip] = useState('400001');
+  // Dynamic User Card Input States (User Entered - NO HARDCODED VALUES)
+  const [cardholderName, setCardholderName] = useState('');
+  const [cardNumber, setCardNumber] = useState('');
+  const [cardExpiry, setCardExpiry] = useState('');
+  const [cardCvv, setCardCvv] = useState('');
+  const [billingZip, setBillingZip] = useState('');
+  const [isCardFlipped, setIsCardFlipped] = useState(false);
 
   const [selectedBank, setSelectedBank] = useState('HDFC Bank');
   const [deptPoCode, setDeptPoCode] = useState('HOSP-WARD-PO-8819');
@@ -99,8 +100,24 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
   // Helper to format card number as user types
   const handleCardNumberChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const raw = e.target.value.replace(/\D/g, '').slice(0, 16);
-    const formatted = raw.replace(/(\d{4})(?=\d)/g, '$1 ');
+    const formatted = raw.replace(/(\d{4})(?=\d)/g, '$1 ').trim();
     setCardNumber(formatted);
+  };
+
+  // Helper to format expiry date MM/YY as user types
+  const handleExpiryChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value.replace(/\D/g, '').slice(0, 4);
+    if (raw.length >= 3) {
+      setCardExpiry(`${raw.slice(0, 2)}/${raw.slice(2)}`);
+    } else {
+      setCardExpiry(raw);
+    }
+  };
+
+  // Helper to format CVV as user types
+  const handleCvvChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const raw = e.target.value.replace(/\D/g, '').slice(0, 4);
+    setCardCvv(raw);
   };
 
   // Helper to detect Card Brand dynamically
@@ -477,47 +494,88 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                 <div className="space-y-4 p-4 bg-slate-50 border border-slate-200 rounded-2xl">
                   <div className="flex items-center justify-between">
                     <span className="text-xs font-black text-slate-900 flex items-center gap-1.5">
-                      <CreditCard className="w-4 h-4 text-slate-700" />
+                      <CreditCard className="w-4 h-4 text-blue-600" />
                       Stripe Card Checkout
                     </span>
                     <span className="text-[10px] font-bold text-slate-500">Visa • Mastercard • RuPay • Amex</span>
                   </div>
 
-                  {/* Dynamic Interactive Credit Card Mockup */}
-                  <div className="relative overflow-hidden rounded-2xl p-5 bg-gradient-to-br from-slate-900 via-indigo-950 to-blue-900 text-white shadow-xl border border-slate-800">
-                    <div className="flex justify-between items-center mb-6">
-                      <div className="flex items-center gap-3">
-                        <div className="w-10 h-7 bg-amber-400/90 rounded-md border border-amber-300 flex items-center justify-center overflow-hidden shadow-inner">
-                          <div className="w-full h-[1px] bg-slate-800/40 my-[2px]"></div>
-                          <div className="w-full h-[1px] bg-slate-800/40 my-[2px]"></div>
+                  {/* Dynamic 3D Interactive Virtual Credit Card */}
+                  <div className="w-full flex justify-center py-1" style={{ perspective: '1000px' }}>
+                    <motion.div
+                      animate={{ rotateY: isCardFlipped ? 180 : 0 }}
+                      transition={{ duration: 0.6, ease: [0.23, 1, 0.32, 1] }}
+                      style={{ transformStyle: 'preserve-3d' }}
+                      className="w-full max-w-sm h-48 relative rounded-2xl cursor-pointer shadow-xl"
+                    >
+                      {/* FRONT OF CREDIT CARD */}
+                      <div
+                        className="absolute inset-0 w-full h-full rounded-2xl p-5 bg-gradient-to-br from-slate-900 via-indigo-950 to-blue-900 text-white border border-slate-800 flex flex-col justify-between"
+                        style={{ backfaceVisibility: 'hidden' }}
+                      >
+                        <div className="flex justify-between items-center">
+                          <div className="flex items-center gap-3">
+                            <div className="w-10 h-7 bg-amber-400/90 rounded-md border border-amber-300 flex flex-col justify-center gap-[2px] px-1.5 shadow-inner">
+                              <div className="w-full h-[1px] bg-slate-900/60" />
+                              <div className="w-full h-[1px] bg-slate-900/60" />
+                              <div className="w-full h-[1px] bg-slate-900/60" />
+                            </div>
+                            <Wifi className="w-5 h-5 text-slate-300/80 rotate-90" />
+                          </div>
+                          <span className="px-2.5 py-1 bg-white/10 backdrop-blur-md rounded-lg text-xs font-black tracking-widest uppercase border border-white/20">
+                            {getCardBrand(cardNumber)}
+                          </span>
                         </div>
-                        <Wifi className="w-5 h-5 text-slate-300/80 rotate-90" />
-                      </div>
-                      <span className="px-2.5 py-1 bg-white/10 backdrop-blur-md rounded-lg text-xs font-black tracking-widest uppercase border border-white/20">
-                        {getCardBrand(cardNumber)}
-                      </span>
-                    </div>
 
-                    <div className="mb-4">
-                      <span className="text-[9px] uppercase tracking-widest text-slate-400 font-bold block mb-1">CARD NUMBER</span>
-                      <div className="font-mono text-lg sm:text-xl font-bold tracking-widest text-blue-100">
-                        {cardNumber || '•••• •••• •••• ••••'}
-                      </div>
-                    </div>
+                        <div>
+                          <span className="text-[8px] uppercase tracking-widest text-slate-400 font-bold block mb-1">CARD NUMBER</span>
+                          <div className="font-mono text-lg font-bold tracking-widest text-blue-100">
+                            {cardNumber || '•••• •••• •••• ••••'}
+                          </div>
+                        </div>
 
-                    <div className="flex justify-between items-end pt-2 border-t border-white/10 text-xs">
-                      <div>
-                        <span className="text-[8px] uppercase tracking-widest text-slate-400 font-bold block">CARDHOLDER NAME</span>
-                        <span className="font-bold text-slate-200 uppercase tracking-wider">{cardholderName || 'CARDHOLDER NAME'}</span>
+                        <div className="flex justify-between items-end pt-2 border-t border-white/10 text-xs">
+                          <div>
+                            <span className="text-[8px] uppercase tracking-widest text-slate-400 font-bold block">CARDHOLDER NAME</span>
+                            <span className="font-bold text-slate-200 uppercase tracking-wider block max-w-[180px] truncate">
+                              {cardholderName || 'CARDHOLDER NAME'}
+                            </span>
+                          </div>
+                          <div>
+                            <span className="text-[8px] uppercase tracking-widest text-slate-400 font-bold block">EXPIRES</span>
+                            <span className="font-mono font-bold text-slate-200">{cardExpiry || 'MM/YY'}</span>
+                          </div>
+                        </div>
                       </div>
-                      <div>
-                        <span className="text-[8px] uppercase tracking-widest text-slate-400 font-bold block">EXPIRES</span>
-                        <span className="font-mono font-bold text-slate-200">{cardExpiry || 'MM/YY'}</span>
+
+                      {/* BACK OF CREDIT CARD */}
+                      <div
+                        className="absolute inset-0 w-full h-full rounded-2xl p-5 bg-gradient-to-br from-slate-950 via-slate-900 to-indigo-950 text-white border border-slate-800 flex flex-col justify-between"
+                        style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}
+                      >
+                        <div className="w-[calc(100%+2.5rem)] -mx-5 h-10 bg-slate-950 mt-1 shadow-inner" />
+
+                        <div className="space-y-1">
+                          <span className="text-[8px] uppercase tracking-widest text-slate-400 font-bold block text-right pr-1">AUTHORIZED SIGNATURE & CVV</span>
+                          <div className="w-full h-9 bg-slate-100 rounded-lg flex items-center justify-between px-3 text-slate-900 shadow-inner">
+                            <div className="font-serif italic text-xs text-slate-400 font-semibold tracking-widest truncate max-w-[180px]">
+                              {cardholderName || 'Signature'}
+                            </div>
+                            <div className="font-mono font-black text-sm bg-white px-2 py-0.5 rounded border border-slate-300 text-slate-900 tracking-widest">
+                              {cardCvv || '•••'}
+                            </div>
+                          </div>
+                        </div>
+
+                        <div className="flex items-center justify-between text-[8px] text-slate-400 pt-1 border-t border-white/10">
+                          <span>256-Bit SSL Encrypted</span>
+                          <span className="font-mono font-bold text-blue-400">PCI-DSS LEVEL 1 COMPLIANT</span>
+                        </div>
                       </div>
-                    </div>
+                    </motion.div>
                   </div>
 
-                  {/* Card Inputs given by User */}
+                  {/* Card Inputs given by User (Clean placeholders, no hardcoded values) */}
                   <div className="space-y-3 pt-1">
                     <div>
                       <label className="block text-[11px] font-bold text-slate-600 mb-1">Cardholder Full Name</label>
@@ -526,8 +584,9 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                         required
                         value={cardholderName}
                         onChange={(e) => setCardholderName(e.target.value)}
+                        onFocus={() => setIsCardFlipped(false)}
                         className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="John Doe"
+                        placeholder="e.g. Sai Satyabrata"
                       />
                     </div>
 
@@ -538,8 +597,9 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                         required
                         value={cardNumber}
                         onChange={handleCardNumberChange}
+                        onFocus={() => setIsCardFlipped(false)}
                         className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-900 outline-none focus:ring-2 focus:ring-blue-500"
-                        placeholder="4532 8819 9021 7712"
+                        placeholder="•••• •••• •••• ••••"
                       />
                     </div>
 
@@ -550,7 +610,8 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                           type="text"
                           required
                           value={cardExpiry}
-                          onChange={(e) => setCardExpiry(e.target.value)}
+                          onChange={handleExpiryChange}
+                          onFocus={() => setIsCardFlipped(false)}
                           className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-900 outline-none focus:ring-2 focus:ring-blue-500"
                           placeholder="MM/YY"
                         />
@@ -562,7 +623,9 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                           maxLength={4}
                           required
                           value={cardCvv}
-                          onChange={(e) => setCardCvv(e.target.value)}
+                          onChange={handleCvvChange}
+                          onFocus={() => setIsCardFlipped(true)}
+                          onBlur={() => setIsCardFlipped(false)}
                           className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-900 outline-none focus:ring-2 focus:ring-blue-500"
                           placeholder="•••"
                         />
@@ -574,8 +637,9 @@ export const PaymentModal: React.FC<PaymentModalProps> = ({
                           required
                           value={billingZip}
                           onChange={(e) => setBillingZip(e.target.value)}
+                          onFocus={() => setIsCardFlipped(false)}
                           className="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-mono font-bold text-slate-900 outline-none focus:ring-2 focus:ring-blue-500"
-                          placeholder="400001"
+                          placeholder="e.g. 400001"
                         />
                       </div>
                     </div>
