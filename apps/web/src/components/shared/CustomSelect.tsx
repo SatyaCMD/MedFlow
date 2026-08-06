@@ -131,7 +131,7 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
                   }`}
                 >
                   <div className="flex items-center gap-2 truncate">
-                    {opt.icon && <span className="text-blue-600 shrink-0">{opt.icon}</span>}
+                    {opt.icon && <span className="text-blue-600 shrink-0">{renderIcon(opt.icon)}</span>}
                     <div>
                       <span className="block truncate">{opt.label}</span>
                       {opt.sublabel && (
