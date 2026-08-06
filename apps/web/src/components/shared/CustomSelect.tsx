@@ -49,10 +49,13 @@ export const CustomSelect: React.FC<CustomSelectProps> = ({
 
   const renderIcon = (ic: any) => {
     if (!ic) return null;
-    if (typeof ic === 'function') {
+    if (React.isValidElement(ic)) {
+      return ic;
+    }
+    if (typeof ic === 'function' || typeof ic === 'object') {
       return React.createElement(ic, { className: 'w-4 h-4' });
     }
-    return ic;
+    return null;
   };
 
   // Click Outside Handler to auto-close dropdown
