@@ -99,14 +99,34 @@ pipeline {
             steps {
                 echo 'Executing SonarQube static code analysis...'
                 script {
+                    def runScan = {
+                        if (isUnix()) {
+                            sh '''
+                                SONAR_HOST="http://host.docker.internal:9000"
+                                if ! curl -sf http://host.docker.internal:9000/api/system/status >/dev/null 2>&1; then
+                                    if curl -sf http://172.17.0.1:9000/api/system/status >/dev/null 2>&1; then
+                                        SONAR_HOST="http://172.17.0.1:9000"
+                                    elif curl -sf http://127.0.0.1:9000/api/system/status >/dev/null 2>&1; then
+                                        SONAR_HOST="http://127.0.0.1:9000"
+                                    fi
+                                fi
+                                echo "[INFO] Detected active SonarQube endpoint: ${SONAR_HOST}"
+                                npx sonar-scanner \
+                                  "-Dsonar.projectKey=MedFlow" \
+                                  "-Dsonar.projectName=MedFlow" \
+                                  "-Dsonar.sources=apps/api/src,apps/web/src,packages/shared/src" \
+                                  "-Dsonar.exclusions=**/node_modules/**,**/.next/**,**/dist/**,**/coverage/**,**/*.test.ts,**/*.spec.ts,**/*.d.ts" \
+                                  "-Dsonar.host.url=${SONAR_HOST}" \
+                                  "-Dsonar.token=sqp_ff029e764892b9077514d42070035e2c1243c93b"
+                            '''
+                        } else {
+                            bat 'npx sonar-scanner "-Dsonar.projectKey=MedFlow" "-Dsonar.projectName=MedFlow" "-Dsonar.sources=apps/api/src,apps/web/src,packages/shared/src" "-Dsonar.exclusions=**/node_modules/**,**/.next/**,**/dist/**,**/coverage/**,**/*.test.ts,**/*.spec.ts,**/*.d.ts" "-Dsonar.host.url=http://127.0.0.1:9000" "-Dsonar.token=sqp_ff029e764892b9077514d42070035e2c1243c93b"'
+                        }
+                    }
+
                     try {
                         withSonarQubeEnv {
-                            if (isUnix()) {
-                                sh 'npx sonar-scanner -Dsonar.projectKey=MedFlow -Dsonar.sources=. -Dsonar.exclusions="**/node_modules/**,**/.next/**,**/dist/**,**/coverage/**,**/*.test.ts,**/*.spec.ts,**/*.d.ts" -Dsonar.host.url=http://127.0.0.1:9000 -Dsonar.token=sqp_ff029e764892b9077514d42070035e2c1243c93b'
-                            } else {
-                                bat 'npx sonar-scanner -Dsonar.projectKey=MedFlow -Dsonar.sources=. -Dsonar.exclusions="**/node_modules/**,**/.next/**,**/dist/**,**/coverage/**,**/*.test.ts,**/*.spec.ts,**/*.d.ts" -Dsonar.host.url=http://127.0.0.1:9000 -Dsonar.token=sqp_ff029e764892b9077514d42070035e2c1243c93b'
-                            }
-
+                            runScan()
                             try {
                                 timeout(time: 2, unit: 'MINUTES') {
                                     def qg = waitForQualityGate()
@@ -121,11 +141,11 @@ pipeline {
                             }
                         }
                     } catch (Throwable e) {
-                        echo "[WARN] SonarQube scanner execute fallback: ${e.message}"
-                        if (isUnix()) {
-                            sh 'npx sonar-scanner -Dsonar.projectKey=MedFlow -Dsonar.sources=. -Dsonar.exclusions="**/node_modules/**,**/.next/**,**/dist/**,**/coverage/**,**/*.test.ts,**/*.spec.ts,**/*.d.ts" -Dsonar.host.url=http://127.0.0.1:9000 -Dsonar.token=sqp_ff029e764892b9077514d42070035e2c1243c93b || echo "[WARN] SonarQube host unavailable."'
-                        } else {
-                            bat 'npx sonar-scanner -Dsonar.projectKey=MedFlow -Dsonar.sources=. -Dsonar.exclusions="**/node_modules/**,**/.next/**,**/dist/**,**/coverage/**,**/*.test.ts,**/*.spec.ts,**/*.d.ts" -Dsonar.host.url=http://127.0.0.1:9000 -Dsonar.token=sqp_ff029e764892b9077514d42070035e2c1243c93b || echo [WARN] SonarQube host unavailable.'
+                        echo "[WARN] withSonarQubeEnv wrapper fallback: ${e.message}. Running direct scan..."
+                        try {
+                            runScan()
+                        } catch (Throwable scanErr) {
+                            echo "[WARN] SonarQube static scan warning: ${scanErr.message}"
                         }
                     }
                 }
