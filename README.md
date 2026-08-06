@@ -362,6 +362,13 @@ To connect your project to a Jenkins server running on **port 8080**:
 
 ### 1. Prerequisite Installations on Jenkins Host
 Ensure the following tools are installed and configured on your machine:
+*   **Node.js (v18 or v20)**: Required for building, linting, and workspace package management.
+    * *Note*: The updated `Jenkinsfile` includes auto-installation fallback for Node.js LTS in Unix/Linux Jenkins environments.
+    * If running Jenkins via Docker container (`docker-compose.ci.yml`), you can also pre-install Node.js in the running container:
+      ```bash
+      docker exec -u 0 -it medflow-jenkins apt-get update
+      docker exec -u 0 -it medflow-jenkins apt-get install -y nodejs npm
+      ```
 *   **Docker Engine / Docker Desktop**: Required to build and package production-ready images.
 *   **Helm CLI**: Kubernetes Package Manager CLI.
     * Install on Windows via PowerShell:

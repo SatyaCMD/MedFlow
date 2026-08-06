@@ -15,9 +15,26 @@ pipeline {
                 checkout scm
                 script {
                     if (isUnix()) {
-                        sh 'node -v'
-                        sh 'npm -v'
-                        sh 'npm install -g pnpm'
+                        sh '''
+                            set -e
+                            if ! command -v node >/dev/null 2>&1; then
+                                echo "[INFO] Node.js not found in Jenkins environment. Installing Node.js LTS..."
+                                if command -v apt-get >/dev/null 2>&1; then
+                                    apt-get update -y && apt-get install -y curl ca-certificates
+                                    curl -fsSL https://deb.nodesource.com/setup_20.x | bash -
+                                    apt-get install -y nodejs
+                                else
+                                    mkdir -p /var/jenkins_home/tools/nodejs
+                                    curl -fsSL https://nodejs.org/dist/v20.18.0/node-v20.18.0-linux-x64.tar.xz | tar -xJ -C /var/jenkins_home/tools/nodejs --strip-components=1
+                                    ln -sf /var/jenkins_home/tools/nodejs/bin/node /usr/local/bin/node
+                                    ln -sf /var/jenkins_home/tools/nodejs/bin/npm /usr/local/bin/npm
+                                    ln -sf /var/jenkins_home/tools/nodejs/bin/npx /usr/local/bin/npx
+                                fi
+                            fi
+                            node -v
+                            npm -v
+                            npm install -g pnpm@9 || npm install -g pnpm || true
+                        '''
                     } else {
                         bat 'node -v'
                         bat 'npm -v'
