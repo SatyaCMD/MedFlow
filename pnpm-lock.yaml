@@ -39,9 +39,15 @@ importers:
       '@opentelemetry/exporter-trace-otlp-http':
         specifier: ^0.49.1
         version: 0.49.1(@opentelemetry/api@1.9.1)
+      '@opentelemetry/resources':
+        specifier: ^1.22.0
+        version: 1.22.0(@opentelemetry/api@1.9.1)
       '@opentelemetry/sdk-node':
         specifier: ^0.49.1
         version: 0.49.1(@opentelemetry/api@1.9.1)
+      '@opentelemetry/semantic-conventions':
+        specifier: ^1.22.0
+        version: 1.22.0
       '@socket.io/redis-adapter':
         specifier: ^8.2.1
         version: 8.3.0(socket.io-adapter@2.5.8)
@@ -239,9 +245,6 @@ importers:
       '@typescript-eslint/parser':
         specifier: ^8.65.0
         version: 8.65.0(eslint@8.57.1)(typescript@5.9.3)
-      eslint:
-        specifier: ^8.57.1
-        version: 8.57.1
       typescript:
         specifier: ^5.3.3
         version: 5.9.3

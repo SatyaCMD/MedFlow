@@ -49,9 +49,9 @@ pipeline {
                 echo 'Installing workspace dependencies...'
                 script {
                     if (isUnix()) {
-                        sh 'npx pnpm install'
+                        sh 'npx pnpm install --no-frozen-lockfile'
                     } else {
-                        bat 'npx pnpm install'
+                        bat 'npx pnpm install --no-frozen-lockfile'
                     }
                 }
             }
