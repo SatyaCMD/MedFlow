@@ -50,27 +50,12 @@ export const AuthSidebar: React.FC<AuthSidebarProps> = ({ title, subtitle }) => 
   ];
 
   return (
-    <div className="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-slate-950 via-blue-950 to-indigo-950 relative flex-col justify-start p-6 xl:p-8 text-white overflow-y-auto border-r border-blue-900/30 min-h-screen">
+    <div className="hidden lg:flex lg:w-1/2 bg-slate-900 relative flex-col justify-start p-6 xl:p-8 text-white overflow-y-auto border-r border-slate-800 min-h-screen">
       
-      {/* Ambient Glowing Background Orbs */}
-      <motion.div
-        animate={{ scale: [1, 1.25, 1], opacity: [0.35, 0.6, 0.35] }}
-        transition={{ duration: 9, repeat: Infinity, ease: 'easeInOut' }}
-        className="absolute -top-28 -left-28 w-[450px] h-[450px] bg-blue-600/20 rounded-full blur-[120px] pointer-events-none"
-      />
-      <motion.div
-        animate={{ scale: [1, 1.3, 1], opacity: [0.25, 0.5, 0.25] }}
-        transition={{ duration: 11, repeat: Infinity, ease: 'easeInOut', delay: 1.5 }}
-        className="absolute -bottom-28 -right-28 w-[450px] h-[450px] bg-indigo-500/20 rounded-full blur-[120px] pointer-events-none"
-      />
-
-      {/* Grid Pattern Overlay */}
-      <div className="absolute inset-0 bg-[radial-gradient(rgba(255,255,255,0.06)_1px,transparent_1px)] [background-size:24px_24px] pointer-events-none opacity-60" />
-
       {/* TOP HEADER: Brand Identity */}
       <div className="relative z-10">
         <div className="inline-flex items-center gap-3.5">
-          <div className="bg-white/10 backdrop-blur-xl p-3 rounded-2xl border border-white/20 shadow-xl">
+          <div className="bg-slate-800 p-3 rounded-2xl border border-slate-700 shadow-lg">
             <Logo size={36} textVisible={false} className="text-white" />
           </div>
           <div>
@@ -106,12 +91,12 @@ export const AuthSidebar: React.FC<AuthSidebarProps> = ({ title, subtitle }) => 
 
         {/* Interactive Tab Controller */}
         <div className="space-y-3.5">
-          <div className="flex items-center p-1 bg-white/5 backdrop-blur-md rounded-xl border border-white/10 text-xs font-bold">
+          <div className="flex items-center p-1 bg-slate-800/80 rounded-xl border border-slate-700/80 text-xs font-bold">
             <button
               onClick={() => setActiveTab('security')}
               className={`flex-1 py-2 rounded-lg flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                 activeTab === 'security'
-                  ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30 border border-blue-400/40'
+                  ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30 border border-blue-500'
                   : 'text-slate-400 hover:text-white'
               }`}
             >
@@ -122,7 +107,7 @@ export const AuthSidebar: React.FC<AuthSidebarProps> = ({ title, subtitle }) => 
               onClick={() => setActiveTab('telemetry')}
               className={`flex-1 py-2 rounded-lg flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                 activeTab === 'telemetry'
-                  ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30 border border-blue-400/40'
+                  ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30 border border-blue-500'
                   : 'text-slate-400 hover:text-white'
               }`}
             >
@@ -133,7 +118,7 @@ export const AuthSidebar: React.FC<AuthSidebarProps> = ({ title, subtitle }) => 
               onClick={() => setActiveTab('compliance')}
               className={`flex-1 py-2 rounded-lg flex items-center justify-center gap-1.5 transition-all cursor-pointer ${
                 activeTab === 'compliance'
-                  ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30 border border-blue-400/40'
+                  ? 'bg-blue-600 text-white shadow-md shadow-blue-600/30 border border-blue-500'
                   : 'text-slate-400 hover:text-white'
               }`}
             >
@@ -158,7 +143,7 @@ export const AuthSidebar: React.FC<AuthSidebarProps> = ({ title, subtitle }) => 
                   return (
                     <div
                       key={idx}
-                      className="p-3.5 bg-white/5 hover:bg-white/10 border border-white/10 hover:border-blue-400/40 rounded-xl transition-all flex items-start gap-3 group"
+                      className="p-3.5 bg-slate-800/60 hover:bg-slate-800/90 border border-slate-700/80 hover:border-blue-500/60 rounded-xl transition-all flex items-start gap-3 group"
                     >
                       <div className="p-2 bg-blue-500/20 text-blue-300 rounded-lg group-hover:bg-blue-600 group-hover:text-white transition-colors shrink-0">
                         <SecIcon className="w-4 h-4" />
@@ -186,7 +171,7 @@ export const AuthSidebar: React.FC<AuthSidebarProps> = ({ title, subtitle }) => 
                 className="grid grid-cols-2 gap-3"
               >
                 {telemetryMetrics.map((m, idx) => (
-                  <div key={idx} className="p-3.5 bg-white/5 border border-white/10 rounded-2xl space-y-1">
+                  <div key={idx} className="p-3.5 bg-slate-800/60 border border-slate-700/80 rounded-2xl space-y-1">
                     <span className="text-[10px] font-bold uppercase tracking-wider text-slate-400">{m.label}</span>
                     <div className={`text-2xl font-black ${m.color} tracking-tight tabular-nums`}>{m.value}</div>
                     <span className="text-[10px] font-semibold text-slate-400 block">{m.sub}</span>
@@ -207,7 +192,7 @@ export const AuthSidebar: React.FC<AuthSidebarProps> = ({ title, subtitle }) => 
                 {complianceBadges.map((b, idx) => {
                   const CompIcon = b.icon;
                   return (
-                    <div key={idx} className="p-3.5 bg-white/5 border border-white/10 rounded-xl flex items-center gap-3">
+                    <div key={idx} className="p-3.5 bg-slate-800/60 border border-slate-700/80 rounded-xl flex items-center gap-3">
                       <div className="p-2 bg-emerald-500/20 text-emerald-300 rounded-lg shrink-0">
                         <CompIcon className="w-4 h-4" />
                       </div>
@@ -226,7 +211,7 @@ export const AuthSidebar: React.FC<AuthSidebarProps> = ({ title, subtitle }) => 
       </div>
 
       {/* FOOTER: Live Infrastructure Telemetry Node */}
-      <div className="relative z-10 pt-4 border-t border-white/10 flex items-center justify-between text-xs font-semibold text-slate-400 mt-auto">
+      <div className="relative z-10 pt-4 border-t border-slate-800 flex items-center justify-between text-xs font-semibold text-slate-400 mt-auto">
         <div className="flex items-center gap-2">
           <span className="w-2.5 h-2.5 rounded-full bg-emerald-400 animate-pulse shadow-xs shadow-emerald-400" />
           <span className="text-slate-300 text-[11px]">System Status: <strong className="text-emerald-400">Operational</strong></span>

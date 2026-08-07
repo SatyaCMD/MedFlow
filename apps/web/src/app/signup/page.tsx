@@ -219,7 +219,6 @@ export default function SignupPage() {
 
       {/* RIGHT COLUMN: Interactive Dedicated Signup Form */}
       <div className="w-full lg:w-1/2 flex flex-col items-center justify-start p-6 sm:p-8 relative bg-slate-50 min-h-screen overflow-y-auto">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-blue-500/5 via-transparent to-transparent pointer-events-none" />
 
         {/* TOP BAR: Sleek Back to Landing Page / Main Site Navigation */}
         <div className="w-full max-w-lg flex items-center justify-between mb-4 z-20 shrink-0">

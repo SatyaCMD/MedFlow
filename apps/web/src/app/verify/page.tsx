@@ -195,7 +195,6 @@ function VerifyPageContent() {
 
       {/* RIGHT COLUMN: Interactive Pin Verification Form */}
       <div className="w-full lg:w-1/2 flex flex-col items-center justify-start p-6 sm:p-8 relative bg-slate-50 min-h-screen overflow-y-auto">
-        <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_center,_var(--tw-gradient-stops))] from-blue-500/5 via-transparent to-transparent pointer-events-none" />
 
         <motion.div
           initial={{ opacity: 0, y: 30 }}
