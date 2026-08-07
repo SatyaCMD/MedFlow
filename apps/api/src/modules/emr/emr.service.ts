@@ -35,19 +35,18 @@ export class EmrService {
   async createEmr(data: any, hospitalId: string) {
     const created = await this.repository.create(data, hospitalId);
 
-    // Generate PDF Prescription & Dispatch Email to Patient with Attachment & S3 Upload
-    try {
-      const dispatchRes = await this.dispatchPrescription(data, hospitalId);
-      if (created && dispatchRes.s3Key) {
-        await this.repository.update(created._id?.toString() || created.id, {
-          s3Key: dispatchRes.s3Key,
-          s3Url: dispatchRes.s3Url,
-          s3Bucket: dispatchRes.s3Bucket,
-        }, hospitalId).catch(() => {});
-      }
-    } catch {
-      // Non-blocking email / S3 error log
-    }
+    // Asynchronously Generate PDF & Dispatch Email / S3 Upload in background (non-blocking)
+    this.dispatchPrescription(data, hospitalId)
+      .then(async (dispatchRes) => {
+        if (created && dispatchRes?.s3Key) {
+          await this.repository.update(created._id?.toString() || created.id, {
+            s3Key: dispatchRes.s3Key,
+            s3Url: dispatchRes.s3Url,
+            s3Bucket: dispatchRes.s3Bucket,
+          }, hospitalId).catch(() => {});
+        }
+      })
+      .catch(() => {});
 
     return created;
   }
