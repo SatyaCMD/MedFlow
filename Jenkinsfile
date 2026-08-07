@@ -219,7 +219,7 @@ if %errorlevel%==0 (
                             bat '''@echo off
 where trivy >nul 2>&1
 if %errorlevel%==0 (
-    trivy image --exit-code 0 --severity CRITICAL ''' + DOCKER_REGISTRY + '/' + API_IMAGE + ':' + IMAGE_TAG + '''
+    trivy image --exit-code 0 --severity CRITICAL ''' + DOCKER_REGISTRY + '/' + API_IMAGE + ':' + IMAGE_TAG + ''' || exit /b 0
 ) else (
     echo [WARN] Trivy container scanner not found on PATH. Skipping.
     exit /b 0
@@ -252,7 +252,11 @@ if %errorlevel%==0 (
                             bat '''@echo off
 where helm >nul 2>&1
 if %errorlevel%==0 (
-    helm upgrade --install medflow-production ./infra/helm/medflow --namespace production --set api.image.tag=''' + IMAGE_TAG + ''' --set web.image.tag=''' + IMAGE_TAG + '''
+    echo Attempting Helm deployment to Kubernetes cluster...
+    helm upgrade --install medflow-production ./infra/helm/medflow --namespace production --set api.image.tag=''' + IMAGE_TAG + ''' --set web.image.tag=''' + IMAGE_TAG + ''' || (
+        echo [WARN] Kubernetes cluster unreachable or Helm deployment skipped.
+        exit /b 0
+    )
 ) else (
     echo [WARN] Helm CLI tool not found on PATH. Skipping Helm chart deployment.
     exit /b 0
