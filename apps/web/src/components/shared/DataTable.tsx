@@ -38,16 +38,17 @@ export function DataTable<T>({
             <tr>
               {columns.map((col, idx) => {
                 const isLast = idx === columns.length - 1;
+                const alignClass =
+                  col.align === 'center'
+                    ? 'text-center'
+                    : col.align === 'right'
+                    ? 'text-right'
+                    : 'text-left';
+                const paddingClass = isLast ? 'pl-3.5 sm:pl-4 pr-6 sm:pr-8' : 'px-3.5 sm:px-4';
                 return (
                   <th
                     key={idx}
-                    className={`px-3 sm:px-4 py-3 text-[11px] font-black uppercase tracking-wider text-slate-700 whitespace-nowrap ${
-                      col.align === 'center'
-                        ? 'text-center'
-                        : col.align === 'right'
-                        ? `text-right ${isLast ? 'pr-6 sm:pr-8' : 'pr-4'}`
-                        : 'text-left'
-                    }`}
+                    className={`py-3.5 text-[11px] font-black uppercase tracking-wider text-slate-700 whitespace-nowrap ${alignClass} ${paddingClass}`}
                   >
                     {col.header}
                   </th>
@@ -90,16 +91,17 @@ export function DataTable<T>({
                 >
                   {columns.map((col, cIdx) => {
                     const isLast = cIdx === columns.length - 1;
+                    const alignClass =
+                      col.align === 'center'
+                        ? 'text-center'
+                        : col.align === 'right'
+                        ? 'text-right'
+                        : 'text-left';
+                    const paddingClass = isLast ? 'pl-3.5 sm:pl-4 pr-6 sm:pr-8' : 'px-3.5 sm:px-4';
                     return (
                       <td
                         key={cIdx}
-                        className={`px-3 sm:px-4 py-3 text-xs text-slate-800 font-semibold whitespace-nowrap ${
-                          col.align === 'center'
-                            ? 'text-center'
-                            : col.align === 'right'
-                            ? `text-right ${isLast ? 'pr-6 sm:pr-8' : 'pr-4'}`
-                            : 'text-left'
-                        }`}
+                        className={`py-3 text-xs text-slate-800 font-semibold whitespace-nowrap ${alignClass} ${paddingClass}`}
                       >
                         {col.accessor(row)}
                       </td>

@@ -262,12 +262,13 @@ export default function PatientsPage() {
     },
     {
       header: 'CLINICAL ACTIONS',
+      align: 'right' as const,
       accessor: (row: PatientCensusRecord) => (
-        <div className="flex items-center gap-1.5">
+        <div className="flex items-center justify-end gap-1.5 shrink-0 whitespace-nowrap">
           <button
             onClick={() => setTransferModalPatient(row)}
             title="Transfer Case (Doctor Leave / Critical Escalation)"
-            className="px-2.5 py-1.5 bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-700 border border-slate-200 rounded-xl font-bold text-[11px] flex items-center gap-1 transition-all cursor-pointer"
+            className="px-2.5 py-1.5 bg-slate-100 hover:bg-blue-50 text-slate-700 hover:text-blue-700 border border-slate-200 rounded-xl font-bold text-[11px] flex items-center gap-1 transition-all cursor-pointer whitespace-nowrap shrink-0"
           >
             <ArrowRightLeft className="w-3.5 h-3.5 text-blue-600" />
             <span>Transfer Case</span>
@@ -276,7 +277,7 @@ export default function PatientsPage() {
           <button
             onClick={() => handleRequestBloodForPatient(row)}
             title="Submit Dual-Approval Blood Request"
-            className="px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl font-bold text-[11px] flex items-center gap-1 transition-all cursor-pointer"
+            className="px-2.5 py-1.5 bg-rose-50 hover:bg-rose-100 text-rose-700 border border-rose-200 rounded-xl font-bold text-[11px] flex items-center gap-1 transition-all cursor-pointer whitespace-nowrap shrink-0"
           >
             <Droplet className="w-3.5 h-3.5 text-rose-600" />
             <span>Request Blood</span>
@@ -360,7 +361,7 @@ export default function PatientsPage() {
 
   return (
     <AppShell userRole={currentRole}>
-      <div className="space-y-8 max-w-6xl mx-auto pb-12 font-sans">
+      <div className="space-y-8 max-w-[1400px] w-full mx-auto pb-12 font-sans px-2 sm:px-4">
         {/* Page Header */}
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-200 pb-6">
           <div>
