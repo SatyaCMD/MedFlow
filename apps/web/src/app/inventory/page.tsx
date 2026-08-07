@@ -117,9 +117,9 @@ export default function InventoryPage() {
     {
       header: 'MEDICINE NAME & BATCH SPEC',
       accessor: (row: PharmacyItem) => (
-        <div className="flex flex-col">
-          <span className="font-extrabold text-slate-900 text-xs">{row.name}</span>
-          <span className="text-[10px] text-slate-500 font-medium">{row.description}</span>
+        <div className="flex flex-col max-w-[240px] sm:max-w-xs">
+          <span className="font-extrabold text-slate-900 text-xs truncate" title={row.name}>{row.name}</span>
+          <span className="text-[10px] text-slate-500 font-medium truncate" title={row.description}>{row.description}</span>
           <span className="text-[10px] font-mono font-bold text-amber-700 mt-0.5">
             Batch: {row.batch} • ₹{row.price} / {row.unit}
           </span>
@@ -169,7 +169,7 @@ export default function InventoryPage() {
 
         return (
           <span
-            className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase border ${
+            className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase border ${
               isOut
                 ? 'bg-rose-100 text-rose-800 border-rose-300 animate-pulse'
                 : isLow
@@ -184,14 +184,15 @@ export default function InventoryPage() {
     },
     {
       header: 'STOCK ACTIONS',
+      align: 'right' as const,
       accessor: (row: PharmacyItem) => (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center justify-end">
           <button
             onClick={() => handleReorderStock(row)}
-            className="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 text-xs font-bold rounded-xl border border-amber-200 flex items-center gap-1 transition-all cursor-pointer shadow-2xs"
+            className="px-2 py-1 bg-amber-50 hover:bg-amber-100 text-amber-800 text-xs font-bold rounded-xl border border-amber-200 flex items-center gap-1 transition-all cursor-pointer shadow-2xs"
             title="Replenish +500 units"
           >
-            <RefreshCw className="w-3.5 h-3.5" />
+            <RefreshCw className="w-3 h-3" />
             <span>Reorder (+500)</span>
           </button>
         </div>

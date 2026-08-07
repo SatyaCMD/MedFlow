@@ -184,8 +184,8 @@ export const PharmacistDashboard: React.FC = () => {
     {
       header: 'Item Description & Batch',
       accessor: (row: PharmacyItem) => (
-        <div className="flex flex-col">
-          <span className="font-bold text-slate-900">{row.name}</span>
+        <div className="flex flex-col max-w-[240px] sm:max-w-xs">
+          <span className="font-bold text-slate-900 truncate" title={row.name}>{row.name}</span>
           <span className="text-[10px] font-bold text-amber-700">Batch: {row.batch} • Unit Price: ₹{row.price}</span>
         </div>
       ),
@@ -224,7 +224,7 @@ export const PharmacistDashboard: React.FC = () => {
 
         return (
           <span
-            className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase border ${
+            className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase border ${
               isOut
                 ? 'bg-rose-100 text-rose-800 border-rose-300 animate-pulse'
                 : isLow
@@ -232,21 +232,24 @@ export const PharmacistDashboard: React.FC = () => {
                 : 'bg-emerald-100 text-emerald-800 border-emerald-300'
             }`}
           >
-            {isOut ? 'OUT OF STOCK' : isLow ? 'LOW STOCK ALERT (<50)' : 'IN STOCK'}
+            {isOut ? 'OUT OF STOCK' : isLow ? 'LOW STOCK (<50)' : 'IN STOCK'}
           </span>
         );
       },
     },
     {
       header: 'Actions',
+      align: 'right' as const,
       accessor: (row: PharmacyItem) => (
-        <button
-          onClick={() => handleReorder(row)}
-          className="px-3 py-1 bg-amber-50 hover:bg-amber-100 text-amber-700 text-xs font-bold rounded-lg border border-amber-200 flex items-center gap-1 transition-all cursor-pointer"
-        >
-          <RefreshCw className="w-3.5 h-3.5" />
-          <span>Reorder (+500)</span>
-        </button>
+        <div className="flex items-center justify-end">
+          <button
+            onClick={() => handleReorder(row)}
+            className="px-2.5 py-1 bg-amber-50 hover:bg-amber-100 text-amber-700 text-xs font-bold rounded-lg border border-amber-200 flex items-center gap-1 transition-all cursor-pointer shadow-2xs"
+          >
+            <RefreshCw className="w-3 h-3" />
+            <span>Reorder</span>
+          </button>
+        </div>
       ),
     },
   ];

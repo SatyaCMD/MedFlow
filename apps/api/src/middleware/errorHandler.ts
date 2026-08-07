@@ -48,6 +48,7 @@ export const errorHandler = (
         message,
         stack: env.NODE_ENV !== 'production' ? err.stack : undefined,
         code: errorCode,
+        details: details || undefined,
       },
       url: req.originalUrl,
       method: req.method,

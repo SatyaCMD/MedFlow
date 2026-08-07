@@ -36,16 +36,23 @@ export function DataTable<T>({
         <table className="min-w-full divide-y divide-slate-200 text-left">
           <thead className="bg-slate-100/90 sticky top-0 backdrop-blur-sm z-10 border-b border-slate-200">
             <tr>
-              {columns.map((col, idx) => (
-                <th
-                  key={idx}
-                  className={`px-4 sm:px-5 py-3.5 text-xs font-black uppercase tracking-wider text-slate-700 whitespace-nowrap ${
-                    col.align === 'center' ? 'text-center' : col.align === 'right' ? 'text-right' : 'text-left'
-                  }`}
-                >
-                  {col.header}
-                </th>
-              ))}
+              {columns.map((col, idx) => {
+                const isLast = idx === columns.length - 1;
+                return (
+                  <th
+                    key={idx}
+                    className={`px-3 sm:px-4 py-3 text-[11px] font-black uppercase tracking-wider text-slate-700 whitespace-nowrap ${
+                      col.align === 'center'
+                        ? 'text-center'
+                        : col.align === 'right'
+                        ? `text-right ${isLast ? 'pr-6 sm:pr-8' : 'pr-4'}`
+                        : 'text-left'
+                    }`}
+                  >
+                    {col.header}
+                  </th>
+                );
+              })}
             </tr>
           </thead>
 
@@ -55,7 +62,7 @@ export function DataTable<T>({
               Array.from({ length: 5 }).map((_, rIdx) => (
                 <tr key={rIdx}>
                   {columns.map((_, cIdx) => (
-                    <td key={cIdx} className="px-4 sm:px-5 py-3.5 whitespace-nowrap">
+                    <td key={cIdx} className="px-3 sm:px-4 py-3 whitespace-nowrap">
                       <div className="h-4 bg-slate-100 rounded animate-pulse w-full max-w-[120px]" />
                     </td>
                   ))}
@@ -81,16 +88,23 @@ export function DataTable<T>({
                   transition={{ duration: 0.15, delay: rIdx * 0.05 }}
                   className="hover:bg-slate-50 transition-colors"
                 >
-                  {columns.map((col, cIdx) => (
-                    <td
-                      key={cIdx}
-                      className={`px-4 sm:px-5 py-3.5 text-xs text-slate-800 font-semibold whitespace-nowrap ${
-                        col.align === 'center' ? 'text-center' : col.align === 'right' ? 'text-right' : 'text-left'
-                      }`}
-                    >
-                      {col.accessor(row)}
-                    </td>
-                  ))}
+                  {columns.map((col, cIdx) => {
+                    const isLast = cIdx === columns.length - 1;
+                    return (
+                      <td
+                        key={cIdx}
+                        className={`px-3 sm:px-4 py-3 text-xs text-slate-800 font-semibold whitespace-nowrap ${
+                          col.align === 'center'
+                            ? 'text-center'
+                            : col.align === 'right'
+                            ? `text-right ${isLast ? 'pr-6 sm:pr-8' : 'pr-4'}`
+                            : 'text-left'
+                        }`}
+                      >
+                        {col.accessor(row)}
+                      </td>
+                    );
+                  })}
                 </motion.tr>
               ))
             )}

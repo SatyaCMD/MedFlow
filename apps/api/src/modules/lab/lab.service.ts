@@ -96,6 +96,55 @@ export class LabService {
     return created;
   }
 
+  async dispatchReport(data: any, _hospitalId: string = 'HOSP-001') {
+    const reportId = data.reportId || `LAB-${Date.now().toString().slice(-6)}`;
+    const patientName = data.patientName || 'Patient';
+    const primaryAccountName = data.primaryPatientName || data.accountHolderName || patientName;
+    const testName = data.testName || 'Complete Blood Count (CBC)';
+    const patientEmail = data.patientEmail || data.email || 'patient@medflow.com';
+
+    const pdfBuffer = await generateLabReportPdf({
+      reportId,
+      patientName,
+      testName,
+      department: data.department || 'Pathology & Biochemistry',
+      results: data.results || [
+        { parameter: 'Diagnostic Findings', value: data.findings || 'Completed', unit: 'N/A', referenceRange: 'Normal Baseline', status: 'NORMAL' },
+      ],
+    });
+
+    const s3Result = await uploadTestReportToS3({
+      primaryAccountName,
+      patientName,
+      department: data.department || 'Pathology',
+      buffer: pdfBuffer,
+    });
+
+    const emailTpl = getLabReportEmail({ patientName, reportId, testName });
+    sendMail({
+      to: patientEmail,
+      subject: emailTpl.subject,
+      html: emailTpl.html,
+      attachments: [
+        {
+          filename: s3Result.fileName || `Lab_Report_${reportId}.pdf`,
+          content: pdfBuffer,
+          contentType: 'application/pdf',
+        },
+      ],
+    }).catch(() => {});
+
+    return {
+      reportId,
+      status: 'DISPATCHED_AND_STORED_IN_S3',
+      s3Key: s3Result.s3Key,
+      s3Url: s3Result.s3Url,
+      s3Bucket: s3Result.bucket,
+      primaryFolder: s3Result.primaryFolder,
+      attachment: s3Result.fileName,
+    };
+  }
+
   async updateLab(id: string, data: any, hospitalId: string) {
     await this.getLabById(id, hospitalId); // verify exists
     return this.repository.update(id, data, hospitalId);

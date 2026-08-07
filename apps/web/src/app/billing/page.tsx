@@ -219,8 +219,8 @@ export default function BillingPage() {
     {
       header: 'Patient & MRN',
       accessor: (row: PatientInvoice) => (
-        <div className="max-w-[140px]">
-          <span className="font-bold text-slate-900 block text-xs truncate">{row.patientName}</span>
+        <div className="max-w-[120px]">
+          <span className="font-bold text-slate-900 block text-xs truncate" title={row.patientName}>{row.patientName}</span>
           <span className="text-[10px] font-bold text-blue-600 block">MRN: {row.mrn}</span>
         </div>
       ),
@@ -228,9 +228,9 @@ export default function BillingPage() {
     {
       header: 'Dept & Doctor',
       accessor: (row: PatientInvoice) => (
-        <div className="max-w-[150px]">
-          <span className="text-slate-800 font-semibold text-xs block truncate">{row.department}</span>
-          <span className="text-[10px] font-bold text-slate-500 block truncate">{row.attendingDoctor}</span>
+        <div className="max-w-[130px]">
+          <span className="text-slate-800 font-semibold text-xs block truncate" title={row.department}>{row.department}</span>
+          <span className="text-[10px] font-bold text-slate-500 block truncate" title={row.attendingDoctor}>{row.attendingDoctor}</span>
         </div>
       ),
     },
@@ -259,32 +259,42 @@ export default function BillingPage() {
     },
     {
       header: 'TPA Status',
-      accessor: (row: PatientInvoice) => (
-        <button
-          onClick={() => handleOpenTpaModal(row)}
-          className={`px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase flex items-center gap-1 cursor-pointer transition-all hover:scale-105 shadow-2xs whitespace-nowrap ${row.tpaStatus.includes('Approved') || row.tpaStatus.includes('Settled')
-              ? 'bg-emerald-100 text-emerald-900 border border-emerald-300 hover:bg-emerald-200'
-              : row.tpaStatus.includes('Direct')
+      accessor: (row: PatientInvoice) => {
+        const isApproved = row.tpaStatus.includes('Approved') || row.tpaStatus.includes('Settled');
+        const isDirect = row.tpaStatus.includes('Direct');
+        const badgeLabel = isApproved ? '✓ TPA Approved' : isDirect ? 'Direct Pay' : 'Pending TPA';
+
+        return (
+          <button
+            onClick={() => handleOpenTpaModal(row)}
+            className={`px-2 py-0.5 rounded-full text-[10px] font-black uppercase flex items-center gap-1 cursor-pointer transition-all hover:scale-105 shadow-2xs whitespace-nowrap ${
+              isApproved
+                ? 'bg-emerald-100 text-emerald-900 border border-emerald-300 hover:bg-emerald-200'
+                : isDirect
                 ? 'bg-blue-100 text-blue-900 border border-blue-300 hover:bg-blue-200'
                 : 'bg-amber-100 text-amber-900 border border-amber-300 hover:bg-amber-200'
             }`}
-          title="Click to track interactive TPA Insurance claim status"
-        >
-          <ShieldCheck className="w-3 h-3 text-emerald-700 shrink-0" />
-          <span>{row.tpaStatus}</span>
-        </button>
-      ),
+            title={`Claim Status: ${row.tpaStatus}`}
+          >
+            <ShieldCheck className="w-3 h-3 text-emerald-700 shrink-0" />
+            <span>{badgeLabel}</span>
+          </button>
+        );
+      },
     },
     {
-      header: 'Actions',
+      header: 'Action',
+      align: 'right' as const,
       accessor: (row: PatientInvoice) => (
-        <button
-          onClick={() => handleOpenInvoiceModal(row)}
-          className="px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-xs rounded-lg border border-blue-200 flex items-center gap-1 cursor-pointer transition-colors whitespace-nowrap"
-        >
-          <FileText className="w-3.5 h-3.5" />
-          <span>Invoice</span>
-        </button>
+        <div className="flex items-center justify-end">
+          <button
+            onClick={() => handleOpenInvoiceModal(row)}
+            className="px-2 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 font-bold text-[11px] rounded-lg border border-blue-200 flex items-center gap-1 cursor-pointer transition-colors whitespace-nowrap"
+          >
+            <FileText className="w-3 h-3" />
+            <span>Invoice</span>
+          </button>
+        </div>
       ),
     },
   ];

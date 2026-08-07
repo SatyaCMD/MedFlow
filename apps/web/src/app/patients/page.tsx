@@ -300,8 +300,8 @@ export default function PatientsPage() {
     {
       header: 'PATIENT NAME & MRN',
       accessor: (row: ClinicalRecord) => (
-        <div>
-          <span className="font-black text-slate-900 block text-xs">{row.patientName}</span>
+        <div className="max-w-[110px]">
+          <span className="font-black text-slate-900 block text-xs truncate" title={row.patientName}>{row.patientName}</span>
           <span className="text-[10px] font-mono font-bold text-slate-500">MRN: {row.mrn}</span>
         </div>
       ),
@@ -309,16 +309,16 @@ export default function PatientsPage() {
     {
       header: 'ATTENDING DOCTOR',
       accessor: (row: ClinicalRecord) => (
-        <div>
-          <span className="font-bold text-slate-900 block text-xs">{row.doctorName}</span>
-          <span className="text-[10px] text-blue-600 font-semibold">{row.department}</span>
+        <div className="max-w-[120px]">
+          <span className="font-bold text-slate-900 block text-xs truncate" title={row.doctorName}>{row.doctorName}</span>
+          <span className="text-[10px] text-blue-600 font-semibold truncate block">{row.department}</span>
         </div>
       ),
     },
     {
       header: 'DIAGNOSIS',
       accessor: (row: ClinicalRecord) => (
-        <span className="text-slate-700 font-semibold text-xs truncate max-w-xs block" title={row.diagnosis}>
+        <span className="text-slate-700 font-semibold text-xs truncate max-w-[150px] sm:max-w-[180px] block" title={row.diagnosis}>
           {row.diagnosis}
         </span>
       ),
@@ -326,31 +326,32 @@ export default function PatientsPage() {
     {
       header: 'PRESCRIBED MEDICATIONS',
       accessor: (row: ClinicalRecord) => (
-        <span className="px-2.5 py-1 bg-amber-50 text-amber-800 border border-amber-200 rounded-full text-[10px] font-black">
+        <span className="px-2 py-0.5 bg-amber-50 text-amber-800 border border-amber-200 rounded-full text-[10px] font-black whitespace-nowrap">
           {row.medications.length} Medicines Prescribed
         </span>
       ),
     },
     {
-      header: 'PHARMACY ACTIONS',
+      header: 'ACTIONS',
+      align: 'right' as const,
       accessor: (row: ClinicalRecord) => (
-        <div className="flex items-center gap-2">
+        <div className="flex items-center justify-end gap-1">
           <button
             onClick={() => handleViewPrescriptionPdf(row)}
-            className="px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-xl font-bold text-xs flex items-center gap-1 cursor-pointer transition-all"
+            className="px-2 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 rounded-lg font-bold text-[11px] flex items-center gap-1 cursor-pointer transition-all shrink-0"
             title="View Official Doctor Prescription Copy"
           >
-            <FileText className="w-3.5 h-3.5 text-blue-600" />
-            <span>View Prescription PDF</span>
+            <FileText className="w-3 h-3 text-blue-600" />
+            <span>View PDF</span>
           </button>
 
           <button
             onClick={() => handleDispenseAndBill(row)}
-            className="px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-xs flex items-center gap-1 cursor-pointer transition-all"
+            className="px-2.5 py-1 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-[11px] rounded-lg shadow-2xs flex items-center gap-1 cursor-pointer transition-all shrink-0"
             title="Dispense Medications & Deduct Inventory Stock"
           >
-            <ShoppingBag className="w-3.5 h-3.5" />
-            <span>Dispense & Bill</span>
+            <ShoppingBag className="w-3 h-3" />
+            <span>Dispense</span>
           </button>
         </div>
       ),

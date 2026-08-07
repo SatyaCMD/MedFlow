@@ -197,22 +197,36 @@ const INITIAL_PHARMACY_SALES: PharmacySaleRecord[] = [
   },
 ];
 
-export const getClinicalRecords = (): ClinicalRecord[] => {
-  if (typeof window === 'undefined') return INITIAL_CLINICAL_RECORDS;
-  const stored = localStorage.getItem(STORAGE_KEYS.CLINICAL_RECORDS);
-  if (!stored) {
-    localStorage.setItem(STORAGE_KEYS.CLINICAL_RECORDS, JSON.stringify(INITIAL_CLINICAL_RECORDS));
-    return INITIAL_CLINICAL_RECORDS;
-  }
+export const getClinicalRecords = (userEmail?: string): ClinicalRecord[] => {
+  if (typeof window === 'undefined') return [];
   try {
-    return JSON.parse(stored);
+    const stored = localStorage.getItem(STORAGE_KEYS.CLINICAL_RECORDS);
+    let records: ClinicalRecord[] = [];
+    if (!stored) {
+      records = INITIAL_CLINICAL_RECORDS;
+      localStorage.setItem(STORAGE_KEYS.CLINICAL_RECORDS, JSON.stringify(INITIAL_CLINICAL_RECORDS));
+    } else {
+      records = JSON.parse(stored);
+    }
+
+    if (!userEmail) return records;
+
+    const cleanEmail = userEmail.trim().toLowerCase();
+    const isSeedUser = cleanEmail.includes('sai_satyabrata') || cleanEmail.includes('test_admin') || cleanEmail.includes('patient@medflow.com');
+
+    return records.filter((r) => {
+      if (isSeedUser && r.patientName.toLowerCase().includes('satyabrata')) return true;
+      if (cleanEmail && r.patientName.toLowerCase().includes(cleanEmail.split('@')[0])) return true;
+      return false;
+    });
   } catch {
-    return INITIAL_CLINICAL_RECORDS;
+    return [];
   }
 };
 
 export const saveClinicalRecord = (record: ClinicalRecord) => {
-  const existing = getClinicalRecords();
+  const raw = typeof window !== 'undefined' ? localStorage.getItem(STORAGE_KEYS.CLINICAL_RECORDS) : null;
+  const existing: ClinicalRecord[] = raw ? JSON.parse(raw) : INITIAL_CLINICAL_RECORDS;
   const updated = [record, ...existing];
   if (typeof window !== 'undefined') {
     localStorage.setItem(STORAGE_KEYS.CLINICAL_RECORDS, JSON.stringify(updated));
@@ -243,17 +257,30 @@ export const saveClinicalRecord = (record: ClinicalRecord) => {
   return updated;
 };
 
-export const getLabOrders = (): LabOrderRecord[] => {
-  if (typeof window === 'undefined') return INITIAL_LAB_ORDERS;
-  const stored = localStorage.getItem(STORAGE_KEYS.LAB_ORDERS);
-  if (!stored) {
-    localStorage.setItem(STORAGE_KEYS.LAB_ORDERS, JSON.stringify(INITIAL_LAB_ORDERS));
-    return INITIAL_LAB_ORDERS;
-  }
+export const getLabOrders = (userEmail?: string): LabOrderRecord[] => {
+  if (typeof window === 'undefined') return [];
   try {
-    return JSON.parse(stored);
+    const stored = localStorage.getItem(STORAGE_KEYS.LAB_ORDERS);
+    let orders: LabOrderRecord[] = [];
+    if (!stored) {
+      orders = INITIAL_LAB_ORDERS;
+      localStorage.setItem(STORAGE_KEYS.LAB_ORDERS, JSON.stringify(INITIAL_LAB_ORDERS));
+    } else {
+      orders = JSON.parse(stored);
+    }
+
+    if (!userEmail) return orders;
+
+    const cleanEmail = userEmail.trim().toLowerCase();
+    const isSeedUser = cleanEmail.includes('sai_satyabrata') || cleanEmail.includes('test_admin') || cleanEmail.includes('patient@medflow.com');
+
+    return orders.filter((o) => {
+      if (isSeedUser && o.patientName.toLowerCase().includes('satyabrata')) return true;
+      if (cleanEmail && o.patientName.toLowerCase().includes(cleanEmail.split('@')[0])) return true;
+      return false;
+    });
   } catch {
-    return INITIAL_LAB_ORDERS;
+    return [];
   }
 };
 

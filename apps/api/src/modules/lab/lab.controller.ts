@@ -46,6 +46,16 @@ export class LabController {
     }
   };
 
+  dispatchReport = async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const hospitalId = req.user?.hospitalId || 'HOSP-001';
+      const result = await this.service.dispatchReport(req.body, hospitalId);
+      res.status(200).json({ success: true, data: result });
+    } catch (err) {
+      next(err);
+    }
+  };
+
   update = async (req: Request, res: Response, next: NextFunction) => {
     try {
       const hospitalId = req.user!.hospitalId;

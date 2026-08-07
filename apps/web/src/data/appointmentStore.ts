@@ -153,24 +153,38 @@ const INITIAL_APPOINTMENTS: SharedAppointment[] = [
   },
 ];
 
-export function getSharedAppointments(): SharedAppointment[] {
-  if (typeof window === 'undefined') return INITIAL_APPOINTMENTS;
+export function getSharedAppointments(userEmail?: string): SharedAppointment[] {
+  if (typeof window === 'undefined') return [];
   try {
     const raw = localStorage.getItem(APPOINTMENTS_STORAGE_KEY);
-    let appointments: SharedAppointment[] = INITIAL_APPOINTMENTS;
+    let appointments: SharedAppointment[] = [];
     if (raw) {
       appointments = JSON.parse(raw);
     } else {
+      appointments = INITIAL_APPOINTMENTS;
       localStorage.setItem(APPOINTMENTS_STORAGE_KEY, JSON.stringify(INITIAL_APPOINTMENTS));
     }
-    return checkAndAutoRefundExpiredAppointments(appointments);
+    const refunded = checkAndAutoRefundExpiredAppointments(appointments);
+
+    if (!userEmail) return refunded;
+
+    const cleanEmail = userEmail.trim().toLowerCase();
+    const isSeedUser = cleanEmail.includes('sai_satyabrata') || cleanEmail.includes('test_admin') || cleanEmail.includes('patient@medflow.com');
+    
+    // Filter appointments matching this patient's email or name
+    return refunded.filter((app) => {
+      if (app.patientEmail && app.patientEmail.toLowerCase() === cleanEmail) return true;
+      if (isSeedUser && app.patientName.toLowerCase().includes('satyabrata')) return true;
+      if (app.patientEmail && cleanEmail.includes(app.patientEmail.split('@')[0])) return true;
+      return false;
+    });
   } catch {
-    return INITIAL_APPOINTMENTS;
+    return [];
   }
 }
 
 export function saveSharedAppointment(newApp: SharedAppointment): SharedAppointment[] {
-  const current = getSharedAppointments();
+  const current = getSharedAppointments(); // Get all from unified storage
   const appToAdd = {
     ...newApp,
     createdAt: newApp.createdAt || Date.now(),
@@ -191,7 +205,8 @@ export function updateSharedAppointmentStatus(
   id: string,
   status: SharedAppointment['status']
 ): SharedAppointment[] {
-  const current = getSharedAppointments();
+  const raw = typeof window !== 'undefined' ? localStorage.getItem(APPOINTMENTS_STORAGE_KEY) : null;
+  const current: SharedAppointment[] = raw ? JSON.parse(raw) : INITIAL_APPOINTMENTS;
   const updated = current.map((a) => (a.id === id ? { ...a, status } : a));
   if (typeof window !== 'undefined') {
     try {
@@ -208,10 +223,49 @@ export function updateSharedAppointmentVitals(
   id: string,
   vitals: SharedAppointment['vitals']
 ): SharedAppointment[] {
-  const current = getSharedAppointments();
+  const raw = typeof window !== 'undefined' ? localStorage.getItem(APPOINTMENTS_STORAGE_KEY) : null;
+  const current: SharedAppointment[] = raw ? JSON.parse(raw) : INITIAL_APPOINTMENTS;
   const updated = current.map((a) =>
-    a.id === id ? { ...a, vitals, status: 'VITALS RECORDED & READY FOR DOCTOR' as const } : a
+    a.id === id ? { ...a, vitals, vitalsDone: true, status: 'VITALS RECORDED & READY FOR DOCTOR' as const } : a
   );
+  if (typeof window !== 'undefined') {
+    try {
+      localStorage.setItem(APPOINTMENTS_STORAGE_KEY, JSON.stringify(updated));
+      window.dispatchEvent(new Event('medflow-appointment-updated'));
+    } catch {
+      // Non-blocking storage
+    }
+  }
+  return updated;
+}
+
+export function updateSharedAppointmentWithRx(
+  targetIdOrMrnOrName: string,
+  rxData: any
+): SharedAppointment[] {
+  const raw = typeof window !== 'undefined' ? localStorage.getItem(APPOINTMENTS_STORAGE_KEY) : null;
+  const current: SharedAppointment[] = raw ? JSON.parse(raw) : INITIAL_APPOINTMENTS;
+  
+  let targetFound = false;
+  const updated = current.map((a) => {
+    const match =
+      a.id === targetIdOrMrnOrName ||
+      a.mrn === targetIdOrMrnOrName ||
+      a.patientName.toLowerCase().includes(targetIdOrMrnOrName.toLowerCase());
+    
+    if (match && !targetFound) {
+      targetFound = true;
+      return {
+        ...a,
+        status: 'Completed & Prescribed' as const,
+        hasPrescription: true,
+        rxNumber: rxData.rxNumber,
+        prescriptionData: rxData,
+      };
+    }
+    return a;
+  });
+
   if (typeof window !== 'undefined') {
     try {
       localStorage.setItem(APPOINTMENTS_STORAGE_KEY, JSON.stringify(updated));
@@ -239,7 +293,8 @@ export function updateSharedAppointmentPaid(id: string, isPaid: boolean): Shared
 
 // 3-Day Auto-Refund Engine Function
 export function checkAndAutoRefundExpiredAppointments(
-  currentAppointments?: SharedAppointment[]
+  currentAppointments?: SharedAppointment[],
+  customStorageKey?: string
 ): SharedAppointment[] {
   const appointments = currentAppointments || getSharedAppointments();
   const currentTime = Date.now();

@@ -38,26 +38,35 @@ const INITIAL_WALLET: PatientWallet = {
   ],
 };
 
-export function getPatientWallet(): PatientWallet {
-  if (typeof window === 'undefined') return INITIAL_WALLET;
+export function getPatientWallet(userEmail?: string): PatientWallet {
+  const emptyWallet: PatientWallet = { balance: 0, transactions: [] };
+  if (typeof window === 'undefined') return emptyWallet;
   try {
-    const raw = localStorage.getItem(WALLET_STORAGE_KEY);
+    const cleanEmail = (userEmail || '').trim().toLowerCase();
+    const isSeedUser = !cleanEmail || cleanEmail.includes('sai_satyabrata') || cleanEmail.includes('test_admin') || cleanEmail.includes('patient@medflow.com');
+    const storageKey = cleanEmail ? `${WALLET_STORAGE_KEY}_${cleanEmail}` : WALLET_STORAGE_KEY;
+    const raw = localStorage.getItem(storageKey);
     if (!raw) {
-      localStorage.setItem(WALLET_STORAGE_KEY, JSON.stringify(INITIAL_WALLET));
-      return INITIAL_WALLET;
+      if (isSeedUser) {
+        localStorage.setItem(storageKey, JSON.stringify(INITIAL_WALLET));
+        return INITIAL_WALLET;
+      }
+      return emptyWallet;
     }
     return JSON.parse(raw);
   } catch {
-    return INITIAL_WALLET;
+    return emptyWallet;
   }
 }
 
 export function creditPatientWallet(
   amount: number,
   description: string,
-  appointmentId?: string
+  appointmentId?: string,
+  userEmail?: string
 ): PatientWallet {
-  const wallet = getPatientWallet();
+  const cleanEmail = (userEmail || '').trim().toLowerCase();
+  const wallet = getPatientWallet(cleanEmail);
   const newTx: WalletTransaction = {
     id: `tx-${Date.now()}-${Math.floor(100 + Math.random() * 900)}`,
     appointmentId,
@@ -76,6 +85,8 @@ export function creditPatientWallet(
 
   if (typeof window !== 'undefined') {
     try {
+      const storageKey = cleanEmail ? `${WALLET_STORAGE_KEY}_${cleanEmail}` : WALLET_STORAGE_KEY;
+      localStorage.setItem(storageKey, JSON.stringify(updatedWallet));
       localStorage.setItem(WALLET_STORAGE_KEY, JSON.stringify(updatedWallet));
       window.dispatchEvent(new Event('medflow-wallet-updated'));
     } catch {

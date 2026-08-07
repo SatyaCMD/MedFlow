@@ -27,6 +27,7 @@ import { useToast } from '../../context/ToastContext';
 import { api } from '../../lib/axios';
 import { MASTER_PHARMACY_CATALOG, PharmacyItem } from '../../data/pharmacyCatalog';
 import { saveClinicalRecord } from '../../data/medicalHistoryStore';
+import { updateSharedAppointmentWithRx } from '../../data/appointmentStore';
 
 export interface PrescribedItem {
   id: string;
@@ -408,6 +409,8 @@ export const DoctorPrescribeStudioModal: React.FC<DoctorPrescribeStudioModalProp
       labTests: rxData.labTests,
       signatureHash: rxData.signatureHash,
     });
+
+    updateSharedAppointmentWithRx(patientMrn || patientName, rxData);
 
     if (onPrescriptionIssued) {
       onPrescriptionIssued(rxData);

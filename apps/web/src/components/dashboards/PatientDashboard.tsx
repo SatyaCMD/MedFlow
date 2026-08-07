@@ -114,11 +114,11 @@ export const PatientDashboard: React.FC = () => {
   const [isAmbulanceTrackerOpen, setIsAmbulanceTrackerOpen] = useState(false);
 
   // Wallet & Transactions state
-  const [patientWallet, setPatientWallet] = useState<PatientWallet>(() => getPatientWallet());
+  const [patientWallet, setPatientWallet] = useState<PatientWallet>(() => getPatientWallet(user?.email));
   const [isWalletLogOpen, setIsWalletLogOpen] = useState(false);
 
   const refreshWallet = () => {
-    setPatientWallet(getPatientWallet());
+    setPatientWallet(getPatientWallet(user?.email));
   };
 
   useEffect(() => {
@@ -131,7 +131,7 @@ export const PatientDashboard: React.FC = () => {
         window.removeEventListener('storage', refreshWallet);
       };
     }
-  }, []);
+  }, [user?.email]);
 
   // Follow-up consultation booking context
   const [followUpContext, setFollowUpContext] = useState<FollowUpContext | null>(null);
@@ -145,10 +145,10 @@ export const PatientDashboard: React.FC = () => {
   });
 
   // Real Appointments State from Shared Store
-  const [appointments, setAppointments] = useState<SharedAppointment[]>(() => getSharedAppointments());
+  const [appointments, setAppointments] = useState<SharedAppointment[]>(() => getSharedAppointments(user?.email));
 
   const refreshAppointments = () => {
-    setAppointments(getSharedAppointments());
+    setAppointments(getSharedAppointments(user?.email));
   };
 
   useEffect(() => {
@@ -163,15 +163,15 @@ export const PatientDashboard: React.FC = () => {
         window.removeEventListener('focus', refreshAppointments);
       };
     }
-  }, []);
+  }, [user?.email]);
 
   // Clinical records from store
   const [myRecords, setMyRecords] = useState<ClinicalRecord[]>([]);
   const [myLabOrders, setMyLabOrders] = useState<LabOrderRecord[]>([]);
 
   const refreshClinicalRecords = () => {
-    const allRecords = getClinicalRecords();
-    const allLabOrders = getLabOrders();
+    const allRecords = getClinicalRecords(user?.email);
+    const allLabOrders = getLabOrders(user?.email);
     setMyRecords(allRecords);
     setMyLabOrders(allLabOrders);
   };
@@ -190,7 +190,7 @@ export const PatientDashboard: React.FC = () => {
         window.removeEventListener('focus', refreshClinicalRecords);
       };
     }
-  }, []);
+  }, [user?.email]);
 
   const handleProceedToPaymentFromBookModal = (bookingDetails: any) => {
     setIsBookModalOpen(false);
@@ -745,65 +745,83 @@ export const PatientDashboard: React.FC = () => {
           </div>
 
           {/* Ongoing Diagnosis Cards */}
-          <div className="grid grid-cols-1 gap-4">
-            {myRecords.map((rec) => (
-              <div key={rec.id} className="p-6 bg-amber-50/40 border border-amber-200 rounded-3xl space-y-4 shadow-sm">
-                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-amber-200/80 pb-3">
-                  <div>
-                    <div className="flex items-center gap-2">
-                      <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-amber-200 text-amber-950 border border-amber-400">
-                        DIAGNOSIS ONGOING
-                      </span>
-                      <span className="font-mono text-xs font-bold text-slate-600">Rx #{rec.rxNumber}</span>
-                    </div>
-                    <h3 className="font-black text-slate-900 text-base mt-1">{rec.diagnosis}</h3>
-                    <span className="text-xs font-semibold text-slate-600">Attending Doctor: {rec.doctorName} ({rec.department})</span>
-                  </div>
-
-                  {/* 50% - 75% Follow-Up Visit Discount Action */}
-                  <button
-                    onClick={() => handleBookFollowUp(rec.rxNumber, rec.doctorName, rec.department, rec.diagnosis)}
-                    className="px-4 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white font-black text-xs rounded-2xl shadow-lg shadow-emerald-600/20 flex items-center gap-2 cursor-pointer transition-all hover:scale-105"
-                  >
-                    <Plus className="w-4 h-4" />
-                    <span>Book Follow-Up Visit (50% - 75% Off) 🩺</span>
-                  </button>
-                </div>
-
-                {/* Ordered Diagnostic Tests Queue */}
-                <div className="space-y-2">
-                  <span className="text-[11px] font-black uppercase text-amber-900 tracking-wider block">
-                    PRESCRIBED DIAGNOSTIC LAB INVESTIGATIONS REQUIRED:
-                  </span>
-                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                    {rec.labTests?.map((test, idx) => (
-                      <div key={idx} className="p-3.5 bg-white border border-amber-200 rounded-2xl space-y-2 shadow-2xs">
-                        <div className="flex items-center justify-between">
-                          <span className="font-black text-xs text-amber-950 flex items-center gap-1.5">
-                            <FlaskConical className="w-4 h-4 text-amber-600" /> {test.name}
-                          </span>
-                          <span className="px-2 py-0.5 bg-amber-100 text-amber-900 text-[10px] font-black rounded-md border border-amber-300">
-                            AWAITING REPORT
-                          </span>
-                        </div>
-                        <div className="text-[11px] text-slate-600 font-medium space-y-0.5">
-                          <div>Category: {test.category || 'Diagnostic Pathology'} • Specimen: {test.specimen || 'Serum'}</div>
-                          <div className="text-amber-800 font-semibold">{test.instructions || 'Standard Protocol'}</div>
-                        </div>
+          {myRecords.length > 0 ? (
+            <div className="grid grid-cols-1 gap-4">
+              {myRecords.map((rec) => (
+                <div key={rec.id} className="p-6 bg-amber-50/40 border border-amber-200 rounded-3xl space-y-4 shadow-sm">
+                  <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-amber-200/80 pb-3">
+                    <div>
+                      <div className="flex items-center gap-2">
+                        <span className="px-2.5 py-0.5 rounded-full text-[10px] font-black uppercase bg-amber-200 text-amber-950 border border-amber-400">
+                          DIAGNOSIS ONGOING
+                        </span>
+                        <span className="font-mono text-xs font-bold text-slate-600">Rx #{rec.rxNumber}</span>
                       </div>
-                    ))}
+                      <h3 className="font-black text-slate-900 text-base mt-1">{rec.diagnosis}</h3>
+                      <span className="text-xs font-semibold text-slate-600">Attending Doctor: {rec.doctorName} ({rec.department})</span>
+                    </div>
+
+                    {/* 50% - 75% Follow-Up Visit Discount Action */}
+                    <button
+                      onClick={() => handleBookFollowUp(rec.rxNumber, rec.doctorName, rec.department, rec.diagnosis)}
+                      className="px-4 py-2.5 bg-gradient-to-r from-emerald-600 to-teal-700 hover:from-emerald-500 hover:to-teal-600 text-white font-black text-xs rounded-2xl shadow-lg shadow-emerald-600/20 flex items-center gap-2 cursor-pointer transition-all hover:scale-105"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span>Book Follow-Up Visit (50% - 75% Off) 🩺</span>
+                    </button>
+                  </div>
+
+                  {/* Ordered Diagnostic Tests Queue */}
+                  <div className="space-y-2">
+                    <span className="text-[11px] font-black uppercase text-amber-900 tracking-wider block">
+                      PRESCRIBED DIAGNOSTIC LAB INVESTIGATIONS REQUIRED:
+                    </span>
+                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                      {rec.labTests?.map((test, idx) => (
+                        <div key={idx} className="p-3.5 bg-white border border-amber-200 rounded-2xl space-y-2 shadow-2xs">
+                          <div className="flex items-center justify-between">
+                            <span className="font-black text-xs text-amber-950 flex items-center gap-1.5">
+                              <FlaskConical className="w-4 h-4 text-amber-600" /> {test.name}
+                            </span>
+                            <span className="px-2 py-0.5 bg-amber-100 text-amber-900 text-[10px] font-black rounded-md border border-amber-300">
+                              AWAITING REPORT
+                            </span>
+                          </div>
+                          <div className="text-[11px] text-slate-600 font-medium space-y-0.5">
+                            <div>Category: {test.category || 'Diagnostic Pathology'} • Specimen: {test.specimen || 'Serum'}</div>
+                            <div className="text-amber-800 font-semibold">{test.instructions || 'Standard Protocol'}</div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  <div className="p-3 bg-white/80 border border-amber-200 rounded-xl text-xs text-amber-950 font-medium flex items-center gap-2">
+                    <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
+                    <span>
+                      <strong>Next Step:</strong> Complete the prescribed lab investigations above. Once your reports are generated, use the button above to book your 2nd follow-up visit at <strong>50% to 75% discount</strong>.
+                    </span>
                   </div>
                 </div>
-
-                <div className="p-3 bg-white/80 border border-amber-200 rounded-xl text-xs text-amber-950 font-medium flex items-center gap-2">
-                  <AlertCircle className="w-4 h-4 text-amber-600 shrink-0" />
-                  <span>
-                    <strong>Next Step:</strong> Complete the prescribed lab investigations above. Once your reports are generated, use the button above to book your 2nd follow-up visit at <strong>50% to 75% discount</strong>.
-                  </span>
-                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="p-8 bg-white border border-slate-200 rounded-3xl text-center space-y-3 shadow-sm">
+              <div className="w-12 h-12 rounded-2xl bg-amber-50 text-amber-600 mx-auto flex items-center justify-center font-bold">
+                <Activity className="w-6 h-6" />
               </div>
-            ))}
-          </div>
+              <h3 className="font-black text-slate-900 text-sm">No Active Ongoing Diagnoses</h3>
+              <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                When a physician prescribes diagnostic investigations (Lipid Panel, MRI, Blood Tests), active tracking will appear here.
+              </p>
+              <button
+                onClick={() => setIsBookModalOpen(true)}
+                className="px-5 py-2.5 bg-amber-600 hover:bg-amber-500 text-white font-bold text-xs rounded-xl cursor-pointer shadow-md inline-flex items-center gap-1.5"
+              >
+                <Plus className="w-4 h-4" /> Book Doctor Consultation
+              </button>
+            </div>
+          )}
         </div>
       )}
 
@@ -907,58 +925,70 @@ export const PatientDashboard: React.FC = () => {
             </span>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {getPatientInvoices()
-              .filter(
-                (inv) =>
-                  inv.patientName.toLowerCase().includes(displayName.toLowerCase()) ||
-                  displayName === 'Patient' ||
-                  inv.patientName.includes('Jane Patient') ||
-                  inv.patientName.includes('Sarah Connor')
-              )
-              .map((inv) => (
-                <div key={inv.id} className="p-5 bg-white border border-slate-200 rounded-2xl space-y-3 shadow-2xs">
-                  <div className="flex items-center justify-between border-b border-slate-100 pb-3">
-                    <div>
-                      <span className="font-mono font-black text-blue-600 text-sm block">{inv.invoiceCode}</span>
-                      <span className="text-xs font-semibold text-slate-500 block">Date: {inv.date} • {inv.department}</span>
-                    </div>
-                    <span className="px-2.5 py-1 bg-emerald-100 text-emerald-800 text-[10px] font-black rounded-full uppercase border border-emerald-300">
-                      {inv.paymentStatus}
-                    </span>
-                  </div>
+          {(() => {
+            const userInvoices = getPatientInvoices(user?.email).filter(
+              (inv) =>
+                inv.patientName.toLowerCase().includes(displayName.toLowerCase()) ||
+                (inv.email && inv.email.toLowerCase() === user?.email?.toLowerCase())
+            );
 
-                  <div className="space-y-1 text-xs">
-                    <div className="flex justify-between font-semibold text-slate-600">
-                      <span>Itemized Line Charges:</span>
-                      <span>{inv.lineItems.length} Items</span>
+            return userInvoices.length > 0 ? (
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                {userInvoices.map((inv) => (
+                  <div key={inv.id} className="p-5 bg-white border border-slate-200 rounded-2xl space-y-3 shadow-2xs">
+                    <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+                      <div>
+                        <span className="font-mono font-black text-blue-600 text-sm block">{inv.invoiceCode}</span>
+                        <span className="text-xs font-semibold text-slate-500 block">Date: {inv.date} • {inv.department}</span>
+                      </div>
+                      <span className="px-2.5 py-1 bg-emerald-100 text-emerald-800 text-[10px] font-black rounded-full uppercase border border-emerald-300">
+                        {inv.paymentStatus}
+                      </span>
                     </div>
-                    <div className="flex justify-between font-semibold text-slate-600">
-                      <span>Medical GST (5%):</span>
-                      <span>₹{inv.gstAmount.toLocaleString('en-IN')}</span>
-                    </div>
-                    <div className="flex justify-between font-black text-slate-900 text-sm border-t border-slate-100 pt-2">
-                      <span>Total Bill:</span>
-                      <span className="text-emerald-700">₹{inv.totalAmount.toLocaleString('en-IN')}</span>
-                    </div>
-                  </div>
 
-                  <button
-                    onClick={() => {
-                      showToast({
-                        title: 'Viewing Itemized Invoice 📄',
-                        message: `Opening GST Invoice #${inv.invoiceCode}...`,
-                        type: 'info',
-                      });
-                      if (typeof window !== 'undefined') window.print();
-                    }}
-                    className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
-                  >
-                    <Download className="w-3.5 h-3.5 text-emerald-400" /> Print Detailed GST Invoice PDF
-                  </button>
+                    <div className="space-y-1 text-xs">
+                      <div className="flex justify-between font-semibold text-slate-600">
+                        <span>Itemized Line Charges:</span>
+                        <span>{inv.lineItems.length} Items</span>
+                      </div>
+                      <div className="flex justify-between font-semibold text-slate-600">
+                        <span>Medical GST (5%):</span>
+                        <span>₹{inv.gstAmount.toLocaleString('en-IN')}</span>
+                      </div>
+                      <div className="flex justify-between font-black text-slate-900 text-sm border-t border-slate-100 pt-2">
+                        <span>Total Bill:</span>
+                        <span className="text-emerald-700">₹{inv.totalAmount.toLocaleString('en-IN')}</span>
+                      </div>
+                    </div>
+
+                    <button
+                      onClick={() => {
+                        showToast({
+                          title: 'Viewing Itemized Invoice 📄',
+                          message: `Opening GST Invoice #${inv.invoiceCode}...`,
+                          type: 'info',
+                        });
+                        if (typeof window !== 'undefined') window.print();
+                      }}
+                      className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
+                    >
+                      <Download className="w-3.5 h-3.5 text-emerald-400" /> Print Detailed GST Invoice PDF
+                    </button>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="p-8 bg-white border border-slate-200 rounded-3xl text-center space-y-3 shadow-sm">
+                <div className="w-12 h-12 rounded-2xl bg-emerald-50 text-emerald-600 mx-auto flex items-center justify-center font-bold">
+                  <CreditCard className="w-6 h-6" />
                 </div>
-              ))}
-          </div>
+                <h3 className="font-black text-slate-900 text-sm">No GST Invoices Found</h3>
+                <p className="text-xs text-slate-500 max-w-sm mx-auto">
+                  Tax receipts for OPD consultations, pharmacy purchases, and lab tests will automatically generate and store here.
+                </p>
+              </div>
+            );
+          })()}
         </div>
       )}
     </div>

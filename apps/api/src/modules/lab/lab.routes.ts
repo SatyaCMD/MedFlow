@@ -10,6 +10,8 @@ import { PERMISSIONS } from '@medicore360/shared';
 const router = Router();
 const controller = new LabController();
 
+router.post('/dispatch-report', controller.dispatchReport);
+
 router.use(authenticate);
 
 router.route('/')

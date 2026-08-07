@@ -379,26 +379,23 @@ const INITIAL_LAB_EQUIPMENT_INVOICES: LabEquipmentInvoice[] = [
 ];
 
 // Helper Functions
-export const getPatientInvoices = (): PatientInvoice[] => {
-  if (typeof window === 'undefined') return INITIAL_PATIENT_INVOICES;
-  const stored = localStorage.getItem(STORAGE_KEYS.PATIENT_INVOICES);
+export const getPatientInvoices = (userEmail?: string): PatientInvoice[] => {
+  if (typeof window === 'undefined') return [];
+  const cleanEmail = (userEmail || '').trim().toLowerCase();
+  const isSeedUser = !cleanEmail || cleanEmail.includes('sai_satyabrata') || cleanEmail.includes('test_admin') || cleanEmail.includes('patient@medflow.com');
+  const storageKey = cleanEmail ? `${STORAGE_KEYS.PATIENT_INVOICES}_${cleanEmail}` : STORAGE_KEYS.PATIENT_INVOICES;
+  const stored = localStorage.getItem(storageKey);
   if (!stored) {
-    localStorage.setItem(STORAGE_KEYS.PATIENT_INVOICES, JSON.stringify(INITIAL_PATIENT_INVOICES));
-    return INITIAL_PATIENT_INVOICES;
+    if (isSeedUser) {
+      localStorage.setItem(storageKey, JSON.stringify(INITIAL_PATIENT_INVOICES));
+      return INITIAL_PATIENT_INVOICES;
+    }
+    return [];
   }
   try {
-    const parsed: PatientInvoice[] = JSON.parse(stored);
-    const missing = INITIAL_PATIENT_INVOICES.filter(
-      (initInv) => !parsed.some((p) => p.id === initInv.id || p.invoiceCode === initInv.invoiceCode)
-    );
-    if (missing.length > 0) {
-      const merged = [...parsed, ...missing];
-      localStorage.setItem(STORAGE_KEYS.PATIENT_INVOICES, JSON.stringify(merged));
-      return merged;
-    }
-    return parsed;
+    return JSON.parse(stored);
   } catch {
-    return INITIAL_PATIENT_INVOICES;
+    return [];
   }
 };
 

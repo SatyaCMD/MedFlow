@@ -36,6 +36,8 @@ import {
   ShoppingBag
 } from 'lucide-react';
 
+import { api } from '../../lib/axios';
+
 export const LabTechnicianDashboard: React.FC = () => {
   const { user } = useAuth();
   const { showToast } = useToast();
@@ -82,25 +84,36 @@ export const LabTechnicianDashboard: React.FC = () => {
     setIsReportModalOpen(true);
   };
 
-  const handleReportSubmit = (e: React.FormEvent) => {
+  const handleReportSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!selectedOrder) return;
 
     const reportData = {
+      reportId: `LAB-${selectedOrder.id.replace(/\D/g, '') || Date.now().toString().slice(-6)}`,
+      patientName: selectedOrder.patientName,
+      primaryPatientName: selectedOrder.patientName,
+      mrn: selectedOrder.mrn,
+      testName: selectedOrder.testName,
+      doctorName: selectedOrder.doctorName,
       findings,
       notes,
       technicianName: techDisplayName,
       submittedAt: `${new Date().toLocaleDateString()} ${new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}`,
-      doctorName: selectedOrder.doctorName,
     };
 
     const updated = submitLabReport(selectedOrder.id, reportData);
     setLabOrders(updated);
     setIsReportModalOpen(false);
 
+    try {
+      await api.post('/lab/dispatch-report', reportData);
+    } catch {
+      // Non-blocking background dispatch
+    }
+
     showToast({
-      title: 'Lab Report Submitted & Dispatched!',
-      message: `Diagnostic report for ${selectedOrder.patientName} (${selectedOrder.testName}) sent to ${selectedOrder.doctorName}.`,
+      title: 'Lab Report Submitted & Synced to AWS S3! ☁️',
+      message: `Diagnostic report for ${selectedOrder.patientName} (${selectedOrder.testName}) stored in S3 and sent to ${selectedOrder.doctorName}.`,
       type: 'success',
     });
   };

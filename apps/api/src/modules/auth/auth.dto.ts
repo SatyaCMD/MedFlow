@@ -5,10 +5,15 @@ import { ROLES } from '@medicore360/shared';
 export const RegisterUserSchema = z.object({
   body: z.object({
     email: z.string().email('Invalid email format'),
-    password: z.string().min(10, 'Password must be at least 10 characters'),
-    firstName: z.string().min(2, 'First name is too short'),
-    lastName: z.string().min(2, 'Last name is too short'),
+    password: z.string().min(8, 'Password must be at least 8 characters'),
+    firstName: z.string().min(1, 'First name is required'),
+    lastName: z.string().min(1, 'Last name is required'),
     role: z.enum(Object.values(ROLES) as [string, ...string[]]).default(ROLES.PATIENT),
+    medicalLicenseNumber: z.string().optional(),
+    specialty: z.string().optional(),
+    department: z.string().optional(),
+    bloodGroup: z.string().optional(),
+    emergencyPhone: z.string().optional(),
   }),
 });
 

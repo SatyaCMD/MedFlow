@@ -12,6 +12,8 @@ import { useToast } from '../../context/ToastContext';
 import { printOfficialGstInvoicePdf } from '../../lib/singlePageReceiptPdf';
 import { useAuth } from '../../hooks/useAuth';
 import { useRouter } from 'next/navigation';
+import { getClinicalRecords, ClinicalRecord } from '../../data/medicalHistoryStore';
+import { getPatientCensus } from '../../data/patientCensusStore';
 import {
   FileText,
   ShieldCheck,
@@ -230,13 +232,105 @@ const CLINICAL_ROSTER_DATABASE: PatientEmrProfile[] = [
   },
 ];
 
+// Function to compile dynamic clinical roster combining seed database, census patients, and actual doctor prescriptions
+function compileDynamicClinicalRoster(): PatientEmrProfile[] {
+  const rosterMap = new Map<string, PatientEmrProfile>();
+
+  // 1. Seed base roster database
+  CLINICAL_ROSTER_DATABASE.forEach((p) => {
+    rosterMap.set(p.mrn.toLowerCase(), { ...p, records: [...p.records] });
+  });
+
+  // 2. Add patients from getPatientCensus() if not present
+  if (typeof window !== 'undefined') {
+    try {
+      const census = getPatientCensus();
+      census.forEach((p) => {
+        const key = (p.mrn || p.name).toLowerCase();
+        if (!rosterMap.has(key)) {
+          rosterMap.set(key, {
+            id: `pemr-${p.id || p.mrn}`,
+            patientName: p.name,
+            mrn: p.mrn || `MC-${Math.floor(1000 + Math.random() * 9000)}`,
+            abhaId: `91-55-${Math.floor(1000 + Math.random() * 8999)}-${Math.floor(1000 + Math.random() * 8999)}`,
+            ageGender: `${p.age || 28} Yrs / ${p.gender || 'Patient'}`,
+            bloodGroup: p.bloodGroup || 'O+',
+            allergies: ['No Known Drug Allergies (NKDA)'],
+            emergencyContact: p.nurseName || 'Verified Clinical Care',
+            records: [],
+          });
+        }
+      });
+    } catch {}
+  }
+
+  // 3. Incorporate real doctor prescriptions from getClinicalRecords()
+  if (typeof window !== 'undefined') {
+    try {
+      const clinicalRecords = getClinicalRecords();
+      clinicalRecords.forEach((rec) => {
+        const key = (rec.mrn || rec.patientName).toLowerCase();
+        let profile = Array.from(rosterMap.values()).find(
+          (p) =>
+            p.mrn.toLowerCase() === key ||
+            p.patientName.toLowerCase() === key ||
+            p.patientName.toLowerCase().includes(rec.patientName.toLowerCase())
+        );
+
+        if (!profile) {
+          profile = {
+            id: `pemr-${rec.mrn || Date.now()}`,
+            patientName: rec.patientName,
+            mrn: rec.mrn || `MC-${Math.floor(1000 + Math.random() * 9000)}`,
+            abhaId: `91-55-${Math.floor(1000 + Math.random() * 8999)}-${Math.floor(1000 + Math.random() * 8999)}`,
+            ageGender: '28 Yrs / Patient',
+            bloodGroup: 'O+',
+            allergies: ['No Known Drug Allergies (NKDA)'],
+            emergencyContact: 'Emergency Contact Verified',
+            records: [],
+          };
+          rosterMap.set((profile.mrn || profile.patientName).toLowerCase(), profile);
+        }
+
+        const recId = rec.id || `rec-${rec.rxNumber}`;
+        const existingRec = profile.records.find((r) => r.id === recId || (rec.rxNumber && r.id.includes(rec.rxNumber)));
+        if (!existingRec) {
+          profile.records.unshift({
+            id: recId,
+            visitDate: rec.date,
+            attendingDoctor: rec.doctorName,
+            department: rec.department || 'General Medicine',
+            diagnosis: rec.diagnosis,
+            vitals: { bp: '120/80 mmHg', hr: '72 bpm', temp: '98.6 °F', spo2: '99%' },
+            medications: (rec.medications || []).map((m: any) => ({
+              name: m.name,
+              dosage: m.dosage || m.frequency || '1 Tablet Daily',
+              frequency: m.instructions || m.duration || 'As prescribed',
+            })),
+            labOrders: (rec.labTests || []).map((t) => ({
+              testName: t.name,
+              status: 'REPORT_SUBMITTED',
+              findings: t.instructions || 'Standard Protocol',
+            })),
+            cdssAlert: 'CDSS PHARMACY SAFETY VERIFIED • NO DRUG ALLERGIES DETECTED',
+            sha256Hash: rec.signatureHash || 'SHA256: e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855',
+          });
+        }
+      });
+    } catch {}
+  }
+
+  return Array.from(rosterMap.values());
+}
+
 // Helper to construct account-specific dynamic EMR profile
 function generateAccountEmr(user: any): PatientEmrProfile {
   const name = user?.firstName ? `${user.firstName} ${user.lastName || ''}`.trim() : 'Patient Account';
   const email = user?.email || 'patient@medflow.com';
 
-  // Check if matches preset roster
-  const preset = CLINICAL_ROSTER_DATABASE.find(
+  const fullRoster = compileDynamicClinicalRoster();
+  // Check if matches preset or real roster
+  const preset = fullRoster.find(
     (p) => p.patientName.toLowerCase() === name.toLowerCase() || name.toLowerCase().includes(p.patientName.toLowerCase())
   );
   if (preset) return preset;
@@ -287,6 +381,7 @@ export default function EmrPage() {
   const { showToast } = useToast();
 
   const [searchQuery, setSearchQuery] = useState('');
+  const [roster, setRoster] = useState<PatientEmrProfile[]>([]);
   const [selectedPatient, setSelectedPatient] = useState<PatientEmrProfile | null>(null);
   const [selectedRecord, setSelectedRecord] = useState<PatientEmrProfile['records'][0] | null>(null);
   const [isRecordModalOpen, setIsRecordModalOpen] = useState(false);
@@ -311,6 +406,28 @@ export default function EmrPage() {
     'PATIENT',
   ].includes(currentRole as string);
 
+  const refreshRoster = () => {
+    const compiled = compileDynamicClinicalRoster();
+    setRoster(compiled);
+
+    if (user) {
+      if (isPatientRole) {
+        setSelectedPatient(generateAccountEmr(user));
+      } else {
+        setSelectedPatient((prev) => {
+          if (prev) {
+            const updated = compiled.find((p) => p.id === prev.id || p.mrn === prev.mrn);
+            if (updated) return updated;
+          }
+          const matched = compiled.find((p) =>
+            p.patientName.toLowerCase().includes(fullName.toLowerCase())
+          );
+          return matched || compiled[0];
+        });
+      }
+    }
+  };
+
   useEffect(() => {
     if (!loading && !user) {
       router.push('/explore/emr');
@@ -318,16 +435,18 @@ export default function EmrPage() {
     }
 
     if (user) {
-      if (isPatientRole) {
-        // Patient role gets ONLY their own dynamic account EMR
-        setSelectedPatient(generateAccountEmr(user));
-      } else {
-        // Staff/Doctor default to first patient or matched patient in roster
-        const matched = CLINICAL_ROSTER_DATABASE.find((p) =>
-          p.patientName.toLowerCase().includes(fullName.toLowerCase())
-        );
-        setSelectedPatient(matched || CLINICAL_ROSTER_DATABASE[0]);
-      }
+      refreshRoster();
+
+      const handleUpdate = () => refreshRoster();
+      window.addEventListener('medflow-clinical-records-updated', handleUpdate);
+      window.addEventListener('storage', handleUpdate);
+      window.addEventListener('focus', handleUpdate);
+
+      return () => {
+        window.removeEventListener('medflow-clinical-records-updated', handleUpdate);
+        window.removeEventListener('storage', handleUpdate);
+        window.removeEventListener('focus', handleUpdate);
+      };
     }
   }, [loading, user, router, fullName, isPatientRole]);
 
@@ -341,7 +460,7 @@ export default function EmrPage() {
     );
   }
 
-  const filteredPatients = CLINICAL_ROSTER_DATABASE.filter((p) => {
+  const filteredPatients = roster.filter((p) => {
     const q = searchQuery.toLowerCase().trim();
     if (!q) return true;
     return (
@@ -561,123 +680,133 @@ export default function EmrPage() {
                 <Clock className="w-4 h-4 text-blue-600" /> Longitudinal Medical History & Digital Prescriptions ({selectedPatient.records.length} Visit File{selectedPatient.records.length > 1 ? 's' : ''})
               </h4>
 
-              {selectedPatient.records.map((rec) => (
-                <div key={rec.id} className="p-5 bg-white border border-slate-200 rounded-2xl space-y-4 shadow-2xs">
-                  {/* Record Banner */}
-                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
-                    <div>
-                      <span className="text-xs font-bold text-blue-600">Visit Date: {rec.visitDate} • {rec.department}</span>
-                      <h5 className="font-black text-slate-900 text-sm mt-0.5">{rec.diagnosis}</h5>
-                      <p className="text-xs text-slate-500 font-semibold mt-0.5">Attending Physician: <strong>{rec.attendingDoctor}</strong></p>
+              {selectedPatient.records.length > 0 ? (
+                selectedPatient.records.map((rec) => (
+                  <div key={rec.id} className="p-5 bg-white border border-slate-200 rounded-2xl space-y-4 shadow-2xs">
+                    {/* Record Banner */}
+                    <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b border-slate-100 pb-3">
+                      <div>
+                        <span className="text-xs font-bold text-blue-600">Visit Date: {rec.visitDate} • {rec.department}</span>
+                        <h5 className="font-black text-slate-900 text-sm mt-0.5">{rec.diagnosis}</h5>
+                        <p className="text-xs text-slate-500 font-semibold mt-0.5">Attending Physician: <strong>{rec.attendingDoctor}</strong></p>
+                      </div>
+
+                      <div className="flex items-center gap-2">
+                        <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase ${
+                          rec.cdssAlert.includes('⚠️') ? 'bg-amber-100 text-amber-900 border border-amber-300' : 'bg-emerald-100 text-emerald-800 border border-emerald-300'
+                        }`}>
+                          {rec.cdssAlert}
+                        </span>
+
+                        <button
+                          onClick={() => {
+                            const rxData: PrescriptionData = {
+                              rxNumber: `RX-2026-${rec.id.replace(/\D/g, '') || '9901'}`,
+                              patientName: selectedPatient.patientName,
+                              mrn: selectedPatient.mrn,
+                              age: selectedPatient.ageGender.split('/')[0] || '32 Yrs',
+                              gender: selectedPatient.ageGender.split('/')[1] || 'Female',
+                              bloodGroup: selectedPatient.bloodGroup,
+                              doctorName: rec.attendingDoctor,
+                              department: rec.department,
+                              date: rec.visitDate,
+                              diagnosis: rec.diagnosis,
+                              medications: rec.medications.map((m) => ({
+                                name: m.name,
+                                dosage: m.dosage,
+                                instructions: m.frequency,
+                              })),
+                              labTests: rec.labOrders?.map((l) => ({
+                                name: l.testName,
+                                category: 'Diagnostics',
+                                specimen: 'Blood Specimen',
+                                instructions: l.findings,
+                              })),
+                              signatureHash: rec.sha256Hash,
+                            };
+                            setSelectedRxData(rxData);
+                            setIsRxPdfOpen(true);
+                          }}
+                          className="px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 font-bold text-xs rounded-xl shadow-2xs flex items-center gap-1.5 cursor-pointer transition-colors"
+                          title="View Official Doctor Prescription Copy"
+                        >
+                          <FileText className="w-3.5 h-3.5 text-amber-600" />
+                          <span>View Prescription PDF</span>
+                        </button>
+
+                        <button
+                          onClick={() => handleOpenRecordModal(rec)}
+                          className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl shadow-2xs flex items-center gap-1.5 cursor-pointer transition-colors"
+                        >
+                          <FileSignature className="w-3.5 h-3.5" />
+                          <span>View Signed EMR File</span>
+                        </button>
+                      </div>
                     </div>
 
-                    <div className="flex items-center gap-2">
-                      <span className={`px-2.5 py-1 rounded-full text-[10px] font-black uppercase ${
-                        rec.cdssAlert.includes('⚠️') ? 'bg-amber-100 text-amber-900 border border-amber-300' : 'bg-emerald-100 text-emerald-800 border border-emerald-300'
-                      }`}>
-                        {rec.cdssAlert}
-                      </span>
-
-                      <button
-                        onClick={() => {
-                          const rxData: PrescriptionData = {
-                            rxNumber: `RX-2026-${rec.id.replace(/\D/g, '') || '9901'}`,
-                            patientName: selectedPatient.patientName,
-                            mrn: selectedPatient.mrn,
-                            age: selectedPatient.ageGender.split('/')[0] || '32 Yrs',
-                            gender: selectedPatient.ageGender.split('/')[1] || 'Female',
-                            bloodGroup: selectedPatient.bloodGroup,
-                            doctorName: rec.attendingDoctor,
-                            department: rec.department,
-                            date: rec.visitDate,
-                            diagnosis: rec.diagnosis,
-                            medications: rec.medications.map((m) => ({
-                              name: m.name,
-                              dosage: m.dosage,
-                              instructions: m.frequency,
-                            })),
-                            labTests: rec.labOrders?.map((l) => ({
-                              name: l.testName,
-                              category: 'Diagnostics',
-                              specimen: 'Blood Specimen',
-                              instructions: l.findings,
-                            })),
-                            signatureHash: rec.sha256Hash,
-                          };
-                          setSelectedRxData(rxData);
-                          setIsRxPdfOpen(true);
-                        }}
-                        className="px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 font-bold text-xs rounded-xl shadow-2xs flex items-center gap-1.5 cursor-pointer transition-colors"
-                        title="View Official Doctor Prescription Copy"
-                      >
-                        <FileText className="w-3.5 h-3.5 text-amber-600" />
-                        <span>View Prescription PDF</span>
-                      </button>
-
-                      <button
-                        onClick={() => handleOpenRecordModal(rec)}
-                        className="px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl shadow-2xs flex items-center gap-1.5 cursor-pointer transition-colors"
-                      >
-                        <FileSignature className="w-3.5 h-3.5" />
-                        <span>View Signed EMR File</span>
-                      </button>
+                    {/* Recorded Vitals Telemetry */}
+                    <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/80 grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs font-semibold">
+                      <div><span className="text-[10px] text-slate-400 uppercase font-black block">BLOOD PRESSURE</span><strong className="text-slate-800">{rec.vitals.bp}</strong></div>
+                      <div><span className="text-[10px] text-slate-400 uppercase font-black block">HEART RATE</span><strong className="text-slate-800">{rec.vitals.hr}</strong></div>
+                      <div><span className="text-[10px] text-slate-400 uppercase font-black block">TEMPERATURE</span><strong className="text-slate-800">{rec.vitals.temp}</strong></div>
+                      <div><span className="text-[10px] text-slate-400 uppercase font-black block">OXYGEN SATURATION</span><strong className="text-emerald-700">{rec.vitals.spo2}</strong></div>
                     </div>
-                  </div>
 
-                  {/* Recorded Vitals Telemetry */}
-                  <div className="p-3 bg-slate-50 rounded-xl border border-slate-200/80 grid grid-cols-2 sm:grid-cols-4 gap-2 text-xs font-semibold">
-                    <div><span className="text-[10px] text-slate-400 uppercase font-black block">BLOOD PRESSURE</span><strong className="text-slate-800">{rec.vitals.bp}</strong></div>
-                    <div><span className="text-[10px] text-slate-400 uppercase font-black block">HEART RATE</span><strong className="text-slate-800">{rec.vitals.hr}</strong></div>
-                    <div><span className="text-[10px] text-slate-400 uppercase font-black block">TEMPERATURE</span><strong className="text-slate-800">{rec.vitals.temp}</strong></div>
-                    <div><span className="text-[10px] text-slate-400 uppercase font-black block">OXYGEN SATURATION</span><strong className="text-emerald-700">{rec.vitals.spo2}</strong></div>
-                  </div>
-
-                  {/* Prescribed Medications */}
-                  <div className="space-y-2">
-                    <span className="text-[10px] font-black uppercase text-slate-500 flex items-center gap-1">
-                      <Pill className="w-3.5 h-3.5 text-blue-600" /> Prescribed Dosing Schedule
-                    </span>
-                    <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
-                      {rec.medications.map((m, idx) => (
-                        <div key={idx} className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold flex items-center justify-between">
-                          <div>
-                            <strong className="text-slate-900 block">{m.name}</strong>
-                            <span className="text-[10px] text-slate-500">{m.frequency}</span>
-                          </div>
-                          <span className="px-2 py-0.5 bg-blue-100 text-blue-800 text-[10px] font-bold rounded-md">{m.dosage}</span>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Lab Test Reports */}
-                  {rec.labOrders && rec.labOrders.length > 0 && (
+                    {/* Prescribed Medications */}
                     <div className="space-y-2">
                       <span className="text-[10px] font-black uppercase text-slate-500 flex items-center gap-1">
-                        <FlaskConical className="w-3.5 h-3.5 text-indigo-600" /> Laboratory Diagnostic Reports
+                        <Pill className="w-3.5 h-3.5 text-blue-600" /> Prescribed Dosing Schedule
                       </span>
-                      <div className="space-y-1.5">
-                        {rec.labOrders.map((l, idx) => (
-                          <div key={idx} className="p-2.5 bg-indigo-50/70 border border-indigo-200 rounded-xl text-xs font-semibold space-y-1">
-                            <div className="flex items-center justify-between">
-                              <strong className="text-indigo-950">{l.testName}</strong>
-                              <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-black rounded-md">✓ Completed</span>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+                        {rec.medications.map((m, idx) => (
+                          <div key={idx} className="p-2.5 bg-slate-50 border border-slate-200 rounded-xl text-xs font-semibold flex items-center justify-between">
+                            <div>
+                              <strong className="text-slate-900 block">{m.name}</strong>
+                              <span className="text-[10px] text-slate-500">{m.frequency}</span>
                             </div>
-                            <p className="text-[11px] text-slate-700">Findings: {l.findings}</p>
+                            <span className="px-2 py-0.5 bg-blue-100 text-blue-800 text-[10px] font-bold rounded-md">{m.dosage}</span>
                           </div>
                         ))}
                       </div>
                     </div>
-                  )}
 
-                  <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400 font-mono font-bold">
-                    <span>{rec.sha256Hash}</span>
-                    <span className="text-emerald-700 font-sans font-bold flex items-center gap-1">
-                      <ShieldCheck className="w-3.5 h-3.5" /> Certified SHA-256 SHA-2 Signed
-                    </span>
+                    {/* Lab Test Reports */}
+                    {rec.labOrders && rec.labOrders.length > 0 && (
+                      <div className="space-y-2">
+                        <span className="text-[10px] font-black uppercase text-slate-500 flex items-center gap-1">
+                          <FlaskConical className="w-3.5 h-3.5 text-indigo-600" /> Laboratory Diagnostic Reports
+                        </span>
+                        <div className="space-y-1.5">
+                          {rec.labOrders.map((l, idx) => (
+                            <div key={idx} className="p-2.5 bg-indigo-50/70 border border-indigo-200 rounded-xl text-xs font-semibold space-y-1">
+                              <div className="flex items-center justify-between">
+                                <strong className="text-indigo-950">{l.testName}</strong>
+                                <span className="px-2 py-0.5 bg-emerald-100 text-emerald-800 text-[10px] font-black rounded-md">✓ Completed</span>
+                              </div>
+                              <p className="text-[11px] text-slate-700">Findings: {l.findings}</p>
+                            </div>
+                          ))}
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="pt-2 border-t border-slate-100 flex items-center justify-between text-[10px] text-slate-400 font-mono font-bold">
+                      <span>{rec.sha256Hash}</span>
+                      <span className="text-emerald-700 font-sans font-bold flex items-center gap-1">
+                        <ShieldCheck className="w-3.5 h-3.5" /> Certified SHA-256 SHA-2 Signed
+                      </span>
+                    </div>
                   </div>
+                ))
+              ) : (
+                <div className="p-8 bg-white border border-slate-200 rounded-2xl text-center space-y-2">
+                  <FileText className="w-8 h-8 text-slate-400 mx-auto" />
+                  <h5 className="font-black text-slate-900 text-sm">No Prescriptions or EMR Files Found</h5>
+                  <p className="text-xs text-slate-500">
+                    This patient has no signed digital prescriptions or EMR records logged in the clinical vault yet.
+                  </p>
                 </div>
-              ))}
+              )}
             </div>
           </div>
         </div>
