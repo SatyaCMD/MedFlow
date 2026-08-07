@@ -279,75 +279,75 @@ export const EnterpriseCommandCenterModal: React.FC<EnterpriseCommandCenterModal
         {/* ========================================================================= */}
         <AnimatePresence>
           {selectedModule && (
-            <div className="fixed inset-0 z-[1000] flex items-center justify-center p-3 sm:p-6 bg-slate-950/85 backdrop-blur-md">
+            <div className="fixed inset-0 z-[1000] flex items-center justify-center p-3 sm:p-6 bg-slate-900/60 backdrop-blur-md">
               <motion.div
                 initial={{ opacity: 0, scale: 0.93, y: 20 }}
                 animate={{ opacity: 1, scale: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.93, y: 20 }}
-                className="bg-slate-900 border border-slate-700 rounded-3xl max-w-4xl w-full p-6 sm:p-8 shadow-2xl text-white space-y-6 max-h-[92vh] overflow-y-auto relative"
+                className="bg-white border border-slate-200 rounded-3xl max-w-4xl w-full p-6 sm:p-8 shadow-2xl text-slate-900 space-y-6 max-h-[92vh] overflow-y-auto relative"
               >
                 {/* Control Panel Header */}
-                <div className="flex items-start justify-between border-b border-slate-800 pb-5">
+                <div className="flex items-start justify-between border-b border-slate-100 pb-5">
                   <div className="flex items-center gap-3">
                     <div className="w-12 h-12 rounded-2xl bg-blue-600 text-white flex items-center justify-center shadow-lg">
                       <Cpu className="w-7 h-7" />
                     </div>
                     <div>
                       <div className="flex items-center gap-2">
-                        <span className="font-mono text-xs font-black text-blue-400">MODULE #{selectedModule.id} CONTROL PANEL</span>
-                        <span className="px-2.5 py-0.5 bg-emerald-500/20 text-emerald-300 font-extrabold text-[10px] rounded-full border border-emerald-500/30 flex items-center gap-1">
-                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+                        <span className="font-mono text-xs font-black text-blue-600">MODULE #{selectedModule.id} CONTROL PANEL</span>
+                        <span className="px-2.5 py-0.5 bg-emerald-50 text-emerald-800 font-extrabold text-[10px] rounded-full border border-emerald-300 flex items-center gap-1">
+                          <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
                           ONLINE & OPERATIONAL
                         </span>
                       </div>
-                      <h2 className="font-black text-xl text-white mt-0.5">{selectedModule.name}</h2>
-                      <p className="text-xs text-slate-400 mt-1">{selectedModule.description}</p>
+                      <h2 className="font-black text-xl text-slate-900 mt-0.5">{selectedModule.name}</h2>
+                      <p className="text-xs text-slate-500 mt-1">{selectedModule.description}</p>
                     </div>
                   </div>
                   <button
                     onClick={() => setSelectedModule(null)}
-                    className="p-2 text-slate-400 hover:text-white bg-slate-800 hover:bg-slate-700 rounded-xl transition-colors cursor-pointer"
+                    className="p-2 text-slate-400 hover:text-slate-700 bg-slate-100 hover:bg-slate-200 rounded-xl transition-colors cursor-pointer"
                   >
                     <X className="w-5 h-5" />
                   </button>
                 </div>
 
                 {/* Live System Metrics Telemetry Bar */}
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-800/60 border border-slate-700/80 p-4 rounded-2xl">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3 bg-slate-50 border border-slate-200 p-4 rounded-2xl">
                   <div className="space-y-1">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase flex items-center gap-1">
-                      <Server className="w-3 h-3 text-blue-400" /> Active Cluster
+                    <span className="text-[10px] font-bold text-slate-500 uppercase flex items-center gap-1">
+                      <Server className="w-3 h-3 text-blue-600" /> Active Cluster
                     </span>
-                    <p className="text-sm font-extrabold text-white">3 Nodes (API 1-3)</p>
+                    <p className="text-sm font-extrabold text-slate-900">3 Nodes (API 1-3)</p>
                   </div>
                   <div className="space-y-1">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase flex items-center gap-1">
-                      <Activity className="w-3 h-3 text-emerald-400" /> System Uptime
+                    <span className="text-[10px] font-bold text-slate-500 uppercase flex items-center gap-1">
+                      <Activity className="w-3 h-3 text-emerald-600" /> System Uptime
                     </span>
-                    <p className="text-sm font-extrabold text-emerald-400">99.99% SLA</p>
+                    <p className="text-sm font-extrabold text-emerald-700">99.99% SLA</p>
                   </div>
                   <div className="space-y-1">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase flex items-center gap-1">
-                      <Zap className="w-3 h-3 text-amber-400" /> Latency
+                    <span className="text-[10px] font-bold text-slate-500 uppercase flex items-center gap-1">
+                      <Zap className="w-3 h-3 text-amber-600" /> Latency
                     </span>
-                    <p className="text-sm font-extrabold text-white">12 ms Avg</p>
+                    <p className="text-sm font-extrabold text-slate-900">12 ms Avg</p>
                   </div>
                   <div className="space-y-1">
-                    <span className="text-[10px] font-bold text-slate-400 uppercase flex items-center gap-1">
-                      <ShieldCheck className="w-3 h-3 text-indigo-400" /> RBAC Policy
+                    <span className="text-[10px] font-bold text-slate-500 uppercase flex items-center gap-1">
+                      <ShieldCheck className="w-3 h-3 text-indigo-600" /> RBAC Policy
                     </span>
-                    <p className="text-sm font-extrabold text-indigo-300">Enforced</p>
+                    <p className="text-sm font-extrabold text-indigo-700">Enforced</p>
                   </div>
                 </div>
 
                 {/* Sub-module Interactive Control Matrix */}
                 <div className="space-y-3">
                   <div className="flex items-center justify-between">
-                    <h4 className="font-extrabold text-sm text-slate-200 flex items-center gap-2">
-                      <Layers className="w-4 h-4 text-blue-400" />
+                    <h4 className="font-black text-sm text-slate-900 flex items-center gap-2">
+                      <Layers className="w-4 h-4 text-blue-600" />
                       <span>Sub-Module Feature Toggle Matrix</span>
                     </h4>
-                    <span className="text-[11px] font-semibold text-slate-400">Click feature to toggle active state</span>
+                    <span className="text-[11px] font-semibold text-slate-500">Click feature to toggle active state</span>
                   </div>
 
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
@@ -359,20 +359,20 @@ export const EnterpriseCommandCenterModal: React.FC<EnterpriseCommandCenterModal
                           onClick={() => handleToggleFeature(sub)}
                           className={`p-3.5 rounded-xl border transition-all cursor-pointer flex items-center justify-between ${
                             isEnabled
-                              ? 'bg-slate-800/90 border-blue-500/50 hover:border-blue-400'
-                              : 'bg-slate-900/90 border-slate-800 opacity-60 hover:opacity-100'
+                              ? 'bg-white border-blue-300 hover:border-blue-500 shadow-2xs'
+                              : 'bg-slate-50 border-slate-200 opacity-60 hover:opacity-100'
                           }`}
                         >
                           <div className="flex items-center gap-2.5">
-                            <div className={`w-2.5 h-2.5 rounded-full ${isEnabled ? 'bg-emerald-400 shadow-[0_0_8px_rgba(52,211,153,0.8)]' : 'bg-slate-600'}`} />
-                            <span className="font-bold text-xs text-white">{sub}</span>
+                            <div className={`w-2.5 h-2.5 rounded-full ${isEnabled ? 'bg-emerald-500 shadow-2xs' : 'bg-slate-400'}`} />
+                            <span className="font-bold text-xs text-slate-900">{sub}</span>
                           </div>
                           <span
-                            className={`px-2 py-0.5 rounded-md text-[10px] font-black uppercase ${
-                              isEnabled ? 'bg-emerald-500/20 text-emerald-300 border border-emerald-500/30' : 'bg-slate-800 text-slate-500 border border-slate-700'
+                            className={`px-2.5 py-0.5 rounded-md text-[10px] font-black uppercase ${
+                              isEnabled ? 'bg-emerald-100 text-emerald-800 border border-emerald-300' : 'bg-slate-200 text-slate-600 border border-slate-300'
                             }`}
                           >
-                            {isEnabled ? 'Enabled' : 'Disabled'}
+                            {isEnabled ? 'ENABLED' : 'DISABLED'}
                           </span>
                         </div>
                       );
@@ -381,7 +381,7 @@ export const EnterpriseCommandCenterModal: React.FC<EnterpriseCommandCenterModal
                 </div>
 
                 {/* Live Telemetry Log Inspector */}
-                <div className="space-y-2 bg-slate-950 border border-slate-800 p-4 rounded-2xl font-mono text-[11px]">
+                <div className="space-y-2 bg-slate-900 border border-slate-800 p-4 rounded-2xl font-mono text-[11px] text-slate-200">
                   <div className="flex items-center justify-between text-slate-400 border-b border-slate-800 pb-2">
                     <span className="flex items-center gap-1.5 font-bold text-slate-300">
                       <Terminal className="w-4 h-4 text-emerald-400" />
@@ -408,14 +408,14 @@ export const EnterpriseCommandCenterModal: React.FC<EnterpriseCommandCenterModal
                 </div>
 
                 {/* Control Panel Action Bar */}
-                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-slate-800 pt-5">
+                <div className="flex flex-col sm:flex-row items-center justify-between gap-3 border-t border-slate-100 pt-5">
                   <div className="flex items-center gap-2">
                     <button
                       onClick={handleRunDiagnostics}
                       disabled={isDiagnosticRunning}
-                      className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs rounded-xl border border-slate-700 transition-all flex items-center gap-2 cursor-pointer"
+                      className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs rounded-xl border border-slate-200 transition-all flex items-center gap-2 cursor-pointer"
                     >
-                      <Zap className="w-4 h-4 text-amber-400" />
+                      <Zap className="w-4 h-4 text-amber-600" />
                       <span>Health Check</span>
                     </button>
                     <button
@@ -426,16 +426,16 @@ export const EnterpriseCommandCenterModal: React.FC<EnterpriseCommandCenterModal
                           type: 'info',
                         });
                       }}
-                      className="px-4 py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs rounded-xl border border-slate-700 transition-all flex items-center gap-2 cursor-pointer"
+                      className="px-4 py-2.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs rounded-xl border border-slate-200 transition-all flex items-center gap-2 cursor-pointer"
                     >
-                      <BarChart3 className="w-4 h-4 text-blue-400" />
+                      <BarChart3 className="w-4 h-4 text-blue-600" />
                       <span>View Metrics</span>
                     </button>
                   </div>
 
                   <button
                     onClick={handleLaunchModuleAction}
-                    className="w-full sm:w-auto px-6 py-2.5 bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-black text-xs rounded-xl shadow-lg shadow-blue-500/20 transition-all flex items-center justify-center gap-2 cursor-pointer hover:scale-[1.02]"
+                    className="w-full sm:w-auto px-6 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-black text-xs rounded-xl shadow-md shadow-blue-600/20 transition-all flex items-center justify-center gap-2 cursor-pointer hover:scale-[1.02]"
                   >
                     <Play className="w-4 h-4 fill-white" />
                     <span>Execute Production Workflow</span>
