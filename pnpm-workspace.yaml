@@ -2,9 +2,11 @@ packages:
   - 'apps/*'
   - 'packages/*'
 
-allowBuilds:
-  argon2: true
-  esbuild: true
-  msgpackr-extract: true
-  unrs-resolver: true
+onlyBuiltDependencies:
+  - argon2
+  - esbuild
+  - msgpackr-extract
+  - protobufjs
+  - unrs-resolver
+
 

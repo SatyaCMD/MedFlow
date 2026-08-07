@@ -21,11 +21,19 @@
   "dependencies": {
     "@opentelemetry/api": "^1.9.1"
   },
+  "onlyBuiltDependencies": [
+    "argon2",
+    "esbuild",
+    "msgpackr-extract",
+    "protobufjs",
+    "unrs-resolver"
+  ],
   "pnpm": {
     "onlyBuiltDependencies": [
       "argon2",
       "esbuild",
       "msgpackr-extract",
+      "protobufjs",
       "unrs-resolver"
     ]
   }

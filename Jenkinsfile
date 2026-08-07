@@ -48,7 +48,7 @@ pipeline {
                     } else {
                         bat 'node -v'
                         bat 'npm -v'
-                        bat 'npm install -g pnpm'
+                        bat 'npm install -g pnpm@9 || npm install -g pnpm'
                     }
                 }
             }
