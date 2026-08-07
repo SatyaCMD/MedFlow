@@ -37,6 +37,7 @@ import {
 } from 'lucide-react';
 
 import { api } from '../../lib/axios';
+import { isTodayDate } from '../../lib/dateUtils';
 
 export const LabTechnicianDashboard: React.FC = () => {
   const { user } = useAuth();
@@ -48,6 +49,7 @@ export const LabTechnicianDashboard: React.FC = () => {
 
   const [labOrders, setLabOrders] = useState<LabOrderRecord[]>([]);
   const [activeTab, setActiveTab] = useState<'PENDING' | 'HISTORY'>('PENDING');
+  const [labTab, setLabTab] = useState<'TODAY' | 'HISTORY'>('TODAY');
 
   // Modal States
   const [selectedOrder, setSelectedOrder] = useState<LabOrderRecord | null>(null);
@@ -118,27 +120,32 @@ export const LabTechnicianDashboard: React.FC = () => {
     });
   };
 
-  // Filtered Pending Lab Orders
-  const pendingOrders = labOrders.filter((o) => {
-    const isPending = o.status !== 'REPORT_SUBMITTED';
+  // Filtered Today vs History Orders
+  const todaysPendingOrders = labOrders.filter(
+    (o) => o.status !== 'REPORT_SUBMITTED' && (o.date === 'Today' || isTodayDate(o.date))
+  );
+
+  const targetOrders = labTab === 'TODAY' ? todaysPendingOrders : labOrders;
+
+  const pendingOrders = targetOrders.filter((o) => {
     const matchesSearch =
       !searchQuery ||
       o.patientName.toLowerCase().includes(searchQuery.toLowerCase()) ||
       o.mrn.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      o.testName.toLowerCase().includes(searchQuery.toLowerCase());
-    return isPending && matchesSearch;
+      o.testName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      o.date.toLowerCase().includes(searchQuery.toLowerCase());
+    return matchesSearch;
   });
 
   // Filtered Diagnostic History
   const historyOrders = labOrders.filter((o) => {
-    const isCompleted = o.status === 'REPORT_SUBMITTED';
     const matchesSearch =
       !historySearchQuery ||
       o.patientName.toLowerCase().includes(historySearchQuery.toLowerCase()) ||
       o.mrn.toLowerCase().includes(historySearchQuery.toLowerCase()) ||
       o.testName.toLowerCase().includes(historySearchQuery.toLowerCase()) ||
       o.date.toLowerCase().includes(historySearchQuery.toLowerCase());
-    return isCompleted && matchesSearch;
+    return matchesSearch;
   });
 
   const columns = [
@@ -357,24 +364,62 @@ export const LabTechnicianDashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Main Diagnostic Queue */}
+      {/* Main Diagnostic Queue with Today vs History View Tabs */}
       <div className="space-y-4">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-          <h2 className="text-xs font-black uppercase tracking-wider text-slate-700 flex items-center gap-2">
-            <FlaskConical className="w-4 h-4 text-indigo-600" />
-            PENDING DIAGNOSTIC LAB ORDERS QUEUE ({pendingOrders.length} ORDERS)
-          </h2>
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50 border border-slate-200 p-4 rounded-2xl">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                setLabTab('TODAY');
+                setSearchQuery('');
+              }}
+              className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer ${
+                labTab === 'TODAY'
+                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
+                  : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100'
+              }`}
+            >
+              <Calendar className="w-4 h-4" />
+              <span>Today's Pending Lab Orders ({todaysPendingOrders.length})</span>
+            </button>
 
-          <div className="relative w-full sm:w-72">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+            <button
+              onClick={() => {
+                setLabTab('HISTORY');
+                setSearchQuery('');
+              }}
+              className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer ${
+                labTab === 'HISTORY'
+                  ? 'bg-indigo-600 text-white shadow-md shadow-indigo-600/20'
+                  : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100'
+              }`}
+            >
+              <History className="w-4 h-4" />
+              <span>📜 Dedicated Lab Reports & Patient Diagnostics History ({labOrders.length})</span>
+            </button>
+          </div>
+
+          <div className="relative min-w-[240px]">
+            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-3" />
             <input
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Filter by Patient Name, MRN or Test..."
-              className="w-full pl-9 pr-3 py-2 bg-slate-50 border border-slate-200 rounded-xl text-xs font-bold text-slate-900 outline-none focus:ring-2 focus:ring-indigo-500/20"
+              placeholder={labTab === 'TODAY' ? "Search today's orders..." : "Search patient name, MRN, test, date..."}
+              className="w-full pl-8 pr-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 outline-none focus:border-indigo-500 shadow-2xs"
             />
           </div>
+        </div>
+
+        <div className="flex items-center justify-between">
+          <h2 className="text-xs font-black uppercase tracking-wider text-slate-700 flex items-center gap-2">
+            <FlaskConical className="w-4 h-4 text-indigo-600" />
+            {labTab === 'TODAY' ? `TODAY'S PENDING DIAGNOSTIC ORDERS QUEUE (${todaysPendingOrders.length})` : `FULL PATIENT DIAGNOSTICS & LAB REPORTS ARCHIVE (${pendingOrders.length})`}
+          </h2>
+
+          <span className="text-xs text-indigo-700 font-bold flex items-center gap-1 bg-indigo-50 px-3 py-1 rounded-full border border-indigo-200">
+            <CheckCircle2 className="w-4 h-4 text-indigo-600" /> {labTab === 'TODAY' ? "Showing Today's Orders Only" : "Dedicated History View Active"}
+          </span>
         </div>
 
         {pendingOrders.length > 0 ? (
@@ -386,7 +431,7 @@ export const LabTechnicianDashboard: React.FC = () => {
             </div>
             <h3 className="font-black text-slate-900 text-sm">Pathology & Diagnostic Queue Empty</h3>
             <p className="text-xs text-slate-500 max-w-sm mx-auto">
-              There are currently no pending lab diagnostic orders. When attending physicians prescribe lab tests for OPD or ward patients, orders will populate here in real-time.
+              There are currently no lab diagnostic orders matching this filter or view.
             </p>
           </div>
         )}

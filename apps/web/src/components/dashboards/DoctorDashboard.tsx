@@ -47,11 +47,14 @@ import {
   AlertCircle
 } from 'lucide-react';
 import { useAuth } from '../../hooks/useAuth';
+import { isTodayDate } from '../../lib/dateUtils';
 
 export const DoctorDashboard: React.FC = () => {
   const { user } = useAuth();
   const { showToast } = useToast();
   const [currentPage, setCurrentPage] = useState(1);
+  const [dashboardTab, setDashboardTab] = useState<'TODAY' | 'HISTORY'>('TODAY');
+  const [dashboardSearchQuery, setDashboardSearchQuery] = useState('');
 
   // Dynamic doctor name resolution
   const doctorDisplayName = user
@@ -450,6 +453,22 @@ export const DoctorDashboard: React.FC = () => {
     },
   ];
 
+  const todaysAppointments = appointments.filter((a) => a.date === 'Today' || isTodayDate(a.date));
+  const historicalAppointments = appointments.filter((a) => a.date !== 'Today' && !isTodayDate(a.date));
+  const targetList = dashboardTab === 'TODAY' ? todaysAppointments : appointments;
+
+  const displayedAppointments = targetList.filter((a) => {
+    if (!dashboardSearchQuery) return true;
+    const q = dashboardSearchQuery.toLowerCase();
+    return (
+      a.patientName.toLowerCase().includes(q) ||
+      a.mrn.toLowerCase().includes(q) ||
+      a.purpose?.toLowerCase().includes(q) ||
+      a.department.toLowerCase().includes(q) ||
+      a.date.toLowerCase().includes(q)
+    );
+  });
+
   return (
     <div className="space-y-8 relative pb-12">
       {/* Header Banner */}
@@ -477,27 +496,72 @@ export const DoctorDashboard: React.FC = () => {
 
       {/* Metrics Cards */}
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <StatCard title="Today's Consultation Schedule" value={`${appointments.length} Visits`} change={2.1} changeLabel="active OPD slots" icon={Calendar} />
-        <StatCard title="Pending Nurse Vitals Check" value={`${appointments.filter(a => isTabLocked(a)).length} Patients`} change={0.0} changeLabel="Room 204 queue" icon={Lock} />
-        <StatCard title="Ready for Prescription" value={`${appointments.filter(a => !isTabLocked(a)).length} Unlocked`} change={5.4} changeLabel="vitals recorded" icon={CheckCircle2} />
-        <StatCard title="Diagnostic Reports Reviewed" value={`${labOrders.length} Reports`} change={12.0} changeLabel="verified pathology" icon={FlaskConical} />
+        <StatCard title="Today's Consultation Schedule" value={`${todaysAppointments.length} Today`} change={2.1} changeLabel="active OPD slots" icon={Calendar} />
+        <StatCard title="Pending Nurse Vitals Check" value={`${todaysAppointments.filter(a => isTabLocked(a)).length} Patients`} change={0.0} changeLabel="Room 204 queue" icon={Lock} />
+        <StatCard title="Ready for Prescription" value={`${todaysAppointments.filter(a => !isTabLocked(a)).length} Unlocked`} change={5.4} changeLabel="vitals recorded" icon={CheckCircle2} />
+        <StatCard title="Total EMR Patient Archive" value={`${appointments.length} Records`} change={12.0} changeLabel="full clinical history" icon={History} />
       </div>
 
-      {/* Appointments Data Table */}
+      {/* Appointments Data Table Section with Today vs History Tabs */}
       <div className="space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-slate-50 border border-slate-200 p-4 rounded-2xl">
+          <div className="flex items-center gap-2">
+            <button
+              onClick={() => {
+                setDashboardTab('TODAY');
+                setDashboardSearchQuery('');
+              }}
+              className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer ${
+                dashboardTab === 'TODAY'
+                  ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20'
+                  : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100'
+              }`}
+            >
+              <Calendar className="w-4 h-4" />
+              <span>Today's OPD Schedule ({todaysAppointments.length})</span>
+            </button>
+
+            <button
+              onClick={() => {
+                setDashboardTab('HISTORY');
+                setDashboardSearchQuery('');
+              }}
+              className={`px-4 py-2 rounded-xl text-xs font-black transition-all flex items-center gap-2 cursor-pointer ${
+                dashboardTab === 'HISTORY'
+                  ? 'bg-blue-600 text-white shadow-md shadow-blue-600/20'
+                  : 'bg-white text-slate-700 border border-slate-200 hover:bg-slate-100'
+              }`}
+            >
+              <History className="w-4 h-4" />
+              <span>📜 Dedicated Patient History & Past Records ({appointments.length})</span>
+            </button>
+          </div>
+
+          <div className="relative min-w-[240px]">
+            <Search className="w-3.5 h-3.5 text-slate-400 absolute left-3 top-3" />
+            <input
+              type="text"
+              value={dashboardSearchQuery}
+              onChange={(e) => setDashboardSearchQuery(e.target.value)}
+              placeholder={dashboardTab === 'TODAY' ? "Search today's queue..." : "Search patient name, MRN, date..."}
+              className="w-full pl-8 pr-3 py-1.5 bg-white border border-slate-200 rounded-xl text-xs font-bold text-slate-900 outline-none focus:border-blue-500 shadow-2xs"
+            />
+          </div>
+        </div>
+
         <div className="flex items-center justify-between">
           <h2 className="text-sm font-black text-slate-900 uppercase tracking-wider flex items-center gap-2">
             <Clock className="w-4 h-4 text-blue-600" />
-            OUTPATIENT CONSULTATION QUEUE & APPROVAL MANAGER ({appointments.length})
+            {dashboardTab === 'TODAY' ? `TODAY'S OUTPATIENT CONSULTATION QUEUE (${todaysAppointments.length})` : `FULL PATIENT CLINICAL HISTORY ARCHIVE (${displayedAppointments.length})`}
           </h2>
           <span className="text-xs text-emerald-700 font-bold flex items-center gap-1 bg-emerald-50 px-3 py-1 rounded-full border border-emerald-200">
-            <CheckCircle2 className="w-4 h-4 text-emerald-600" /> E-Prescriber & Nurse Vitals Sync Active
+            <CheckCircle2 className="w-4 h-4 text-emerald-600" /> {dashboardTab === 'TODAY' ? "Showing Today's Data Only" : "Dedicated History View Active"}
           </span>
         </div>
 
         <DataTable
           columns={columns}
-          data={appointments}
+          data={displayedAppointments}
           currentPage={currentPage}
           totalPages={1}
           onPageChange={(page) => setCurrentPage(page)}

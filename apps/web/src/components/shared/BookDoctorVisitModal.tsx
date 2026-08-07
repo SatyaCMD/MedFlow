@@ -15,6 +15,8 @@ import {
   AlertCircle,
   X,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   Search,
   Star,
   Sparkles,
@@ -182,23 +184,80 @@ export const BookDoctorVisitModal: React.FC<BookDoctorVisitModalProps> = ({
   };
 
   const calendarDays = getNext14Days();
+  const dateContainerRef = useRef<HTMLDivElement>(null);
+
+  const scrollDatesLeft = () => {
+    if (dateContainerRef.current) {
+      dateContainerRef.current.scrollBy({ left: -220, behavior: 'smooth' });
+    }
+  };
+
+  const scrollDatesRight = () => {
+    if (dateContainerRef.current) {
+      dateContainerRef.current.scrollBy({ left: 220, behavior: 'smooth' });
+    }
+  };
+
+  const isSlotInPast = (slotStr: string, targetDateStr: string): boolean => {
+    if (!calendarDays || calendarDays.length === 0) return false;
+    const isToday = targetDateStr === calendarDays[0].formattedStr;
+    if (!isToday) return false;
+
+    try {
+      const now = new Date();
+      const parts = slotStr.trim().split(' ');
+      if (parts.length < 2) return false;
+
+      const timePart = parts[0];
+      const modifier = parts[1].toUpperCase();
+
+      const [rawHours, minutes] = timePart.split(':').map(Number);
+      let hours = rawHours;
+
+      if (modifier === 'PM' && hours < 12) hours += 12;
+      if (modifier === 'AM' && hours === 12) hours = 0;
+
+      const slotDate = new Date();
+      slotDate.setHours(hours, minutes, 0, 0);
+
+      return slotDate < now;
+    } catch {
+      return false;
+    }
+  };
 
   useEffect(() => {
     if (isOpen) {
       if (!selectedDate) setSelectedDate(calendarDays[0].formattedStr);
-      if (selectedDoctor && selectedDoctor.availableSlots && selectedDoctor.availableSlots.length > 0) {
-        setSelectedTimeSlot(selectedDoctor.availableSlots[0]);
+      if (selectedDoctor && selectedDoctor.availableSlots) {
+        const validSlots = selectedDoctor.availableSlots.filter((slot) => !isSlotInPast(slot, selectedDate || calendarDays[0].formattedStr));
+        if (validSlots.length > 0) {
+          setSelectedTimeSlot(validSlots[0]);
+        }
       }
     }
   }, [isOpen]);
+
+  // When date or doctor changes, ensure selected slot is not in the past
+  useEffect(() => {
+    if (selectedDoctor && selectedDoctor.availableSlots) {
+      const validSlots = selectedDoctor.availableSlots.filter((slot) => !isSlotInPast(slot, selectedDate));
+      if (validSlots.length > 0) {
+        if (!selectedTimeSlot || isSlotInPast(selectedTimeSlot, selectedDate) || !selectedDoctor.availableSlots.includes(selectedTimeSlot)) {
+          setSelectedTimeSlot(validSlots[0]);
+        }
+      }
+    }
+  }, [selectedDate, selectedDoctor]);
 
   // When department changes, select the first doctor in that department
   useEffect(() => {
     const deptDocs = REAL_DOCTORS_DATASET.filter((d) => d.department.toUpperCase() === selectedDept.toUpperCase());
     if (deptDocs.length > 0) {
       setSelectedDoctor(deptDocs[0]);
-      if (deptDocs[0].availableSlots && deptDocs[0].availableSlots.length > 0) {
-        setSelectedTimeSlot(deptDocs[0].availableSlots[0]);
+      const validSlots = deptDocs[0].availableSlots?.filter((slot) => !isSlotInPast(slot, selectedDate)) || [];
+      if (validSlots.length > 0) {
+        setSelectedTimeSlot(validSlots[0]);
       }
     }
   }, [selectedDept]);
@@ -925,17 +984,48 @@ export const BookDoctorVisitModal: React.FC<BookDoctorVisitModalProps> = ({
 
           {/* SECTION 3: CALENDAR DATE SELECTION & 5-7 TIME SLOTS */}
           <div className="space-y-4">
-            <h4 className="font-black text-xs uppercase tracking-wider text-slate-900 flex items-center gap-2">
-              <CalendarIcon className="w-4 h-4 text-blue-600" />
-              <span>3. Consultation Date & Time Slot Selection (5-7 Slots Available)</span>
-            </h4>
+            <div className="flex items-center justify-between">
+              <h4 className="font-black text-xs uppercase tracking-wider text-slate-900 flex items-center gap-2">
+                <CalendarIcon className="w-4 h-4 text-blue-600" />
+                <span>3. Consultation Date & Time Slot Selection</span>
+              </h4>
 
-            {/* Date Scroll Picker */}
+              {/* Interactive Horizontal Slider Controls */}
+              <div className="flex items-center gap-1.5">
+                <button
+                  type="button"
+                  onClick={scrollDatesLeft}
+                  className="p-1.5 rounded-lg bg-slate-100 hover:bg-blue-100 text-slate-600 hover:text-blue-700 transition-all cursor-pointer shadow-2xs"
+                  title="Slide Dates Left"
+                >
+                  <ChevronLeft className="w-4 h-4" />
+                </button>
+                <span className="text-[10px] font-bold text-slate-400 select-none">Slide</span>
+                <button
+                  type="button"
+                  onClick={scrollDatesRight}
+                  className="p-1.5 rounded-lg bg-slate-100 hover:bg-blue-100 text-slate-600 hover:text-blue-700 transition-all cursor-pointer shadow-2xs"
+                  title="Slide Dates Right"
+                >
+                  <ChevronRight className="w-4 h-4" />
+                </button>
+              </div>
+            </div>
+
+            {/* Date Scroll Picker with Horizontal Sliding */}
             <div>
-              <label className="block text-[11px] font-extrabold text-slate-700 mb-2">
-                Select Date (Next 14 Days Available)
-              </label>
-              <div className="flex gap-2.5 overflow-x-auto pb-2 scrollbar-thin">
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-[11px] font-extrabold text-slate-700">
+                  Select Date (Next 14 Days Available)
+                </label>
+                <span className="text-[10px] text-blue-600 font-bold">
+                  ← Slide horizontally to view upcoming dates →
+                </span>
+              </div>
+              <div
+                ref={dateContainerRef}
+                className="flex gap-2.5 overflow-x-auto pb-2 scroll-smooth scrollbar-thin scrollbar-thumb-slate-300"
+              >
                 {calendarDays.map((cd, idx) => {
                   const isSelected = selectedDate === cd.formattedStr;
                   return (
@@ -943,10 +1033,11 @@ export const BookDoctorVisitModal: React.FC<BookDoctorVisitModalProps> = ({
                       key={idx}
                       type="button"
                       onClick={() => setSelectedDate(cd.formattedStr)}
-                      className={`min-w-[85px] p-3 rounded-2xl border text-center transition-all cursor-pointer shrink-0 ${isSelected
+                      className={`min-w-[85px] p-3 rounded-2xl border text-center transition-all cursor-pointer shrink-0 ${
+                        isSelected
                           ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-600/20 scale-105'
                           : 'bg-slate-50 text-slate-700 border-slate-200 hover:bg-slate-100'
-                        }`}
+                      }`}
                     >
                       <span className="block text-[10px] font-extrabold uppercase opacity-80">{cd.dayName}</span>
                       <span className="block text-base font-black mt-0.5">{cd.dateNum}</span>
@@ -957,29 +1048,36 @@ export const BookDoctorVisitModal: React.FC<BookDoctorVisitModalProps> = ({
               </div>
             </div>
 
-            {/* Time Slots grid (More than 5 slots per doctor) */}
+            {/* Time Slots grid with Past Time Validation */}
             <div>
               <label className="block text-[11px] font-extrabold text-slate-700 mb-2 flex items-center justify-between">
                 <span>Select OPD Time Slot for {selectedDoctor?.name || 'Doctor'}</span>
                 <span className="text-[10px] font-bold text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full border border-emerald-200">
-                  {selectedDoctor?.availableSlots?.length || 6} Slots Available
+                  {selectedDoctor?.availableSlots?.filter((s) => !isSlotInPast(s, selectedDate)).length || 0} Available Slots Today
                 </span>
               </label>
               <div className="grid grid-cols-3 sm:grid-cols-6 gap-2">
                 {selectedDoctor?.availableSlots?.map((slot, idx) => {
                   const isSelected = selectedTimeSlot === slot;
+                  const isPast = isSlotInPast(slot, selectedDate);
                   return (
                     <button
                       key={idx}
                       type="button"
-                      onClick={() => setSelectedTimeSlot(slot)}
-                      className={`py-2 px-2.5 rounded-xl border text-xs font-black transition-all cursor-pointer flex items-center justify-center gap-1 ${isSelected
-                          ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-600/20 scale-105'
-                          : 'bg-slate-50 text-slate-800 border-slate-200 hover:bg-slate-100 hover:border-slate-300'
-                        }`}
+                      disabled={isPast}
+                      onClick={() => !isPast && setSelectedTimeSlot(slot)}
+                      className={`py-2 px-2.5 rounded-xl border text-xs font-black transition-all flex items-center justify-center gap-1 ${
+                        isPast
+                          ? 'bg-slate-100 text-slate-400 border-slate-200 cursor-not-allowed line-through opacity-50 relative'
+                          : isSelected
+                          ? 'bg-blue-600 text-white border-blue-600 shadow-md shadow-blue-600/20 scale-105 cursor-pointer'
+                          : 'bg-slate-50 text-slate-800 border-slate-200 hover:bg-slate-100 hover:border-slate-300 cursor-pointer'
+                      }`}
+                      title={isPast ? 'Slot time has already passed for today' : 'Select Time Slot'}
                     >
                       <Clock className="w-3 h-3" />
                       <span>{slot}</span>
+                      {isPast && <span className="text-[8px] font-bold no-underline text-rose-500 ml-0.5">(Passed)</span>}
                     </button>
                   );
                 })}
