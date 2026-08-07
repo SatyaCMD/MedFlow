@@ -261,7 +261,9 @@ function compileDynamicClinicalRoster(): PatientEmrProfile[] {
           });
         }
       });
-    } catch {}
+    } catch (err) {
+      // Ignore storage parse errors
+    }
   }
 
   // 3. Incorporate real doctor prescriptions from getClinicalRecords()
@@ -317,7 +319,9 @@ function compileDynamicClinicalRoster(): PatientEmrProfile[] {
           });
         }
       });
-    } catch {}
+    } catch (err) {
+      // Ignore clinical records lookup errors
+    }
   }
 
   return Array.from(rosterMap.values());

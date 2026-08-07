@@ -61,7 +61,7 @@ pipeline {
                     if (isUnix()) {
                         sh 'pnpm install --no-frozen-lockfile || npx pnpm install --no-frozen-lockfile'
                     } else {
-                        bat 'npx pnpm install --no-frozen-lockfile'
+                        bat 'pnpm install --no-frozen-lockfile || npx pnpm install --no-frozen-lockfile'
                     }
                 }
             }
@@ -74,7 +74,7 @@ pipeline {
                     if (isUnix()) {
                         sh 'pnpm run lint || npx pnpm run lint'
                     } else {
-                        bat 'npx pnpm run lint'
+                        bat 'pnpm run lint || npx pnpm run lint'
                     }
                 }
             }
@@ -89,7 +89,7 @@ pipeline {
                         sh 'pnpm run build || npx pnpm run build'
                     } else {
                         bat 'if exist apps\\web\\.next rmdir /s /q apps\\web\\.next'
-                        bat 'npx pnpm run build'
+                        bat 'pnpm run build || npx pnpm run build'
                     }
                 }
             }
