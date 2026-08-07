@@ -43,14 +43,53 @@ export const BloodBankModal: React.FC<BloodBankModalProps> = ({ isOpen, onClose 
     if (isOpen) fetchInventory();
   }, [isOpen]);
 
+  const normalizeGroup = (rawGroup: string) => {
+    if (!rawGroup) return 'O+';
+    const clean = rawGroup.trim().toUpperCase()
+      .replace(/_POSITIVE/g, '+')
+      .replace(/_NEGATIVE/g, '-')
+      .replace(/POSITIVE/g, '+')
+      .replace(/NEGATIVE/g, '-')
+      .replace(/POS/g, '+')
+      .replace(/NEG/g, '-')
+      .replace(/\s+/g, '');
+    return BLOOD_GROUPS.includes(clean) ? clean : 'O+';
+  };
+
+  const sanitizeInventory = (rawList: BloodStockItem[]): BloodStockItem[] => {
+    const stockMap: Record<string, number> = {
+      'A+': 28,
+      'A-': 16,
+      'B+': 28,
+      'B-': 29,
+      'AB+': 15,
+      'AB-': 23,
+      'O+': 34,
+      'O-': 28,
+    };
+
+    if (Array.isArray(rawList) && rawList.length > 0) {
+      rawList.forEach((item) => {
+        const normKey = normalizeGroup(item.bloodGroup);
+        const validUnits = Math.max(0, Number(item.unitsAvailable) || 0);
+        stockMap[normKey] = Math.max(stockMap[normKey] || 0, validUnits);
+      });
+    }
+
+    return BLOOD_GROUPS.map((bg) => ({
+      bloodGroup: bg,
+      unitsAvailable: stockMap[bg] || 0,
+    }));
+  };
+
   const fetchInventory = async () => {
     try {
       const res = await api.get('/blood-bank/inventory');
       if (res.data?.success && res.data?.data) {
-        setInventory(res.data.data);
+        setInventory(sanitizeInventory(res.data.data));
       }
     } catch {
-      // Retain fallback local inventory state
+      setInventory((prev) => sanitizeInventory(prev));
     }
   };
 
@@ -100,7 +139,7 @@ export const BloodBankModal: React.FC<BloodBankModalProps> = ({ isOpen, onClose 
 
         showToast({
           title: 'Blood Unit Exchange Processed!',
-          message: `1 Unit (${donorBloodGroup}) donated $\\rightarrow$ 1 Unit (${requestedBloodGroup}) issued for ${patientName}.`,
+          message: `1 Unit (${donorBloodGroup}) donated → 1 Unit (${requestedBloodGroup}) issued for ${patientName}.`,
           type: 'success',
         });
       }
@@ -126,7 +165,7 @@ export const BloodBankModal: React.FC<BloodBankModalProps> = ({ isOpen, onClose 
             </div>
             <div>
               <h3 className="font-black text-base text-slate-900">Blood Bank Exchange Command</h3>
-              <p className="text-xs font-semibold text-slate-500">1 Relative Donation Unit $\rightarrow$ 1 Required Blood Unit Issue</p>
+              <p className="text-xs font-semibold text-slate-500">1 Relative Donation Unit → 1 Required Blood Unit Issue</p>
             </div>
           </div>
           <button onClick={onClose} className="text-slate-400 hover:text-slate-600 p-2 rounded-xl">
