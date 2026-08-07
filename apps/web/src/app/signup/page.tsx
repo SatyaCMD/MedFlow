@@ -591,12 +591,25 @@ export default function SignupPage() {
               </div>
             )}
 
-            {/* KYC Verification Onboarding Banner for Staff Roles */}
-            {role !== 'PATIENT' && (
+            {/* KYC Verification Onboarding Banner for Clinical Staff Roles */}
+            {(() => {
+              const r = (role || '').toUpperCase();
+              const isExempt =
+                r === 'PATIENT' ||
+                r === 'SUPER_ADMIN' ||
+                r === 'HOSPITAL_ADMIN' ||
+                r === 'ADMIN' ||
+                r === 'AMBULANCE_ADMIN' ||
+                r === 'AMBULANCE' ||
+                r === 'BLOOD_BANK' ||
+                r === 'PHARMACY' ||
+                r === 'PHARMACIST';
+              return !isExempt;
+            })() && (
               <div className="p-3 bg-amber-50 border border-amber-200/80 rounded-xl flex gap-2 text-xs text-amber-800 font-medium items-start">
                 <ShieldAlert className="w-4 h-4 text-amber-600 flex-shrink-0 mt-0.5" />
                 <span>
-                  <strong>KYC Onboarding Active:</strong> Staff profiles are submitted with status <span className="font-bold text-amber-950 underline">PENDING</span>. System access is enabled following admin credential verification.
+                  <strong>KYC Onboarding Active:</strong> Clinical staff profiles are submitted with status <span className="font-bold text-amber-950 underline">PENDING</span>. System access is enabled following admin credential verification.
                 </span>
               </div>
             )}

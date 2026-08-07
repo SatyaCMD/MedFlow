@@ -99,7 +99,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children, userRole = 'DOCTOR
     }
   }, [user]);
 
-  // Trigger KYC modal ONLY on first visit for non-super-admins after auth loading completes
+  // Trigger KYC modal ONLY on first visit for non-exempt roles after auth loading completes
   useEffect(() => {
     if (typeof window === 'undefined') return;
     if (loading) return; // Do NOT trigger while auth is loading
@@ -112,13 +112,26 @@ export const AppShell: React.FC<AppShellProps> = ({ children, userRole = 'DOCTOR
     const idDone = userId ? localStorage.getItem(`medflow_kyc_completed_${userId}`) === 'true' : false;
     const isAlreadyCompleted = emailDone || idDone;
 
-    if (!isSuperAdmin && !isAlreadyCompleted && !kycSubmitted && !isApproved) {
+    const currentRole = ((user as any).role || 'PATIENT').toString().toUpperCase();
+    const isKycExemptRole =
+      currentRole === 'SUPER_ADMIN' ||
+      currentRole === 'HOSPITAL_ADMIN' ||
+      currentRole === 'ADMIN' ||
+      currentRole === 'AMBULANCE_ADMIN' ||
+      currentRole === 'AMBULANCE' ||
+      currentRole === 'BLOOD_BANK' ||
+      currentRole === 'BLOOD_BANK_ADMIN' ||
+      currentRole === 'PHARMACY' ||
+      currentRole === 'PHARMACIST' ||
+      currentRole === 'PATIENT';
+
+    if (!isKycExemptRole && !isAlreadyCompleted && !kycSubmitted && !isApproved) {
       const timer = setTimeout(() => setIsKycModalOpen(true), 1200);
       return () => clearTimeout(timer);
     } else {
       setIsKycModalOpen(false);
     }
-  }, [user, loading, isSuperAdmin, kycSubmitted, isApproved]);
+  }, [user, loading, kycSubmitted, isApproved]);
 
   const handleKycSubmitted = () => {
     setKycSubmitted(true);
