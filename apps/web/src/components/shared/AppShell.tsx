@@ -122,8 +122,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children, userRole = 'DOCTOR
       currentRole === 'BLOOD_BANK' ||
       currentRole === 'BLOOD_BANK_ADMIN' ||
       currentRole === 'PHARMACY' ||
-      currentRole === 'PHARMACIST' ||
-      currentRole === 'PATIENT';
+      currentRole === 'PHARMACIST';
 
     if (!isKycExemptRole && !isAlreadyCompleted && !kycSubmitted && !isApproved) {
       const timer = setTimeout(() => setIsKycModalOpen(true), 1200);

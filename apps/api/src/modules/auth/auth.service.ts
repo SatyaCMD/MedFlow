@@ -128,10 +128,9 @@ export class AuthService {
     const salt = crypto.randomBytes(16).toString('hex');
     const passwordHash = await this.hashPassword(data.password, salt);
     
-    // Newly registered clinical staff (DOCTOR, NURSE, LAB_TECHNICIAN) require KYC verification
-    // Roles exempt from KYC (auto-VERIFIED): PATIENT, SUPER_ADMIN, HOSPITAL_ADMIN, AMBULANCE_ADMIN, BLOOD_BANK, PHARMACIST, PHARMACY, ADMIN
+    // Roles requiring KYC verification (initialKycStatus = PENDING): PATIENT, DOCTOR, NURSE, LAB_TECHNICIAN
+    // Roles exempt from KYC (auto-VERIFIED): SUPER_ADMIN, HOSPITAL_ADMIN, AMBULANCE_ADMIN, BLOOD_BANK, PHARMACIST, PHARMACY, ADMIN
     const exemptRoles = [
-      ROLES.PATIENT,
       ROLES.SUPER_ADMIN,
       ROLES.HOSPITAL_ADMIN,
       ROLES.AMBULANCE_ADMIN,

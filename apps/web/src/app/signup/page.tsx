@@ -591,11 +591,10 @@ export default function SignupPage() {
               </div>
             )}
 
-            {/* KYC Verification Onboarding Banner for Clinical Staff Roles */}
+            {/* KYC Verification Onboarding Banner for Roles Requiring KYC (Patient, Doctor, Nurse, Lab Tech) */}
             {(() => {
               const r = (role || '').toUpperCase();
               const isExempt =
-                r === 'PATIENT' ||
                 r === 'SUPER_ADMIN' ||
                 r === 'HOSPITAL_ADMIN' ||
                 r === 'ADMIN' ||
