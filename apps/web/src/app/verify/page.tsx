@@ -74,7 +74,7 @@ function VerifyPageContent() {
   };
 
   useEffect(() => {
-    const tokenFromUrl = searchParams.get('tempToken');
+    const tokenFromUrl = searchParams?.get('tempToken');
     const tokenFromSession = sessionStorage.getItem('tempToken');
     const activeToken = tokenFromUrl || tokenFromSession;
 

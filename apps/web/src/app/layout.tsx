@@ -2,6 +2,9 @@ import type { Metadata } from 'next';
 import './globals.css';
 import { Providers } from './providers';
 
+export const dynamic = 'force-dynamic';
+export const revalidate = 0;
+
 export const metadata: Metadata = {
   title: 'MediCore 360 - Enterprise Hospital Management System',
   description: 'Enterprise EHMS platform for modern healthcare systems.',

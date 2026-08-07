@@ -1,5 +1,4 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
-import crypto from 'node:crypto';
 import { BloodStock, BloodExchangeRecord, BloodGroup } from './bloodBank.model.js';
 
 const BLOOD_GROUPS: BloodGroup[] = ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'];

@@ -32,16 +32,16 @@ function PaymentSuccessContent() {
   const router = useRouter();
   const { showToast } = useToast();
 
-  const transactionId = searchParams.get('tx') || `pay_rzp_${Math.random().toString(36).substring(2, 10)}`;
-  const invoiceId = searchParams.get('invoice') || `ORD-RX-${Math.floor(100000 + Math.random() * 900000)}`;
-  const itemTitle = searchParams.get('item') || 'IPD Hospital Stay & Surgery Package';
-  const amount = searchParams.get('amount') || '₹45,800';
-  const customerName = searchParams.get('name') || 'Alex Care';
-  const cardholderName = searchParams.get('cardholder') || customerName;
-  const cardLast4 = searchParams.get('cardLast4') || '7712';
-  const cardBrand = searchParams.get('brand') || 'Visa';
-  const paymentMethod = searchParams.get('method') || 'STRIPE CARD';
-  const category = searchParams.get('cat') || 'APPOINTMENT';
+  const transactionId = searchParams?.get('tx') || `pay_rzp_${Math.random().toString(36).substring(2, 10)}`;
+  const invoiceId = searchParams?.get('invoice') || `ORD-RX-${Math.floor(100000 + Math.random() * 900000)}`;
+  const itemTitle = searchParams?.get('item') || 'IPD Hospital Stay & Surgery Package';
+  const amount = searchParams?.get('amount') || '₹45,800';
+  const customerName = searchParams?.get('name') || 'Alex Care';
+  const cardholderName = searchParams?.get('cardholder') || customerName;
+  const cardLast4 = searchParams?.get('cardLast4') || '7712';
+  const cardBrand = searchParams?.get('brand') || 'Visa';
+  const paymentMethod = searchParams?.get('method') || 'STRIPE CARD';
+  const category = searchParams?.get('cat') || 'APPOINTMENT';
 
   const [timestamp, setTimestamp] = useState('');
 
