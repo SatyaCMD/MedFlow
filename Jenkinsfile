@@ -117,10 +117,10 @@ pipeline {
                                   "-Dsonar.sources=apps/api/src,apps/web/src,packages/shared/src" \
                                   "-Dsonar.exclusions=**/node_modules/**,**/.next/**,**/dist/**,**/coverage/**,**/*.test.ts,**/*.spec.ts,**/*.d.ts" \
                                   "-Dsonar.host.url=${SONAR_HOST}" \
-                                  "-Dsonar.token=sqp_ff029e764892b9077514d42070035e2c1243c93b"
+                                  "-Dsonar.token=${SONAR_TOKEN}"
                             '''
                         } else {
-                            bat 'npx sonar-scanner "-Dsonar.projectKey=MedFlow" "-Dsonar.projectName=MedFlow" "-Dsonar.sources=apps/api/src,apps/web/src,packages/shared/src" "-Dsonar.exclusions=**/node_modules/**,**/.next/**,**/dist/**,**/coverage/**,**/*.test.ts,**/*.spec.ts,**/*.d.ts" "-Dsonar.host.url=http://127.0.0.1:9000" "-Dsonar.token=sqp_ff029e764892b9077514d42070035e2c1243c93b"'
+                            bat 'npx sonar-scanner "-Dsonar.projectKey=MedFlow" "-Dsonar.projectName=MedFlow" "-Dsonar.sources=apps/api/src,apps/web/src,packages/shared/src" "-Dsonar.exclusions=**/node_modules/**,**/.next/**,**/dist/**,**/coverage/**,**/*.test.ts,**/*.spec.ts,**/*.d.ts" "-Dsonar.host.url=http://127.0.0.1:9000" "-Dsonar.token=%SONAR_TOKEN%"'
                         }
                     }
 

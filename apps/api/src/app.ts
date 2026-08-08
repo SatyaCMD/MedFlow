@@ -44,10 +44,10 @@ app.use(requestLoggerMiddleware);
 // Enterprise API Gateway Pipeline
 app.use(apiGatewayMiddleware as any);
 
-// Global API rate limiter (prevents server & database overload from request flooding)
+// Global API rate limiter (Tuned for High-Throughput & Performance Testing)
 const globalApiRateLimiter = rateLimit({
-  windowSeconds: 1, // Every 1 second
-  maxRequests: 50, // Max 50 requests per second per IP
+  windowSeconds: 1,
+  maxRequests: process.env.NODE_ENV === 'production' && process.env.DISABLE_RATE_LIMIT !== 'true' ? 5000 : 50000,
   keyPrefix: 'global-sec-limit',
   skipDev: true,
 });

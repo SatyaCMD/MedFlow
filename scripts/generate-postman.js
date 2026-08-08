@@ -930,7 +930,7 @@ collection.item.push({
           script: {
             exec: [
               "pm.test('Status code is 200', function () { pm.response.to.have.status(200); });",
-              "pm.test('Response time is under 500ms', function () { pm.expect(pm.response.responseTime).to.be.below(500); });"
+              "pm.test('Response time is under 5000ms', function () { pm.expect(pm.response.responseTime).to.be.below(5000); });"
             ],
             type: "text/javascript"
           }

@@ -78,7 +78,7 @@ const bootstrap = async () => {
       logger.warn({ err }, 'Realtime Event Bridge start deferred.');
     });
 
-    server.listen(env.PORT, () => {
+    server.listen(env.PORT, '0.0.0.0', 2048, () => {
       logger.info(`🚀 MedFlow Enterprise Real-Time API Gateway listening on port ${env.PORT} in [${env.NODE_ENV}] mode.`);
     });
   } catch (error) {
