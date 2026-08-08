@@ -7,7 +7,9 @@
   "scripts": {
     "build": "tsc",
     "dev": "tsx watch src/server.ts",
+    "dev:cluster": "tsx watch src/cluster.ts",
     "start": "node dist/server.js",
+    "start:cluster": "node dist/cluster.js",
     "lint": "eslint \"src/**/*.ts\"",
     "typecheck": "tsc --noEmit"
   },

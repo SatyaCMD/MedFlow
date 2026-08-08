@@ -32,6 +32,7 @@ import auditRouter from './modules/audit/audit.routes.js';
 import { rateLimit } from './middleware/rateLimit.js';
 import { apiGatewayMiddleware } from './gateway/gatewayRouter.js';
 import { requestLoggerMiddleware } from './middleware/requestLogger.js';
+import { cacheMiddleware } from './lib/cache.js';
 
 const app = express();
 
@@ -72,6 +73,9 @@ app.use(requestIdMiddleware);
 
 // Apply Global Rate Limiting across all API routes
 app.use('/api/v1', globalApiRateLimiter);
+
+// Apply Ultra High-Performance L1/L2 Response Caching
+app.use('/api/v1', cacheMiddleware({ ttlSeconds: 300 }));
 
 // API Endpoints
 app.use('/api/v1/auth', authRouter);
