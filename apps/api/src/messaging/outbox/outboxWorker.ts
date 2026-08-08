@@ -1,3 +1,4 @@
+import mongoose from 'mongoose';
 import { OutboxModel } from './outbox.model.js';
 import { EventBus } from '../eventBus.js';
 import { logger } from '../../lib/logger.js';
@@ -23,6 +24,10 @@ export class OutboxWorker {
   }
 
   public async processOutboxBatch(): Promise<number> {
+    if (mongoose.connection.readyState !== 1) {
+      return 0;
+    }
+
     try {
       // Find up to 50 PENDING or retryable outbox entries
       const pendingEntries = await OutboxModel.find({
@@ -62,8 +67,12 @@ export class OutboxWorker {
       }
 
       return pendingEntries.length;
-    } catch (err) {
-      logger.error({ err }, 'Error querying Outbox collection in OutboxWorker.');
+    } catch (err: any) {
+      if (err?.code === 'ECONNABORTED' || err?.code === 'ECONNRESET' || err?.message?.includes('ECONNABORTED')) {
+        logger.warn({ code: err?.code, message: err?.message }, 'Transient socket issue querying Outbox in OutboxWorker. Retrying next cycle.');
+      } else {
+        logger.error({ err }, 'Error querying Outbox collection in OutboxWorker.');
+      }
       return 0;
     }
   }
