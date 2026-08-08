@@ -11,6 +11,7 @@ import { rabbitMQEngine } from './messaging/rabbitmq/rabbitmq.client.js';
 import { outboxWorker } from './messaging/outbox/outboxWorker.js';
 import { realtimeEventBridge } from './messaging/kafka/consumers/eventBridge.consumer.js';
 import { startBackgroundWorkers } from './lib/worker.js';
+import { prewarmCache } from './lib/cache.js';
 
 let server: Server;
 
@@ -77,6 +78,9 @@ const bootstrap = async () => {
     realtimeEventBridge.start().catch((err) => {
       logger.warn({ err }, 'Realtime Event Bridge start deferred.');
     });
+
+    // 6. Pre-warm L1 In-Memory LRU Cache for Sub-5ms SLA
+    prewarmCache().catch(() => {});
 
     server.listen(env.PORT, '0.0.0.0', 2048, () => {
       logger.info(`🚀 MedFlow Enterprise Real-Time API Gateway listening on port ${env.PORT} in [${env.NODE_ENV}] mode.`);
