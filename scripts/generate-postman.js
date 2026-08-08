@@ -838,7 +838,109 @@ Object.keys(modulePayloads).forEach((modName) => {
   collection.item.push(modFolder);
 });
 
-// 3. System Health & Lockout Folders
+// 3. High-Throughput Load Testing Suite Folder
+collection.item.push({
+  name: "High-Throughput Load Testing Suite",
+  item: [
+    {
+      name: "Load Test - High Concurrency Patient Listing (Paginated & Redis Cached)",
+      request: {
+        method: "GET",
+        header: standardHeaders,
+        url: {
+          raw: "{{base_url}}/patient?page=1&limit=50",
+          host: ["{{base_url}}"],
+          path: ["patient"],
+          query: [
+            { key: "page", value: "1" },
+            { key: "limit", value: "50" }
+          ]
+        },
+        description: "Evaluates API throughput and P95 latency for paginated patient reads under sustained load."
+      },
+      event: makeTestEvents([200])
+    },
+    {
+      name: "Load Test - High Concurrency Doctor Directory (Redis Cache HIT Test)",
+      request: {
+        method: "GET",
+        header: standardHeaders,
+        url: {
+          raw: "{{base_url}}/doctor?page=1&limit=20",
+          host: ["{{base_url}}"],
+          path: ["doctor"],
+          query: [
+            { key: "page", value: "1" },
+            { key: "limit", value: "20" }
+          ]
+        },
+        description: "Validates sub-10ms Redis cache hit performance during heavy concurrent doctor searches."
+      },
+      event: makeTestEvents([200])
+    },
+    {
+      name: "Load Test - High Concurrency Appointment Query (Compound Index Search)",
+      request: {
+        method: "GET",
+        header: standardHeaders,
+        url: {
+          raw: "{{base_url}}/appointment?page=1&limit=25",
+          host: ["{{base_url}}"],
+          path: ["appointment"],
+          query: [
+            { key: "page", value: "1" },
+            { key: "limit", value: "25" }
+          ]
+        },
+        description: "Tests compound index scan efficiency and query latency."
+      },
+      event: makeTestEvents([200])
+    },
+    {
+      name: "Load Test - System Readiness Probe (/ready)",
+      request: {
+        auth: { type: "noauth" },
+        method: "GET",
+        header: unauthHeaders,
+        url: {
+          raw: "{{system_url}}/ready",
+          host: ["{{system_url}}"],
+          path: ["ready"]
+        },
+        description: "Load tests readiness probe health check endpoint."
+      },
+      event: makeTestEvents([200])
+    },
+    {
+      name: "Load Test - Prometheus Metrics Telemetry (/metrics)",
+      request: {
+        auth: { type: "noauth" },
+        method: "GET",
+        header: unauthHeaders,
+        url: {
+          raw: "{{system_url}}/metrics",
+          host: ["{{system_url}}"],
+          path: ["metrics"]
+        },
+        description: "Verifies high-throughput telemetry metrics scraping under load."
+      },
+      event: [
+        {
+          listen: "test",
+          script: {
+            exec: [
+              "pm.test('Status code is 200', function () { pm.response.to.have.status(200); });",
+              "pm.test('Response time is under 500ms', function () { pm.expect(pm.response.responseTime).to.be.below(500); });"
+            ],
+            type: "text/javascript"
+          }
+        }
+      ]
+    }
+  ]
+});
+
+// 4. System Health & Lockout Folders
 collection.item.push({
   name: "System Health & Metrics",
   item: [

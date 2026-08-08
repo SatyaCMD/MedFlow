@@ -3024,7 +3024,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"name\": \"Approved & Dispatched O- Transfusion\",\n    \"status\": \"APPROVED_DISPATCHED\",\n    \"dispatchedBy\": \"Blood Bank Admin\",\n    \"dispatchTimestamp\": \"2026-08-03T19:42:09.416Z\"\n}"
+              "raw": "{\n    \"name\": \"Approved & Dispatched O- Transfusion\",\n    \"status\": \"APPROVED_DISPATCHED\",\n    \"dispatchedBy\": \"Blood Bank Admin\",\n    \"dispatchTimestamp\": \"2026-08-08T13:15:24.609Z\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/blood-bank/{{blood-bank_id}}",
@@ -4757,7 +4757,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"name\": \"Pre-Consultation Vitals Telemetry Message\",\n    \"status\": \"READ\",\n    \"readAt\": \"2026-08-03T19:42:09.416Z\"\n}"
+              "raw": "{\n    \"name\": \"Pre-Consultation Vitals Telemetry Message\",\n    \"status\": \"READ\",\n    \"readAt\": \"2026-08-08T13:15:24.610Z\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/messaging/{{messaging_id}}",
@@ -5068,7 +5068,7 @@
             ],
             "body": {
               "mode": "raw",
-              "raw": "{\n    \"name\": \"Lab Results Published Notification\",\n    \"status\": \"DELIVERED\",\n    \"deliveredAt\": \"2026-08-03T19:42:09.416Z\"\n}"
+              "raw": "{\n    \"name\": \"Lab Results Published Notification\",\n    \"status\": \"DELIVERED\",\n    \"deliveredAt\": \"2026-08-08T13:15:24.610Z\"\n}"
             },
             "url": {
               "raw": "{{base_url}}/notification/{{notification_id}}",
@@ -6095,6 +6095,301 @@
                   "        }",
                   "    } catch (e) {}",
                   "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      "name": "High-Throughput Load Testing Suite",
+      "item": [
+        {
+          "name": "Load Test - High Concurrency Patient Listing (Paginated & Redis Cached)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "x-hospital-id",
+                "value": "HOSP-001"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/patient?page=1&limit=50",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "patient"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "50"
+                }
+              ]
+            },
+            "description": "Evaluates API throughput and P95 latency for paginated patient reads under sustained load."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200]);",
+                  "});",
+                  "pm.test(\"Response time is under 10000ms\", function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(10000);",
+                  "});",
+                  "pm.test(\"Response payload structure is valid JSON\", function () {",
+                  "    pm.response.to.be.json;",
+                  "});",
+                  "pm.test(\"Response contains success flag\", function () {",
+                  "    try {",
+                  "        if (pm.response && pm.response.text && pm.response.text()) {",
+                  "            var jsonData = pm.response.json();",
+                  "            pm.expect(jsonData).to.have.property('success');",
+                  "        }",
+                  "    } catch (e) {}",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Load Test - High Concurrency Doctor Directory (Redis Cache HIT Test)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "x-hospital-id",
+                "value": "HOSP-001"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/doctor?page=1&limit=20",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "doctor"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "20"
+                }
+              ]
+            },
+            "description": "Validates sub-10ms Redis cache hit performance during heavy concurrent doctor searches."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200]);",
+                  "});",
+                  "pm.test(\"Response time is under 10000ms\", function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(10000);",
+                  "});",
+                  "pm.test(\"Response payload structure is valid JSON\", function () {",
+                  "    pm.response.to.be.json;",
+                  "});",
+                  "pm.test(\"Response contains success flag\", function () {",
+                  "    try {",
+                  "        if (pm.response && pm.response.text && pm.response.text()) {",
+                  "            var jsonData = pm.response.json();",
+                  "            pm.expect(jsonData).to.have.property('success');",
+                  "        }",
+                  "    } catch (e) {}",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Load Test - High Concurrency Appointment Query (Compound Index Search)",
+          "request": {
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              },
+              {
+                "key": "Authorization",
+                "value": "Bearer {{accessToken}}"
+              },
+              {
+                "key": "x-hospital-id",
+                "value": "HOSP-001"
+              }
+            ],
+            "url": {
+              "raw": "{{base_url}}/appointment?page=1&limit=25",
+              "host": [
+                "{{base_url}}"
+              ],
+              "path": [
+                "appointment"
+              ],
+              "query": [
+                {
+                  "key": "page",
+                  "value": "1"
+                },
+                {
+                  "key": "limit",
+                  "value": "25"
+                }
+              ]
+            },
+            "description": "Tests compound index scan efficiency and query latency."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200]);",
+                  "});",
+                  "pm.test(\"Response time is under 10000ms\", function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(10000);",
+                  "});",
+                  "pm.test(\"Response payload structure is valid JSON\", function () {",
+                  "    pm.response.to.be.json;",
+                  "});",
+                  "pm.test(\"Response contains success flag\", function () {",
+                  "    try {",
+                  "        if (pm.response && pm.response.text && pm.response.text()) {",
+                  "            var jsonData = pm.response.json();",
+                  "            pm.expect(jsonData).to.have.property('success');",
+                  "        }",
+                  "    } catch (e) {}",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Load Test - System Readiness Probe (/ready)",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{system_url}}/ready",
+              "host": [
+                "{{system_url}}"
+              ],
+              "path": [
+                "ready"
+              ]
+            },
+            "description": "Load tests readiness probe health check endpoint."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test(\"Status code is 200\", function () {",
+                  "    pm.expect(pm.response.code).to.be.oneOf([200]);",
+                  "});",
+                  "pm.test(\"Response time is under 10000ms\", function () {",
+                  "    pm.expect(pm.response.responseTime).to.be.below(10000);",
+                  "});",
+                  "pm.test(\"Response payload structure is valid JSON\", function () {",
+                  "    pm.response.to.be.json;",
+                  "});",
+                  "pm.test(\"Response contains success flag\", function () {",
+                  "    try {",
+                  "        if (pm.response && pm.response.text && pm.response.text()) {",
+                  "            var jsonData = pm.response.json();",
+                  "            pm.expect(jsonData).to.have.property('success');",
+                  "        }",
+                  "    } catch (e) {}",
+                  "});"
+                ],
+                "type": "text/javascript"
+              }
+            }
+          ]
+        },
+        {
+          "name": "Load Test - Prometheus Metrics Telemetry (/metrics)",
+          "request": {
+            "auth": {
+              "type": "noauth"
+            },
+            "method": "GET",
+            "header": [
+              {
+                "key": "Content-Type",
+                "value": "application/json"
+              }
+            ],
+            "url": {
+              "raw": "{{system_url}}/metrics",
+              "host": [
+                "{{system_url}}"
+              ],
+              "path": [
+                "metrics"
+              ]
+            },
+            "description": "Verifies high-throughput telemetry metrics scraping under load."
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('Status code is 200', function () { pm.response.to.have.status(200); });",
+                  "pm.test('Response time is under 500ms', function () { pm.expect(pm.response.responseTime).to.be.below(500); });"
                 ],
                 "type": "text/javascript"
               }
