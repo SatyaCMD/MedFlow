@@ -35,12 +35,12 @@ export abstract class BaseRepository<T extends Document> {
       return null;
     }
     const filter = this.scopeQuery({ _id: id } as FilterQuery<T>, hospitalId);
-    return this.model.findOne(filter).lean().exec() as Promise<T | null>;
+    return this.model.findOne(filter).read('secondaryPreferred').lean().exec() as Promise<T | null>;
   }
 
   async findOne(filter: FilterQuery<T>, hospitalId: string): Promise<T | null> {
     const scopedFilter = this.scopeQuery(filter, hospitalId);
-    return this.model.findOne(scopedFilter).lean().exec() as Promise<T | null>;
+    return this.model.findOne(scopedFilter).read('secondaryPreferred').lean().exec() as Promise<T | null>;
   }
 
   async create(data: Partial<T>, hospitalId: string): Promise<T> {
@@ -72,7 +72,7 @@ export abstract class BaseRepository<T extends Document> {
     hospitalId: string
   ): Promise<PaginatedResult<T>> {
     const page = Math.max(1, options.page || 1);
-    const limit = Math.max(1, options.limit || 20);
+    const limit = Math.min(100, Math.max(1, options.limit || 20)); // Cap limit at 100
     const skip = (page - 1) * limit;
 
     const scopedFilter = this.scopeQuery(filter, hospitalId);
@@ -82,8 +82,8 @@ export abstract class BaseRepository<T extends Document> {
     const sortOptions = { [sortField]: sortOrder } as { [key: string]: 1 | -1 };
 
     const [items, total] = await Promise.all([
-      this.model.find(scopedFilter).sort(sortOptions).skip(skip).limit(limit).lean().exec() as Promise<T[]>,
-      this.model.countDocuments(scopedFilter),
+      this.model.find(scopedFilter).read('secondaryPreferred').sort(sortOptions).skip(skip).limit(limit).lean().exec() as Promise<T[]>,
+      this.model.countDocuments(scopedFilter).read('secondaryPreferred'),
     ]);
 
     const totalPages = Math.ceil(total / limit);

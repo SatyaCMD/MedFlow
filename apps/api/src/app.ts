@@ -1,6 +1,7 @@
 import express from 'express';
 import cors from 'cors';
 import helmet from 'helmet';
+import compression from 'compression';
 import mongoSanitize from 'express-mongo-sanitize';
 import mongoose from 'mongoose';
 import { env } from './config/env.js';
@@ -32,6 +33,9 @@ import { rateLimit } from './middleware/rateLimit.js';
 import { apiGatewayMiddleware } from './gateway/gatewayRouter.js';
 
 const app = express();
+
+// Enable Gzip/Brotli Payload Compression
+app.use(compression());
 
 // Enterprise API Gateway Pipeline
 app.use(apiGatewayMiddleware as any);

@@ -75,6 +75,26 @@ services:
     networks:
       - medflow-network
 
+  loki:
+    image: grafana/loki:latest
+    container_name: medflow-loki
+    restart: unless-stopped
+    ports:
+      - "3100:3100"
+    command: -config.file=/etc/loki/local-config.yaml
+    networks:
+      - medflow-network
+
+  promtail:
+    image: grafana/promtail:latest
+    container_name: medflow-promtail
+    restart: unless-stopped
+    volumes:
+      - /var/log:/var/log
+    command: -config.file=/etc/promtail/config.yml
+    networks:
+      - medflow-network
+
 volumes:
   prometheus_data:
     driver: local

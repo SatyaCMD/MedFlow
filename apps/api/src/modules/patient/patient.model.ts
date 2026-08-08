@@ -18,5 +18,9 @@ const patientSchema = new Schema<IPatient>(
   { timestamps: true }
 );
 
+// High-Throughput Compound Indexes for Multi-Tenant Queries & Soft Delete Filters
+patientSchema.index({ hospitalId: 1, deletedAt: 1, createdAt: -1 });
+patientSchema.index({ hospitalId: 1, name: 1 });
+
 export const Patient = model<IPatient>('Patient', patientSchema);
 

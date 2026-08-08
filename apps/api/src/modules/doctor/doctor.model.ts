@@ -18,5 +18,9 @@ const doctorSchema = new Schema<IDoctor>(
   { timestamps: true }
 );
 
+// High-Throughput Compound Indexes
+doctorSchema.index({ hospitalId: 1, deletedAt: 1, createdAt: -1 });
+doctorSchema.index({ hospitalId: 1, name: 1 });
+
 export const Doctor = model<IDoctor>('Doctor', doctorSchema);
 

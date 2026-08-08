@@ -10,6 +10,7 @@ import { kafkaEngine } from './messaging/kafka/kafka.client.js';
 import { rabbitMQEngine } from './messaging/rabbitmq/rabbitmq.client.js';
 import { outboxWorker } from './messaging/outbox/outboxWorker.js';
 import { realtimeEventBridge } from './messaging/kafka/consumers/eventBridge.consumer.js';
+import { startBackgroundWorkers } from './lib/worker.js';
 
 let server: Server;
 
@@ -70,8 +71,9 @@ const bootstrap = async () => {
       logger.info('Messaging infrastructure initialization deferred to outbox worker fallback.');
     }
 
-    // 5. Start Background Outbox Worker & Realtime Event Bridge
+    // 5. Start Background Outbox Worker, BullMQ Workers & Realtime Event Bridge
     outboxWorker.start();
+    startBackgroundWorkers();
     realtimeEventBridge.start().catch((err) => {
       logger.warn({ err }, 'Realtime Event Bridge start deferred.');
     });
