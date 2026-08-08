@@ -2,13 +2,11 @@ import { Request, Response, NextFunction } from 'express';
 import { logger } from '../lib/logger.js';
 
 export const requestLoggerMiddleware = (req: Request, res: Response, next: NextFunction) => {
-  if (process.env.DISABLE_VERBOSE_LOGS === 'true') {
-    return next();
-  }
-
   const start = Date.now();
   res.on('finish', () => {
     const duration = Date.now() - start;
+    const logLine = `[HTTP] ${req.method} ${req.originalUrl || req.url} ${res.statusCode} - ${duration}ms`;
+    console.log(logLine);
     logger.info(
       {
         method: req.method,
@@ -16,7 +14,7 @@ export const requestLoggerMiddleware = (req: Request, res: Response, next: NextF
         status: res.statusCode,
         duration: `${duration}ms`,
       },
-      `HTTP ${req.method} ${req.originalUrl || req.url} ${res.statusCode} - ${duration}ms`
+      logLine
     );
   });
   next();
