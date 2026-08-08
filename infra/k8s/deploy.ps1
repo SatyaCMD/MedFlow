@@ -7,7 +7,9 @@ Write-Host "[INFO] Starting MedFlow Enterprise Kubernetes Deployment..." -Foregr
 # 1. Ensure Docker images are properly tagged for local cluster resolution
 Write-Host "[INFO] Checking and tagging local Docker images for Kubernetes..." -ForegroundColor Yellow
 try { docker tag medflow-api:latest medicore360/api:latest 2>$null } catch {}
+try { docker tag medflow-api:latest medicore360/api:v1.0.1 2>$null } catch {}
 try { docker tag medflow-web:latest medicore360/web:latest 2>$null } catch {}
+try { docker tag medflow-web:latest medicore360/web:v1.0.0 2>$null } catch {}
 
 # 2. Apply Kustomize Stack
 Write-Host "[INFO] Applying complete Kubernetes stack (Config, Secrets, StatefulSets, Deployments, Ingress, HPA, NetworkPolicy, PDB)..." -ForegroundColor Yellow
