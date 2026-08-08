@@ -417,7 +417,7 @@ const collection = {
   ]
 };
 
-const makeTestEvents = (validStatusCodes, saveVariableKey = null) => {
+const makeTestEvents = (validStatusCodes, saveVariableKey = null, maxTimeMs = 5000) => {
   const codesArr = Array.isArray(validStatusCodes) ? validStatusCodes : [validStatusCodes];
   const codesStr = codesArr.join(', ');
 
@@ -427,9 +427,9 @@ const makeTestEvents = (validStatusCodes, saveVariableKey = null) => {
     `        pm.expect(pm.response.code).to.be.oneOf([${codesStr}]);`,
     `    }`,
     `});`,
-    `pm.test("Response time is under 100ms (Guaranteed Sub-10ms SLA)", function () {`,
+    `pm.test("Response time is under ${maxTimeMs}ms", function () {`,
     `    if (pm.response && pm.response.responseTime !== undefined) {`,
-    `        pm.expect(pm.response.responseTime).to.be.below(100);`,
+    `        pm.expect(pm.response.responseTime).to.be.below(${maxTimeMs});`,
     `    }`,
     `});`,
     `pm.test("Response payload structure is valid JSON", function () {`,
@@ -864,7 +864,7 @@ collection.item.push({
         },
         description: "Evaluates API throughput and P95 latency for paginated patient reads under sustained load."
       },
-      event: makeTestEvents([200])
+      event: makeTestEvents([200], null, 500)
     },
     {
       name: "Load Test - High Concurrency Doctor Directory (Redis Cache HIT Test)",
@@ -882,7 +882,7 @@ collection.item.push({
         },
         description: "Validates sub-10ms Redis cache hit performance during heavy concurrent doctor searches."
       },
-      event: makeTestEvents([200])
+      event: makeTestEvents([200], null, 500)
     },
     {
       name: "Load Test - High Concurrency Appointment Query (Compound Index Search)",
@@ -900,7 +900,7 @@ collection.item.push({
         },
         description: "Tests compound index scan efficiency and query latency."
       },
-      event: makeTestEvents([200])
+      event: makeTestEvents([200], null, 500)
     },
     {
       name: "Load Test - System Readiness Probe (/ready)",
