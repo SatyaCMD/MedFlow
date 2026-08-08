@@ -3,7 +3,7 @@ import { env } from '../config/env.js';
 import { logger } from './logger.js';
 
 export const redis = new Redis(env.REDIS_URI, {
-  maxRetriesPerRequest: 3,
+  maxRetriesPerRequest: null,
   retryStrategy(times: number) {
     const delay = Math.min(times * 100, 3000);
     return delay;

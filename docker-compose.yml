@@ -24,7 +24,7 @@ services:
       dockerfile: ./infra/docker/api.prod.Dockerfile
     container_name: api
     ports:
-      - "4001:4000"
+      - "4000:4000"
     environment:
       - PORT=4000
       - NODE_ENV=production
