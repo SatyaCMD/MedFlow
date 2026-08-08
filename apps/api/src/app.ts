@@ -31,11 +31,15 @@ import aiRouter from './modules/ai/ai.routes.js';
 import auditRouter from './modules/audit/audit.routes.js';
 import { rateLimit } from './middleware/rateLimit.js';
 import { apiGatewayMiddleware } from './gateway/gatewayRouter.js';
+import { requestLoggerMiddleware } from './middleware/requestLogger.js';
 
 const app = express();
 
 // Enable Gzip/Brotli Payload Compression
 app.use(compression());
+
+// Real-Time Request Logging Middleware for Live Terminal Telemetry
+app.use(requestLoggerMiddleware);
 
 // Enterprise API Gateway Pipeline
 app.use(apiGatewayMiddleware as any);
